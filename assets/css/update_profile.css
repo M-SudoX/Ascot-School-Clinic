@@ -1,4 +1,4 @@
-/* Update Profile Styles with Sliding Sidebar */
+/* Update Profile Styles with Fixed, Scrollable Sidebar */
 * {
     margin: 0;
     padding: 0;
@@ -21,15 +21,20 @@ body.no-scroll {
     background: linear-gradient(135deg, #ffda6a, #fff7da);
     padding: 15px 20px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1100;
 }
+
 .logo-img {
     width: 80px;
     height: 80px;
     object-fit: cover;
     border-radius: 50%;
-    max-width: 80px;
-    max-height: 80px;
 }
+
 .college-info h4 {
     color: #333;
     margin: 0;
@@ -46,41 +51,47 @@ body.no-scroll {
 }
 
 .college-info p {
-    color: #666;
+    color: #333;
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 1.1em;
+    font-weight: bold;
 }
 
 /* Main Container */
 .main-container {
     min-height: calc(100vh - 90px);
     position: relative;
+    margin-top: 100px;
 }
+
 .span {
     font-size: 10px;
 }
 
 /* Sidebar Styles */
 .sidebar {
-    background-color: #fff;
-    min-height: calc(100vh - 90px);
-    padding: 0;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-    position: relative;
-    transition: transform 0.3s ease-in-out;
-    overflow-y: auto;
+    position: fixed;
+    top: 100px; /* aligns below header */
+    left: 0;
+    width: 250px;
+    height: calc(100vh - 100px); /* full height minus header */
+    background-color: #f1f3f6;
+    padding: 20px 0;
+    border-right: 1px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden; /* prevents sidebar scrolling */
+    z-index: 900;
 }
 
 /* Mobile Sidebar Positioning */
 @media (max-width: 767px) {
     .sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
+        transform: translateX(-100%);
         width: 280px;
         height: 100vh;
-        z-index: 1050;
-        transform: translateX(-100%);
+        top: 0;
         background-color: #fff;
         box-shadow: 0 0 20px rgba(0,0,0,0.3);
         padding-top: 20px;
@@ -157,10 +168,9 @@ body.no-scroll {
 .nav-link.active {
     font-size: 18px;
     background-color: #f5f5f5;
-    color:#333;
+    color: #333;
     border-left-color: #ffda6a;
     font-weight: 600;
-    
 }
 
 .nav-link i {
@@ -191,14 +201,18 @@ body.no-scroll {
 
 /* Main Content */
 .main-content {
+    margin-left: 280px; /* ✅ same width as sidebar */
     padding: 30px;
+    overflow-y: auto;
+    height: calc(100vh - 100px);
     transition: margin-left 0.3s ease-in-out;
 }
 
 @media (max-width: 767px) {
     .main-content {
-        padding: 15px;
         margin-left: 0;
+        padding: 15px;
+        height: auto;
     }
 }
 
@@ -249,6 +263,7 @@ body.no-scroll {
 
 .form-title {
     background-color: #f8f9fa;
+    padding: 20px 30px;
     border-bottom: 2px solid #dee2e6;
     text-align: center;
 }
@@ -262,7 +277,7 @@ body.no-scroll {
 
 /* Form Section */
 .form-section {
-    padding: 10px;
+    padding: 30px;
 }
 
 .section-title {
@@ -287,7 +302,7 @@ body.no-scroll {
 .form-control, .form-select {
     border: 2px solid #e9ecef;
     border-radius: 6px;
-    padding: 5px 7px;
+    padding: 10px 12px;
     font-size: 14px;
     transition: all 0.3s ease;
     background-color: #fff;
@@ -316,10 +331,12 @@ body.no-scroll {
     transition: all 0.3s ease;
 }
 
+/* Buttons */
 .btn-primary {
     background: linear-gradient(135deg, #007bff, #0056b3);
     border: none;
     box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+    color: #fff;
 }
 
 .btn-primary:hover {
@@ -336,17 +353,9 @@ body.no-scroll {
 .btn-secondary:hover {
     background-color: #5a6268;
     transform: translateY(-2px);
-    color: #fff;
 }
 
-.text-muted {
-    text-align: center;
-    font-size: medium;
-    --bs-text-opacity: 1;
-    color: #6c757d !important;
-}
-
-/* Sidebar Overlay */
+/* Sidebar Overlay (mobile) */
 .sidebar-overlay {
     position: fixed;
     top: 0;
@@ -363,64 +372,6 @@ body.no-scroll {
 .sidebar-overlay.show {
     opacity: 1;
     visibility: visible;
-}
-
-/* Mobile menu toggle button */
-#sidebarToggle {
-    border: none;
-    background: transparent;
-    color: #333;
-    font-size: 1.3rem;
-    padding: 8px 12px;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#sidebarToggle:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-    color: #007bff;
-}
-
-#sidebarToggle:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-}
-
-/* Desktop - hide toggle button */
-@media (min-width: 768px) {
-    #sidebarToggle {
-        display: none !important;
-    }
-}
-
-/* Mobile specific styles */
-@media (max-width: 767px) {
-    .form-header {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .form-logo {
-        margin-right: 0;
-        margin-bottom: 10px;
-    }
-    
-    .form-section {
-        padding: 20px;
-    }
-    
-    .form-actions {
-        padding: 15px 20px;
-    }
-    
-    .form-actions .btn {
-        margin: 5px 0;
-        width: 100%;
-        display: block;
-    }
 }
 
 /* Custom scrollbar for sidebar */
@@ -440,24 +391,25 @@ body.no-scroll {
 .sidebar::-webkit-scrollbar-thumb:hover {
     background: #ced4da;
 }
-.btn-success {
-    --bs-btn-color: #fff;
-    --bs-btn-bg: #0d6efd;
-    --bs-btn-border-color: #0d6efd;
-    --bs-btn-hover-color: #fff;
-    --bs-btn-hover-bg: #0b5ed7;
-    --bs-btn-hover-border-color: #0a58ca;
-    --bs-btn-focus-shadow-rgb: 60, 153, 110;
-    --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: #0a58ca;
-    --bs-btn-active-border-color: #0a53be;
-    --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
-    --bs-btn-disabled-color: #fff;
-    --bs-btn-disabled-bg: #0d6efd;
-    --bs-btn-disabled-border-color: #0d6efd;
-    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-}
-.college-info p {
-    color: #333;
-    font-size: 1.1em;
+
+/* Mobile specific styles */
+@media (max-width: 767px) {
+    .form-header {
+        flex-direction: column;
+        text-align: center;
     }
+
+    .form-logo {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+
+    .form-section {
+        padding: 20px;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+        margin: 5px 0;
+    }
+}

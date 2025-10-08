@@ -59,7 +59,7 @@ if (!$student_info) {
                 </div>
                 <div class="col">
                     <div class="college-info">
-                        <h4>Republic of the Philippines</h4>
+                        <h5>Republic of the Philippines</h5>
                         <h4>AURORA STATE COLLEGE OF TECHNOLOGY</h4>
                         <p>ONLINE SCHOOL CLINIC</p>  <!-- SYSTEM TITLE -->
                     </div>

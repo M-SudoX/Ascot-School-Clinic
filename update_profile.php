@@ -216,7 +216,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
   <link href="assets/css/update_profile.css" rel="stylesheet">
   <style>
     .form-header-with-logo {
-        border-bottom: 3px solid #e0f02eff;
+        border-bottom: 3px solid #2E8B57;
         padding: 20px 0;
         margin-bottom: 30px;
         background: linear-gradient(135deg, #ffda6a, #fff7da);
@@ -272,19 +272,21 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
       </div>
   </div>
 
-  <div class="container-fluid">
-    <div class="row">
-      <!-- SIDEBAR NAVIGATION -->
-      <div class="col-md-3 col-lg-2 sidebar">
-        <nav class="nav flex-column">
-          <a class="nav-link" href="student_dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-          <a class="nav-link active" href="update_profile.php"><i class="fas fa-user-edit"></i> Update Profile</a>
-          <a class="nav-link" href="schedule_consultation.php"><i class="fas fa-calendar-alt"></i> Schedule Consultation</a>
-        </nav>
-        <div class="logout-btn">
-          <a class="nav-link text-danger" href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
-        </div>
-      </div>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- SIDEBAR NAVIGATION -->
+            <div class="col-md-3 col-lg-2 sidebar">
+                <nav class="nav flex-column">
+                    <!-- NAVIGATION LINKS -->
+                    <a class="nav-link active" href="student_dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    <a class="nav-link" href="update_profile.php"><i class="fas fa-user-edit"></i> Update Profile</a>
+                    <a class="nav-link" href="schedule_consultation.php"><i class="fas fa-calendar-alt"></i> Schedule Consultation</a>
+                </nav>
+                <!-- LOGOUT BUTTON -->
+                <div class="logout-btn mt-3">
+                    <a class="nav-link text-danger" href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                </div>
+            </div>
 
       <!-- MAIN CONTENT AREA -->
       <div class="col-md-9 col-lg-10 main-content">
@@ -303,6 +305,10 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
         <?php endif; ?>
+        <br>
+        <br>
+        <br>
+        <br>
         
         <!-- FORM HEADER WITH LOGO -->
         <div class="form-header-with-logo">
@@ -436,6 +442,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 </div>
               </div>
             </div>
+
             <!-- PART II: MEDICAL HISTORY SECTION -->
             <div class="form-section">
               <div class="section-title">PART II: MEDICAL HISTORY</div>
