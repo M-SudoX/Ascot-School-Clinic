@@ -216,10 +216,10 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
   <link href="assets/css/update_profile.css" rel="stylesheet">
   <style>
     .form-header-with-logo {
-        border-bottom: 3px solid #2E8B57;
+        border-bottom: 3px solid #e0f02eff;
         padding: 20px 0;
         margin-bottom: 30px;
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        background: linear-gradient(135deg, #ffda6a, #fff7da);
     }
     .form-header-with-logo .logo-section {
         display: flex;
@@ -436,7 +436,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 </div>
               </div>
             </div>
-
             <!-- PART II: MEDICAL HISTORY SECTION -->
             <div class="form-section">
               <div class="section-title">PART II: MEDICAL HISTORY</div>
