@@ -1,0 +1,468 @@
+
+body {
+    background-color: #f8f9fa;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+/* Header Styles */
+.header {
+    background: linear-gradient(135deg, #ffda6a, #fff7da);
+    padding: 15px 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.logo-img {
+    width: 90px;
+    height: 90%;
+    object-fit: cover;
+    border-radius: 50%;
+    max-width: 80px;
+    max-height: 80px;
+}
+
+.college-info h4 {
+    color: #333;
+    margin: 0;
+    font-weight: bold;
+    font-size: 1.1rem;
+    line-height: 1.2;
+}
+
+.college-info p {
+    color: #666;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    background-color: #e9ecef;
+    min-height: calc(100vh - 90px);
+    padding: 20px 0;
+    position: relative;
+}
+
+.sidebar .nav-link {
+    font-size: 18px;
+    color: #000000;
+    padding: 12px 20px;
+    border-radius: 0;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.sidebar .nav-link:hover {
+    background-color: #6c757d;
+    color: #333;
+}
+
+.sidebar .nav-link.active {
+    background-color: #6c757d;
+    color: #333;
+}
+
+.sidebar .nav-link i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+/* Main Content Styles */
+.main-content {
+    padding: 20px;
+}
+
+/* Info Card Styles */
+.info-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.info-card h5 {
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    align-items: center;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 500;
+    color: #666;
+    flex: 0 0 40%;
+}
+
+.info-value {
+    flex: 1;
+    text-align: right;
+    color: #333;
+}
+
+/* Calendar Widget Styles */
+.calendar-widget {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+}
+
+.calendar-widget h5 {
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.calendar-header {
+    background: linear-gradient(135deg, #ffda6a, #fff7da);
+    color: #333;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    margin: -20px -20px 15px -20px;
+    border-radius: 8px 8px 0 0;
+    font-size: 0.9rem;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background-color: #ddd;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.calendar-day {
+    background-color: white;
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 0.8rem;
+    min-height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.calendar-day:hover {
+    background-color: #f8f9fa;
+}
+
+.calendar-header-day {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #666;
+    min-height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-day.today {
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+}
+
+.calendar-day.has-appointment {
+    background-color: #28a745;
+    color: white;
+    position: relative;
+}
+
+.calendar-day.has-appointment::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 4px;
+    height: 4px;
+    background-color: #ffc107;
+    border-radius: 50%;
+}
+
+/* Next Appointment Styles */
+.next-appointment {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border-left: 4px solid #007bff;
+}
+
+.next-appointment h6 {
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.appointment-date {
+    font-weight: bold;
+    color: #007bff;
+    font-size: 1rem;
+    margin-bottom: 2px;
+}
+
+.appointment-time {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Logout Button Styles */
+.logout-btn {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+}
+
+.logout-btn .nav-link {
+    color: white;
+    text-align: center;
+    border-radius: 5px;
+    justify-content: center;
+}
+
+.logout-btn .nav-link:hover {
+    background-color: white;
+    color: white;
+}
+
+/* Quick Actions Styles */
+.quick-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.quick-action-btn {
+    flex: 1;
+    padding: 15px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    text-align: center;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 80px;
+    justify-content: center;
+}
+
+.quick-action-btn:hover {
+    background-color: #f8f9fa;
+    color: #333;
+    text-decoration: none;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-color: #007bff;
+}
+
+.quick-action-btn i {
+    display: block;
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    color: #007bff;
+}
+
+.quick-action-btn span {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar {
+        min-height: auto;
+        padding: 10px 0;
+    }
+    
+    .main-content {
+        padding: 15px;
+    }
+    
+    .quick-actions {
+        flex-direction: column;
+    }
+    
+    .quick-action-btn {
+        flex-direction: row;
+        text-align: left;
+        min-height: 60px;
+        padding: 12px 15px;
+    }
+    
+    .quick-action-btn i {
+        margin-right: 10px;
+        margin-bottom: 0;
+        font-size: 1.2rem;
+    }
+    
+    .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .info-label {
+        flex: none;
+    }
+    
+    .info-value {
+        text-align: left;
+    }
+    
+    .calendar-grid {
+        font-size: 0.75rem;
+    }
+    
+    .calendar-day,
+    .calendar-header-day {
+        padding: 6px 2px;
+        min-height: 20px;
+    }
+    
+    .logout-btn {
+        position: static;
+        margin-top: 20px;
+    }
+}
+
+@media (max-width: 576px) {
+    .header {
+        padding: 10px 15px;
+    }
+    
+    .college-info h4 {
+        font-size: 1rem;
+    }
+    
+    .college-info p {
+        font-size: 0.8rem;
+    }
+    
+    .logo {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+    
+    .main-content {
+        padding: 10px;
+    }
+    
+    .info-card,
+    .calendar-widget {
+        padding: 15px;
+    }
+}
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading States */
+.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Status Indicators */
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-active {
+    background-color: #28a745;
+}
+
+.status-pending {
+    background-color: #ffc107;
+}
+
+.status-inactive {
+    background-color: #dc3545;
+}
+
+/* Custom Scrollbar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

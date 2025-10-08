@@ -1,0 +1,336 @@
+/* Students Page Styles - CLEAN VERSION */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+}
+
+/* Header Styles */
+.header {
+    background: linear-gradient(135deg, #ffda6a, #fff7da);
+    color: white;
+    padding: 15px 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    
+}
+
+.logo-img {
+    height: 110px;
+    width: 110px;
+}
+.republic {
+    color: #333;
+    font-size: 1.0rem;
+    opacity: 0.9;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+}
+
+.school-name {
+    color: #333;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.2;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+.clinic-title {
+    color: #333;
+    font-size: 1.0rem;
+    font-weight: 600;
+    opacity: 0.95;
+    margin-top: 0.25rem;
+    letter-spacing: 0.5px;
+}
+
+.college-info {
+    text-align: center;
+}
+
+.college-info h4 {
+    margin: 0;
+    font-weight: bold;
+    color: white;
+}
+
+.college-info h4:first-child {
+    font-size: 16px;
+    opacity: 0.9;
+    margin-bottom: 5px;
+}
+
+.college-info h4:last-child {
+    font-size: 22px;
+    margin-bottom: 5px;
+}
+
+.college-info p {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: #e8f5e8;
+    text-transform: uppercase;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    background: white;
+    padding: 0;
+    min-height: calc(100vh - 100px);
+}
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    padding: 30px 0;
+}
+
+.nav-link {
+    color: #333 !important;
+    padding: 15px 25px;
+    text-decoration: none;
+    border: none;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    border-left: 4px solid transparent;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-left-color: #2E8B57;
+}
+
+.nav-link.active {
+    background: rgba(46, 139, 87, 0.2);
+    color: white;
+    font-weight: bold;
+    border-left-color: #2E8B57;
+}
+
+.nav-link i {
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+}
+
+.logout-btn {
+    padding: 0 25px;
+    margin-top: auto;
+}
+
+.text-danger {
+    color: #e74c3c !important;
+}
+
+/* Main Content */
+.main-content {
+    padding: 30px;
+    background: #f8f9fa;
+    min-height: calc(100vh - 100px);
+}
+
+/* Page Header */
+.d-flex h2 {
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.d-flex h2 i {
+    color: #2E8B57;
+    margin-right: 10px;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+/* Table Styles */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background: #c2ebef;
+    color: #333;
+    border: none;
+    padding: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.table tbody td {
+    padding: 15px;
+    vertical-align: middle;
+    border-color: #e9ecef;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(46, 139, 87, 0.05);
+}
+
+/* Badges */
+.badge {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #27ae60, #229954) !important;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.875rem;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #27ae60, #229954);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.btn-outline-primary {
+    border: 2px solid #3498db;
+    color: #3498db;
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: #3498db;
+    color: white;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Form Controls */
+.form-control, .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px 15px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #2E8B57;
+    box-shadow: 0 0 0 3px rgba(46, 139, 87, 0.1);
+}
+
+/* Pagination */
+.pagination {
+    margin-bottom: 0;
+}
+
+.page-link {
+    border: none;
+    color: #2E8B57;
+    padding: 10px 18px;
+    margin: 0 5px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.page-link:hover {
+    background: #2E8B57;
+    color: white;
+}
+
+.page-item.active .page-link {
+    background: linear-gradient(135deg, #2E8B57, #3da56a);
+    border: none;
+}
+
+.page-item.disabled .page-link {
+    color: #6c757d;
+    background: #f8f9fa;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-content {
+        padding: 20px;
+    }
+    
+    .d-flex {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .card-body {
+        padding: 20px;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .btn-group {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .btn-sm {
+        padding: 4px 8px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .sidebar {
+        display: none;
+    }
+    
+    .main-content {
+        margin: 0;
+        padding: 1rem;
+    }
+    
+    .btn {
+        display: none;
+    }
+}
