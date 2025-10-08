@@ -102,9 +102,6 @@ try {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu show" id="consultationMenu">
-                        <a href="new_consultation.php" class="submenu-item">
-                            <i class="fas fa-plus-circle"></i>
-                            New Consultation
                         </a>
                         <a href="view_records.php" class="submenu-item active">
                             <i class="fas fa-folder-open"></i>

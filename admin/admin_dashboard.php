@@ -151,11 +151,6 @@ if (!isset($_SESSION['admin_id'])) {
                             <i class="fas fa-file-invoice"></i>
                             Monthly Summary
                         </a>
-                        <!-- HEALTH TRENDS LINK -->
-                        <a href="health_trends.php" class="submenu-item">
-                            <i class="fas fa-chart-line"></i>
-                            Health Trends
-                        </a>
                     </div>
                 </div>
 
