@@ -67,8 +67,6 @@ require_once 'includes/db_connect.php';
         <!-- Sign-up link (para sa mga bagong user) at Next button -->
         <div class="d-flex justify-content-between align-items-center mt-3">
           <!-- Link papuntang Sign-Up page -->
-          <a href="signup.php" class="signup-link">Sign-Up</a>
-
           <!-- Button para magsumite ng form (dadalhin sa process_user_type.php) -->
           <button type="submit" class="btn btn-next">Next</button>
         </div>

@@ -260,11 +260,10 @@ body {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
-    justify-content: center;
 }
 
 .quick-action-btn {
-    flex: 0.23;
+    flex: 1;
     padding: 15px;
     background: white;
     border: 1px solid #dee2e6;

@@ -154,11 +154,11 @@ if (!$student_info) {
                             </div>
                         </div>
                     </div>
+
                     <!-- CALENDAR WIDGET -->
                     <div class="col-lg-6">
                         <div class="calendar-widget fade-in">
                             <h5>Consultation Schedule Overview</h5>
-                            <br>
                             <div class="calendar-header">APPOINTMENT CALENDAR</div>
                             <div class="calendar-grid" id="calendar">
                                 <!-- CALENDAR HEADER - DAYS OF WEEK -->

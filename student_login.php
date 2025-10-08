@@ -105,8 +105,12 @@
     </form>
 
     <!-- FORGOT PASSWORD LINK -->
-    <div class="text-center mt-3">
-      <a href="#" class="small text-decoration-none">Forget your Password? Click here.</a>
+     <br>
+            <div class="signup-link">
+          Do not have account? <a href="signup.php">SIGN UP</a>
+           </div>
+    <div class="text-center mt-1">
+      Forgot your password? <a href="#">Click here</a>
     </div>
   </div>
 

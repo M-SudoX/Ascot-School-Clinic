@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $_SESSION['success'] = 'Account created successfully! You can now log in.';
-        header("Location: index.php");
+        header("Location: student_login.php");
         exit();
 
     } catch (PDOException $e) {
