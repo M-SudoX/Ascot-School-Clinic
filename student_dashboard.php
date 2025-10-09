@@ -59,7 +59,7 @@ if (!$student_info) {
                 </div>
                 <div class="col">
                     <div class="college-info">
-                        <h5>Republic of the Philippines</h5>
+                        <h4>Republic of the Philippines</h4>
                         <h4>AURORA STATE COLLEGE OF TECHNOLOGY</h4>
                         <p>ONLINE SCHOOL CLINIC</p>  <!-- SYSTEM TITLE -->
                     </div>
@@ -111,7 +111,7 @@ if (!$student_info) {
                     <!-- STUDENT INFORMATION CARD -->
                     <div class="col-lg-6">
                         <div class="info-card fade-in">
-                            <h5>Student Information</h5>
+                            <h4>Student Information</h4>
                             
                             <!-- DISPLAY STUDENT FULL NAME -->
                             <div class="info-row">
@@ -180,8 +180,8 @@ if (!$student_info) {
                                     </div>
                                 <?php endfor; ?>
                             </div>
-                            
                             <!-- NEXT APPOINTMENT SECTION -->
+                             <br>
                             <div class="next-appointment">
                                 <h6>Next Upcoming Appointment</h6>
                                 <div class="appointment-date">No upcoming appointments</div>  <!-- DEFAULT MESSAGE -->

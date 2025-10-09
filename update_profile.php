@@ -232,14 +232,15 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
     }
     .form-header-with-logo .college-info h4 {
         margin: 0;
-        color: #2c3e50;
+        color: #333;
         font-weight: bold;
     }
     .form-header-with-logo .college-info p {
         margin: 5px 0 0 0;
         color: #333;
-        font-weight: bold;
+        font-weight: normal;
         font-size: 1.1em;
+        margin-top: -10px; 
     }
     @media (max-width: 768px) {
         .form-header-with-logo .logo-img {

@@ -82,6 +82,6 @@ require_once 'includes/db_connect.php';
 
   <!-- Bootstrap JS Bundle (local file mula sa assets/css folder) -->
   <!-- Naglalaman ng JS code ng Bootstrap at Popper.js para gumana ang mga interactive components -->
-  <script src="assets/css/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
