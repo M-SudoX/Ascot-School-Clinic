@@ -101,7 +101,7 @@
           <div id="password-requirements" class="password-requirements">
             <small id="req-length">✗ At least 6 characters</small>
             <small id="req-number">✗ At least 1 number</small>
-            <small id="req-symbol">✗ At least 1 special character</small>
+            <small id="req-symbol">✗ At least 1 special character (!, @, #, $, %, ^, &, *)</small>
             <small id="req-letter">✗ At least 1 letter</small>
           </div>
 
@@ -140,7 +140,7 @@
       // ✅ Separate checks for number and special character
       const hasLength = password.length >= 6;
       const hasNumber = /\d/.test(password);
-      const hasSymbol = /[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;/]/.test(password);
+      const hasSymbol = /[!@#$%^&*]/.test(password);
       const hasLetter = /[A-Za-z]/.test(password);
 
       const reqLength = document.getElementById('req-length');
@@ -150,7 +150,7 @@
 
       reqLength.innerHTML = (hasLength ? "✓" : "✗") + " At least 6 characters";
       reqNumber.innerHTML = (hasNumber ? "✓" : "✗") + " At least 1 number";
-      reqSymbol.innerHTML = (hasSymbol ? "✓" : "✗") + " At least 1 special character";
+      reqSymbol.innerHTML = (hasSymbol ? "✓" : "✗") + " At least 1 special character !@#$%^&*";
       reqLetter.innerHTML = (hasLetter ? "✓" : "✗") + " At least 1 letter";
 
       reqLength.classList.toggle('valid', hasLength);
@@ -189,7 +189,7 @@
 
       const hasLength = password.length >= 6;
       const hasNumber = /\d/.test(password);
-      const hasSymbol = /[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;/]/.test(password);
+      const hasSymbol = /[!@#$%^&*]/.test(password);
       const hasLetter = /[A-Za-z]/.test(password);
 
       const allValid = fullname && student_number && email &&
@@ -222,7 +222,7 @@
 
       const hasLength = password.length >= 6;
       const hasNumber = /\d/.test(password);
-      const hasSymbol = /[!@#$%^&*(),.?":{}|<>_\-+=~`[\]\\;/]/.test(password);
+      const hasSymbol = /[!@#$%^&*]/.test(password);
       const hasLetter = /[A-Za-z]/.test(password);
 
       if (!fullname || !student_number || !email || !password || !confirmPassword) {
@@ -231,7 +231,7 @@
       }
 
       if (!hasLength || !hasNumber || !hasSymbol || !hasLetter) {
-        alert('Password must include at least 6 characters, 1 letter, 1 number, and 1 special character.');
+        alert('Password must include at least 6 characters, 1 letter, 1 number, and 1 special character.!@#$%^&*');
         return false;
       }
 

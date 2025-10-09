@@ -432,7 +432,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                   <input type="text" name="course_year" class="form-control underlined"
                          value="<?php echo htmlspecialchars($student_info['course_year'] ?? ''); ?>"
                          <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                         placeholder="e.g. BSIT-3">
+                         placeholder="e.g ">
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Cellphone Number:</label>
@@ -585,7 +585,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 </div>
 
                 <!-- EDIT AND SAVE BUTTONS SECTION -->
-                <div class="action-buttons mt-4 text-center">
+                <div class="action-buttons mt-5 text-center">
                   <?php if (!$edit_mode): ?>
                     <!-- EDIT BUTTON: Papalitan ang URL para mag-switch sa edit mode -->
                     <a href="update_profile.php?edit=true" class="btn btn-edit">

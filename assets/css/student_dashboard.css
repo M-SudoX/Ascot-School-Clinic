@@ -95,17 +95,18 @@ body {
 }
 
 .quick-action-btn {
-    background-color: #ffda6a;
-    color: white;
+    background-color: rgb(254, 254, 109);
+    color: #333;
     padding: 15px 25px;
     border-radius: 10px;
     text-align: center;
     text-decoration: none;
     transition: 0.3s;
+    align-items: center;
 }
 
 .quick-action-btn:hover {
-    background-color: #003580;
+    background-color: #ffda6a;
 }
 
 /* === INFO CARDS === */
