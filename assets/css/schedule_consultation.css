@@ -543,6 +543,9 @@ ease;
     .college-info h3 {
         font-size: 18px;
     }
+    .alert-success {
+        background-color: green;
+    }
 
     .header-info-section {
         flex-direction: column;

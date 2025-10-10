@@ -1,22 +1,55 @@
 <?php
 session_start();
+require 'includes/db_connect.php'; // ✅ Make sure this path is correct
 
-// ✅ Security check kung naka-login ang student
-// Temporarily disabled for testing without database
-// if (!isset($_SESSION['student_id'])) {
-//     header("Location: student_login.php");
-//     exit();
-// }
+// ✅ Security check - ensure student is logged in
+if (!isset($_SESSION['student_id'])) {
+    header("Location: student_login.php");
+    exit();
+}
 
-// ✅ Sample data for testing (remove this when database is ready)
-$student_number = $_SESSION['student_number'] ?? '2021-12345';
+$student_id = $_SESSION['student_id'];
+$student_number = $_SESSION['student_number'] ?? '';
 
 // ✅ Get current month and year
 $currentMonth = date('m');
 $currentYear = date('Y');
 
-// ✅ SAMPLE DATA - Replace this with actual database query later
-$consultationData = [2, 5, 3, 4]; // Week 1, Week 2, Week 3, Week 4
+// ✅ Get start and end of current month
+$monthStart = date('Y-m-01');
+$monthEnd = date('Y-m-t');
+
+// ✅ Fetch all approved consultations this month for this student
+$query = "
+    SELECT date 
+    FROM consultation_requests
+    WHERE student_id = :student_id 
+      AND status = 'Approved'
+      AND date BETWEEN :start AND :end
+";
+$stmt = $pdo->prepare($query);
+$stmt->execute([
+    'student_id' => $student_id,
+    'start' => $monthStart,
+    'end' => $monthEnd
+]);
+$consultations = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+// ✅ Initialize 4-week array
+$consultationData = [0, 0, 0, 0];
+
+foreach ($consultations as $consultDate) {
+    $day = date('j', strtotime($consultDate));
+
+    // Determine week number of the month (1–4)
+    if ($day <= 7) $week = 0;
+    elseif ($day <= 14) $week = 1;
+    elseif ($day <= 21) $week = 2;
+    else $week = 3;
+
+    $consultationData[$week]++;
+}
+
 $totalConsults = array_sum($consultationData);
 ?>
 
@@ -32,17 +65,16 @@ $totalConsults = array_sum($consultationData);
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* ✅ Medium-sized chart adjustment */
+        /* ✅ Keep your design exactly as before */
         .chart-container {
             background: white;
             border-radius: 15px;
             padding: 30px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.07);
-            width: 700px;       /* Medium width */
-            height: 400px;      /* Medium height */
-            margin: 0 auto;     /* Center horizontally */
+            width: 700px;
+            height: 400px;
+            margin: 0 auto;
         }
-
         @media (max-width: 768px) {
             .chart-container {
                 width: 100%;
@@ -107,13 +139,7 @@ $totalConsults = array_sum($consultationData);
                     <i class="fas fa-chart-line"></i>
                     Consultation Reports
                 </div>
-                <p class="page-subtitle">Track your monthly consultation history and statistics</p>
-
-                <!-- DEMO MODE BANNER -->
-                <div class="alert alert-info" role="alert">
-                    <i class="fas fa-info-circle"></i> 
-                    <strong>Demo Mode:</strong> Showing sample data. Connect to database for real data.
-                </div>
+                <p class="page-subtitle">Track your weekly consultation activity this month</p>
 
                 <!-- STATS CARD -->
                 <div class="stats-card">
@@ -143,7 +169,6 @@ $totalConsults = array_sum($consultationData);
     </div>
 
     <script src="assets/js/bootstrap.bundle.min.js"></script>
-
     <script>
         const consultationData = <?php echo json_encode($consultationData); ?>;
 

@@ -189,7 +189,7 @@ if (!isset($_SESSION['admin_id'])) {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="appointmentsMenu">
-                        <a href="calendar.php" class="submenu-item">
+                        <a href="calendar_view.php" class="submenu-item">
                             <i class="fas fa-calendar-alt"></i>
                             Calendar View
                         </a>
