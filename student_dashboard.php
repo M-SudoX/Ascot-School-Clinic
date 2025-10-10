@@ -85,8 +85,18 @@ if (!$student_info) {
                     <a class="nav-link active" href="student_dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
                     <a class="nav-link" href="update_profile.php"><i class="fas fa-user-edit"></i> Update Profile</a>
                     <a class="nav-link" href="schedule_consultation.php"><i class="fas fa-calendar-alt"></i> Schedule Consultation</a>
-                </nav>
+
+                    <!-- ✅ ADDED REPORT LINK -->
+                    <a class="nav-link" href="student_report.php"><i class="fas fa-chart-bar"></i> Report</a>
+                <a class="nav-link" href="student_announcement.php">
+        <i class="fas fa-bullhorn"></i> Announcement
+    </a>
+</nav>
+
+
                 <!-- LOGOUT BUTTON -->
+                 <br>
+                 <br>
                 <div class="logout-btn mt-3">
                     <a class="nav-link text-danger" href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
@@ -95,23 +105,13 @@ if (!$student_info) {
             <!-- MAIN CONTENT AREA -->
             <div class="col-md-9 col-lg-10 main-content">
                 <!-- QUICK ACTION BUTTONS -->
-                <div class="quick-actions">
-                    <a href="update_profile.php" class="quick-action-btn">
-                        <i class="fas fa-user"></i>
-                        <span>Update Profile</span>  <!-- MABILIS NA ACCESS SA PROFILE UPDATE -->
-                    </a>
-                    <a href="schedule_consultation.php" class="quick-action-btn">
-                        <i class="fas fa-calendar-plus"></i>
-                        <span>Schedule Consultation</span>  <!-- MABILIS NA ACCESS SA CONSULTATION -->
-                    </a>
-                </div>
-
                 <!-- INFORMATION DISPLAY ROW -->
                 <div class="row mt-4">
                     <!-- STUDENT INFORMATION CARD -->
                     <div class="col-lg-6">
                         <div class="info-card fade-in">
-                            <h4>Student Information</h4>
+                            <h3>Student Information</h3>
+                            <br>
                             
                             <!-- DISPLAY STUDENT FULL NAME -->
                             <div class="info-row">
@@ -131,10 +131,9 @@ if (!$student_info) {
                                 <span class="info-value">
                                     <?php 
                                     $course_year = $student_info['course_year'] ?? 'Not set';
-                                    // CHECK KUNG BLANK O "Not set" ANG COURSE/YEAR
                                     echo (empty($course_year) || $course_year === 'Not set') 
-                                        ? '<span class="text-warning">Not set</span>'  // WARNING KUNG WALA
-                                        : htmlspecialchars($course_year);  // IPAKITA KUNG MERON
+                                        ? '<span class="text-warning">Not set</span>'
+                                        : htmlspecialchars($course_year);
                                     ?>
                                 </span>
                             </div>
@@ -145,10 +144,9 @@ if (!$student_info) {
                                 <span class="info-value">
                                     <?php 
                                     $contact = $student_info['cellphone_number'] ?? 'Not set';
-                                    // CHECK KUNG BLANK O "Not set" ANG CONTACT NUMBER
                                     echo (empty($contact) || $contact === 'Not set') 
-                                        ? '<span class="text-warning">Not set</span>'  // WARNING KUNG WALA
-                                        : htmlspecialchars($contact);  // IPAKITA KUNG MERON
+                                        ? '<span class="text-warning">Not set</span>'
+                                        : htmlspecialchars($contact);
                                     ?>
                                 </span>
                             </div>
@@ -158,7 +156,8 @@ if (!$student_info) {
                     <!-- CALENDAR WIDGET -->
                     <div class="col-lg-6">
                         <div class="calendar-widget fade-in">
-                            <h5>Consultation Schedule Overview</h5>
+                            <h3>Consultation Schedule Overview</h3>
+                            <br>
                             <div class="calendar-header">APPOINTMENT CALENDAR</div>
                             <div class="calendar-grid" id="calendar">
                                 <!-- CALENDAR HEADER - DAYS OF WEEK -->
@@ -172,19 +171,18 @@ if (!$student_info) {
                                 
                                 <!-- DYNAMIC CALENDAR DAYS GENERATION -->
                                 <?php 
-                                $days_in_month = date('t');  // KUHAIN ANG NUMBER OF DAYS SA CURRENT MONTH
+                                $days_in_month = date('t');
                                 for ($i = 1; $i <= $days_in_month; $i++): 
                                 ?>
                                     <div class="calendar-day <?php echo $i == date('j') ? 'today' : ''; ?>">
-                                        <?php echo $i; ?>  <!-- IPAKITA ANG DAY NUMBER -->
+                                        <?php echo $i; ?>
                                     </div>
                                 <?php endfor; ?>
                             </div>
-                            <!-- NEXT APPOINTMENT SECTION -->
                              <br>
                             <div class="next-appointment">
                                 <h6>Next Upcoming Appointment</h6>
-                                <div class="appointment-date">No upcoming appointments</div>  <!-- DEFAULT MESSAGE -->
+                                <div class="appointment-date">No upcoming appointments</div>
                                 <div class="appointment-time">-</div>
                             </div>
                         </div>
@@ -195,18 +193,16 @@ if (!$student_info) {
     </div>
 
     <!-- JAVASCRIPT FILES -->
-    <script src="assets/js/bootstrap.bundle.min.js"></script>  <!-- BOOTSTRAP JS COMPONENTS -->
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // JAVASCRIPT FOR ENHANCED USER EXPERIENCE
         document.addEventListener('DOMContentLoaded', function() {
-            // AUTO-HIDE SUCCESS ALERT AFTER 3 SECONDS
             const alertBox = document.getElementById("successAlert");
             if (alertBox) {
                 setTimeout(() => {
-                    alertBox.classList.remove("show");  // ALISIN ANG "SHOW" CLASS
-                    setTimeout(() => alertBox.remove(), 300);  // TANGGALIN ANG ELEMENT AFTER ANIMATION
-                }, 3000);  // 3 SECONDS DELAY
+                    alertBox.classList.remove("show");
+                    setTimeout(() => alertBox.remove(), 300);
+                }, 3000);
             }
         });
     </script>

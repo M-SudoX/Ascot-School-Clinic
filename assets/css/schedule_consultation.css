@@ -13,15 +13,16 @@ body {
 
 /* ✅ Fixed Header */
 .header {
-    position: fixed; /* stays visible */
+    background: linear-gradient(135deg, #ffda6a, #fff7da);
+    color: #fff;
+    padding: 15px 30px;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    height: 100px; /* fixed height */
-    background: linear-gradient(135deg, #ffda6a, #fff7da);
-    padding: 15px 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     z-index: 1000;
+     border-bottom: 3px solid #ffdd57;
+     border-radius: 10px;
 }
 
 .header-container {
@@ -60,7 +61,7 @@ body {
     color: #333;
     margin: 0;
     font-weight: bold;
-    font-size: 1.1rem;
+    font-size: 1.20rem;
     line-height: 1.2;
 }
 
@@ -73,9 +74,11 @@ body {
 }
 
 .college-info p {
-    color: #666;
     margin: 0;
-    font-size: 0.9rem;
+    color: #333;
+    font-size: 16px;
+    font-weight: normal;
+    margin-bottom: 10px;
 }
 
 /* ✅ Main Container (starts below header) */
@@ -88,46 +91,53 @@ body {
 
 /* ✅ Sidebar */
 .sidebar {
-    position: fixed;
-    top: 100px; /* aligned below header */
+   position: fixed;
+    top: 80px;
     left: 0;
-    bottom: 0;
-    width: 270px;
-    background: white;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
-    overflow-y: auto;
+    height: calc(100vh - 100px);
+    background-color: #f1f3f6;
+    padding: 20px 0;
+    border-right: 1px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
     z-index: 900;
-    border-radius: 0 15px 15px 0; /* cleaned up radius */
+    border-radius: 0 15px 15px 0;
 }
+
 
 .nav-menu {
     padding: 20px 0;
 }
 
 .nav-link {
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    padding: 15px 25px;
-    text-decoration: none;
     color: #333;
-    transition: all 0.3s ease;
+    padding: 15px 25px;
+    font-weight: 500;
+    text-decoration: none;
+    display: flex
+;
+    align-items: center;
+    font-size: 16px;
     border-left: 4px solid transparent;
+    transition: all 0.3s 
+ease;
+
 }
 
 .nav-link:hover {
-    background-color: #f8f9fa;
-    color: #333;
-    border-left-color: #ffda6a;
-    text-decoration: none;
+    background-color: #778899;
+    color: white;
+    border-radius: 8px;
+    font-size: 16px;
 }
 
 .nav-link .active {
-    background-color: #6c757d;
-    color: rgb(254, 248, 248);
-    border-left-color: #ffda6a;
-    font-weight: 540;
+    background-color: #778899;
+    color: white;
+    border-radius: 8px;
+    font-size: 16px;
 }
 
 .nav-item {
@@ -166,9 +176,7 @@ body {
 }
 
 .logout-link:hover {
-    background-color: #f8d7da !important;
-    border-left-color: #dc3545 !important;
-    color: #dc3545 !important;
+    background:#778899;
 }
 
 .nav-divider {
@@ -190,12 +198,13 @@ body {
 /* Content Header */
 .content-header {
     background: linear-gradient(135deg, #ffda6a, #fff7de);
-    padding: 15px;
+    padding: 50px;
     border-radius: 8px;
     margin-bottom: 30px;
     display: flex;
     align-items: center;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    height: 30px;
 }
 
 .header-info-section {
@@ -514,7 +523,7 @@ body {
     .main-content {
         margin-left: 0;
         padding: 20px;
-        height: calc(100vh - 100px);
+        height: auto;
     }
 
     .form-row {

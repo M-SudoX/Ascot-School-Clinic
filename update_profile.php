@@ -216,11 +216,14 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
   <link href="assets/css/update_profile.css" rel="stylesheet">
   <style>
     .form-header-with-logo {
-        border-bottom: 3px solid #2E8B57;
-        padding: 20px 0;
-        margin-bottom: 30px;
-        background: linear-gradient(135deg, #ffda6a, #fff7da);
-    }
+    background: linear-gradient(135deg, #ffda6a, #fff7de);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
     .form-header-with-logo .logo-section {
         display: flex;
         align-items: center;
@@ -234,12 +237,13 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         margin: 0;
         color: #333;
         font-weight: bold;
+        font-size: 1.20rem;
     }
     .form-header-with-logo .college-info p {
         margin: 5px 0 0 0;
         color: #333;
         font-weight: normal;
-        font-size: 1.1em;
+        font-size: 16px;
         margin-top: -10px; 
     }
     @media (max-width: 768px) {
@@ -273,6 +277,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
       </div>
   </div>
 
+<!-- MAIN LAYOUT CONTAINER -->
     <div class="container-fluid">
         <div class="row">
             <!-- SIDEBAR NAVIGATION -->
@@ -282,8 +287,18 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                     <a class="nav-link active" href="student_dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
                     <a class="nav-link" href="update_profile.php"><i class="fas fa-user-edit"></i> Update Profile</a>
                     <a class="nav-link" href="schedule_consultation.php"><i class="fas fa-calendar-alt"></i> Schedule Consultation</a>
-                </nav>
+
+                    <!-- ✅ ADDED REPORT LINK -->
+                    <a class="nav-link" href="student_report.php"><i class="fas fa-chart-bar"></i> Report</a>
+                <a class="nav-link" href="student_announcement.php">
+        <i class="fas fa-bullhorn"></i> Announcement
+    </a>
+</nav>
+
+
                 <!-- LOGOUT BUTTON -->
+                 <br>
+                 <br>
                 <div class="logout-btn mt-3">
                     <a class="nav-link text-danger" href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
@@ -310,7 +325,8 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         <br>
         <br>
         <br>
-        
+        <br>
+  
         <!-- FORM HEADER WITH LOGO -->
         <div class="form-header-with-logo">
           <div class="container">
@@ -328,7 +344,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
             </div>
           </div>
         </div>
-
         <!-- HEALTH INFORMATION FORM -->
         <div class="health-form-container">
           <div class="form-title">

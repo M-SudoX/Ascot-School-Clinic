@@ -160,10 +160,14 @@ body {
     border-radius: 15px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     margin-bottom: 20px;
-}
 
+}
 .card-body {
-    padding: 30px;
+    flex: 1 1 auto;
+    padding: var(--bs-card-spacer-y) var(--bs-card-spacer-x);
+    color: #333;
+    background-color:#ffda6a ;
+    border-radius: 12px;
 }
 
 /* Table Styles */

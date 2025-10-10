@@ -21,13 +21,13 @@ body {
     left: 0;
     width: 100%;
     z-index: 1000;
+     border-bottom: 3px solid #ffdd57;
+     border-radius: 10px;
 }
 
 .logo-img {
     width: 80px;
-    height: 80px;
-    object-fit: cover;
-    border-radius: 50%;
+    
 }
 
 .college-info h4, .college-info p {
@@ -48,8 +48,7 @@ body {
     position: fixed;
     top: 100px;
     left: 0;
-    width: 220;
-    height: calc(100vh - 100px);
+    height: calc(105vh - 100px);
     background-color: #f1f3f6;
     padding: 20px 0;
     border-right: 1px solid #dee2e6;
@@ -58,12 +57,7 @@ body {
     justify-content: space-between;
     overflow: hidden;
     z-index: 900;
-    border-radius: 0 15px 15px 0;
-}
-
-/* Sidebar Links */
-.nav {
-    padding: 10px 0 20px 0;
+    border-radius: 10px;
 }
 
 .nav-link {
@@ -73,7 +67,7 @@ body {
     text-decoration: none;
     display: flex;
     align-items: center;
-    font-size: 18px;
+    font-size: 16px;
     border-left: 4px solid transparent;
     transition: all 0.3s ease;
 }
@@ -93,12 +87,9 @@ body {
 }
 
 .nav-link.active {
-    padding: 12px 20px;
-    font-weight: 500;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    background-color: #778899;
+    color: white;
+    border-radius: 8px;
     font-size: 16px;
 }
 
@@ -124,7 +115,7 @@ body {
 /* === MAIN CONTENT === */
 .main-content {
     margin-left: 280px;
-    padding: 30px;
+    padding: 25px;
     overflow-y: auto;
     height: calc(100vh - 100px);
     background-color: #f8f9fa;
@@ -140,6 +131,7 @@ body {
     display: flex;
     align-items: center;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    
 }
 
 .form-logo {
@@ -177,10 +169,11 @@ body {
 }
 
 .form-title h3 {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
     color: #333;
     margin-top: -20px; 
+    text-align: center;
 }
 
 /* === FORM SECTIONS === */

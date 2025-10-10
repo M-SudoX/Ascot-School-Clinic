@@ -3,32 +3,16 @@
 //<!-- CLIENT-SIDE TECHNOLOGIES -->
 
 //HTML5 - Page structure and semantics
-
 //CSS3 + Bootstrap 5 - Responsive design and styling
-
 //JavaScript - Interactive features and dynamic content
-
 //Font Awesome - Icons for better user interface
- 
 
 // SERVER-SIDE TECHNOLOGIES
 
 //PHP - Server-side processing and logic
-
 //PDO (PHP Data Objects) - Secure database operations
-
 //MySQL - Data storage and retrieval
-
 //Sessions - Admin authentication and state management
-
-
-
-
-
-
-
-
-// i use session start check if yo are admin and authorize administrator can be access the dashboard 
 
 // START SESSION TO ACCESS SESSION VARIABLES
 session_start();
@@ -52,12 +36,99 @@ if (!isset($_SESSION['admin_id'])) {
     <link href="../assets/webfonts/all.min.css" rel="stylesheet">
     <!-- CUSTOM CSS FOR ADMIN DASHBOARD -->
     <link href="../admin/css/admin_dashboard.css" rel="stylesheet">
+    <style>
+        /* Notification button styles */
+        .notification-dropdown {
+            position: relative;
+        }
+
+        .notification-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #444;
+            margin top: 15px;
+        }
+
+        .notification-btn:hover {
+            color: #007bff;
+        }
+
+        .notification-btn .badge {
+            position: absolute;
+            top: -8px;
+            right: -5px;
+            background-color: #dc3545;
+            color: white;
+            font-size: 0.7rem;
+            border-radius: 50%;
+            padding: 3px 6px;
+        }
+
+        /* Notification dropdown menu */
+        .notification-menu {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            border-radius: 10px;
+            width: 250px;
+            z-index: 999;
+        }
+
+        .notification-menu.show {
+            display: block;
+        }
+
+        .notification-menu .notif-title {
+            font-weight: bold;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .notification-menu .notif-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .notification-menu .notif-list li {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        .notification-menu .notif-list li i {
+            color: #007bff;
+            margin-right: 5px;
+        }
+
+        .notification-menu .view-all {
+            display: block;
+            text-align: center;
+            padding: 8px;
+            font-size: 0.85rem;
+            color: #007bff;
+            text-decoration: none;
+            border-top: 1px solid #ddd;
+        }
+
+        .notification-menu .view-all:hover {
+            background: #f8f9fa;
+        }
+    </style>
 </head>
 <body>
     <!-- HEADER SECTION WITH LOGO AND SCHOOL INFORMATION -->
     <header class="top-header">
         <div class="container-fluid">
-            <div class="header-content">
+            <div class="header-content d-flex align-items-center">
                 <!-- ASCOT LOGO -->
                 <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img">
                 <div class="school-info">
@@ -74,13 +145,11 @@ if (!isset($_SESSION['admin_id'])) {
         <!-- SIDEBAR NAVIGATION MENU -->
         <aside class="sidebar">
             <nav class="sidebar-nav">
-                <!-- DASHBOARD LINK - ACTIVE STATE -->
                 <a href="admin_dashboard.php" class="nav-item active">
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
 
-                <!-- STUDENT MANAGEMENT DROPDOWN MENU -->
                 <div class="nav-group">
                     <button class="nav-item dropdown-btn" data-target="studentMenu">
                         <i class="fas fa-user-graduate"></i>
@@ -88,12 +157,10 @@ if (!isset($_SESSION['admin_id'])) {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu show" id="studentMenu">
-                        <!-- STUDENTS PROFILE LINK -->
                         <a href="students.php" class="submenu-item">
                             <i class="fas fa-id-card"></i>
                             Students Profile
                         </a>
-                        <!-- SEARCH STUDENTS LINK -->
                         <a href="search_students.php" class="submenu-item">
                             <i class="fas fa-search"></i>
                             Search Students
@@ -101,7 +168,6 @@ if (!isset($_SESSION['admin_id'])) {
                     </div>
                 </div>
 
-                <!-- CONSULTATION DROPDOWN MENU -->
                 <div class="nav-group">
                     <button class="nav-item dropdown-btn" data-target="consultationMenu">
                         <i class="fas fa-stethoscope"></i>
@@ -109,7 +175,6 @@ if (!isset($_SESSION['admin_id'])) {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="consultationMenu">
-                        <!-- VIEW RECORDS LINK -->
                         <a href="view_records.php" class="submenu-item">
                             <i class="fas fa-folder-open"></i>
                             View Records
@@ -117,7 +182,6 @@ if (!isset($_SESSION['admin_id'])) {
                     </div>
                 </div>
 
-                <!-- APPOINTMENTS DROPDOWN MENU -->
                 <div class="nav-group">
                     <button class="nav-item dropdown-btn" data-target="appointmentsMenu">
                         <i class="fas fa-calendar-check"></i>
@@ -125,12 +189,10 @@ if (!isset($_SESSION['admin_id'])) {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="appointmentsMenu">
-                        <!-- CALENDAR VIEW LINK -->
                         <a href="calendar.php" class="submenu-item">
                             <i class="fas fa-calendar-alt"></i>
                             Calendar View
                         </a>
-                        <!-- APPROVALS LINK -->
                         <a href="approvals.php" class="submenu-item">
                             <i class="fas fa-check-circle"></i>
                             Approvals
@@ -138,7 +200,6 @@ if (!isset($_SESSION['admin_id'])) {
                     </div>
                 </div>
 
-                <!-- REPORTS DROPDOWN MENU -->
                 <div class="nav-group">
                     <button class="nav-item dropdown-btn" data-target="reportsMenu">
                         <i class="fas fa-chart-bar"></i>
@@ -146,7 +207,6 @@ if (!isset($_SESSION['admin_id'])) {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="reportsMenu">
-                        <!-- MONTHLY SUMMARY LINK -->
                         <a href="monthly_summary.php" class="submenu-item">
                             <i class="fas fa-file-invoice"></i>
                             Monthly Summary
@@ -154,7 +214,6 @@ if (!isset($_SESSION['admin_id'])) {
                     </div>
                 </div>
 
-                <!-- ADMIN TOOLS DROPDOWN MENU -->
                 <div class="nav-group">
                     <button class="nav-item dropdown-btn" data-target="adminMenu">
                         <i class="fas fa-cog"></i>
@@ -162,12 +221,10 @@ if (!isset($_SESSION['admin_id'])) {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="adminMenu">
-                        <!-- USER MANAGEMENT LINK -->
                         <a href="user_management.php" class="submenu-item">
                             <i class="fas fa-users-cog"></i>
                             User Management
                         </a>
-                        <!-- ACCESS LOGS LINK -->
                         <a href="access_logs.php" class="submenu-item">
                             <i class="fas fa-clipboard-list"></i>
                             Access Logs
@@ -175,7 +232,6 @@ if (!isset($_SESSION['admin_id'])) {
                     </div>
                 </div>
 
-                <!-- LOGOUT LINK -->
                 <a href="../logout.php" class="nav-item logout">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
@@ -185,33 +241,45 @@ if (!isset($_SESSION['admin_id'])) {
 
         <!-- MAIN CONTENT AREA -->
         <main class="main-content">
-            <!-- QUICK ACTION BUTTONS SECTION -->
+            <!-- Notification button floating right above quick-actions -->
+             <br>
+             <br>
+             <br>
+             <br>
+            <div style="display:flex; justify-content:flex-end; margin:4px 20px 0 0;">
+                <div class="notification-dropdown">
+                    <button class="notification-btn" id="notifBtn" style="top:-4px;">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge" id="notifCount">3</span>
+                    </button>
+                    <div class="notification-menu" id="notifMenu">
+                        <p class="notif-title">Notifications</p>
+                        <ul class="notif-list">
+                            <li><i class="fas fa-user-plus"></i> New student registered</li>
+                            <li><i class="fas fa-calendar-check"></i> Appointment pending approval</li>
+                            <li><i class="fas fa-stethoscope"></i> Consultation completed</li>
+                        </ul>
+                        <a href="notifications.php" class="view-all">View all</a>
+                    </div>
+                </div>
+            </div>
+
             <div class="quick-actions">
-                <!-- NEW CONSULTATION BUTTON -->
                 <a href="new_consultation.php" class="action-btn">
                     <i class="fas fa-plus-circle"></i>
                     <span>New Consultation</span>
                 </a>
-                <!-- SEARCH STUDENTS BUTTON -->
                 <a href="search_students.php" class="action-btn">
                     <i class="fas fa-search"></i>
                     <span>Search Students</span>
                 </a>
-                <!-- PENDING APPROVALS BUTTON WITH COUNTER -->
-                <a href="approvals.php" class="action-btn">
-                    <i class="fas fa-clock"></i>
-                    <span>Pending: (3)</span>
-                </a>
-                <!-- GENERATE REPORTS BUTTON -->
                 <a href="reports.php" class="action-btn">
                     <i class="fas fa-file-alt"></i>
                     <span>Generate Reports</span>
                 </a>
             </div>
 
-            <!-- DASHBOARD STATISTICS CARD -->
             <div class="dashboard-card">
-                <!-- STATS ROW WITH TODAY'S COUNT AND ALERTS -->
                 <div class="stats-row">
                     <div class="stat-item">
                         <i class="fas fa-calendar-day"></i>
@@ -220,30 +288,24 @@ if (!isset($_SESSION['admin_id'])) {
                             <div class="stat-value">5 Consults</div>
                         </div>
                     </div>
-                    </div>
                 </div>
 
-                <!-- DIVIDER LINE -->
                 <div class="divider"></div>
 
-                <!-- RECENT ACTIVITY SECTION -->
                 <div class="activity-section">
                     <h3 class="section-title">
                         <i class="fas fa-history"></i>
                         Recent Activity
                     </h3>
                     <div class="activity-list">
-                        <!-- ACTIVITY ITEM 1 -->
                         <div class="activity-item">
                             <i class="fas fa-user-md"></i>
                             <span>Dr. James added consult (3:00 pm)</span>
                         </div>
-                        <!-- ACTIVITY ITEM 2 -->
                         <div class="activity-item">
                             <i class="fas fa-clipboard-check"></i>
                             <span>New appointment request received (2:30 pm)</span>
                         </div>
-                        <!-- ACTIVITY ITEM 3 -->
                         <div class="activity-item">
                             <i class="fas fa-user-check"></i>
                             <span>Student profile updated (1:15 pm)</span>
@@ -251,17 +313,13 @@ if (!isset($_SESSION['admin_id'])) {
                     </div>
                 </div>
 
-                <!-- DIVIDER LINE -->
                 <div class="divider"></div>
 
-                <!-- QUICK LINKS SECTION -->
                 <div class="quick-links">
-                    <!-- VIEW ALL STUDENTS LINK -->
                     <a href="students.php" class="link-btn">
                         <i class="fas fa-users"></i>
                         View All Students
                     </a>
-                    <!-- REPORTS ARCHIVE LINK -->
                     <a href="reports.php" class="link-btn">
                         <i class="fas fa-archive"></i>
                         Reports Archive
@@ -280,8 +338,7 @@ if (!isset($_SESSION['admin_id'])) {
                 const targetId = this.getAttribute('data-target');
                 const submenu = document.getElementById(targetId);
                 const arrow = this.querySelector('.arrow');
-                
-                // CLOSE OTHER SUBMENUS WHEN OPENING A NEW ONE
+
                 document.querySelectorAll('.submenu').forEach(menu => {
                     if (menu.id !== targetId && menu.classList.contains('show')) {
                         menu.classList.remove('show');
@@ -291,8 +348,7 @@ if (!isset($_SESSION['admin_id'])) {
                         }
                     }
                 });
-                
-                // TOGGLE CURRENT SUBMENU VISIBILITY
+
                 submenu.classList.toggle('show');
                 arrow.classList.toggle('rotate');
             });
@@ -301,28 +357,35 @@ if (!isset($_SESSION['admin_id'])) {
         // QUICK ACTION BUTTONS FUNCTIONALITY (CURRENTLY SHOWS ALERTS)
         document.querySelectorAll('.action-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
-                e.preventDefault(); // PREVENT DEFAULT LINK BEHAVIOR
+                e.preventDefault();
                 const actionText = this.querySelector('span').textContent;
                 alert(`Redirecting to: ${actionText}`);
-                // UNCOMMENT BELOW FOR ACTUAL NAVIGATION:
-                // window.location.href = this.href;
             });
         });
 
         // QUICK LINKS FUNCTIONALITY (CURRENTLY SHOWS ALERTS)
         document.querySelectorAll('.link-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
-                e.preventDefault(); // PREVENT DEFAULT LINK BEHAVIOR
+                e.preventDefault();
                 const linkText = this.textContent.trim();
                 alert(`Navigating to: ${linkText}`);
-                // UNCOMMENT BELOW FOR ACTUAL NAVIGATION:
-                // window.location.href = this.href;
             });
+        });
+
+        // NOTIFICATION DROPDOWN FUNCTIONALITY
+        const notifBtn = document.getElementById('notifBtn');
+        const notifMenu = document.getElementById('notifMenu');
+
+        notifBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            notifMenu.classList.toggle('show');
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!notifMenu.contains(e.target) && !notifBtn.contains(e.target)) {
+                notifMenu.classList.remove('show');
+            }
         });
     </script>
 </body>
 </html>
-
-<!-- 
-THE PHP CODE ONLY HANDLES SESSION VERIFICATION AT THE BEGINNING.
--->

@@ -1,0 +1,312 @@
+/* ===================================
+   STUDENT REPORT PAGE STYLES
+   =================================== */
+
+/* RESET & BASE STYLES */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+}
+
+/* ===================================
+   HEADER STYLES
+   =================================== */
+
+.logo-img {
+   height: 80px;
+}
+
+.college-info h4 {
+    margin: 0;
+    font-size: 1.20rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.college-info p {
+    margin: 0;
+    font-size: 16px;
+    opacity: 0.9;
+    color: #333;
+}
+
+/* ===================================
+   SIDEBAR STYLES
+   =================================== */
+.sidebar {
+    
+    background: white;
+    min-height: calc(100vh - 120px);
+    padding: 20px 0;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    border-radius: 0 15px 15px 0;
+}
+
+.nav-link {
+    color: #333;
+    padding: 12px 20px;
+    margin: 5px 0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-size: 15px;
+}
+
+.nav-link:hover {
+    background-color: #778899;
+    color: #1e3c72;
+    transform: translateX(5px);
+}
+
+.nav-link.active {
+    background-color: #778899;
+    color: white;
+    font-weight: 600;
+}
+
+.nav-link i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+.logout-btn .nav-link {
+    color: #dc3545;
+    text-align: center;
+    font-weight: 600;
+}
+
+.logout-btn .nav-link:hover {
+    background:#778899;
+;
+    color: white;
+}
+
+/* ===================================
+   MAIN CONTENT STYLES
+   =================================== */
+.main-content {
+    padding: 30px;
+}
+
+.page-title {
+    color: #1e3c72;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-subtitle {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 30px;
+}
+
+/* ===================================
+   STATS CARD STYLES
+   =================================== */
+.stats-card {
+    background: white;
+    border-radius: 15px;
+    padding: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+    margin-bottom: 15px;
+    display: flex;
+    gap: 20px;
+    width: 400px;          /* Slightly narrower than before */
+        height: auto;           /* Automatically adjust based on content */
+        margin: 0 auto; 
+         transform: translateX(-395px);
+}
+
+.stats-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #f9cc43 0%, #f6b93b 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.stats-info h5 {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+    font-weight: 500;
+}
+
+.stats-info h2 {
+    color: #1e3c72;
+    font-size: 32px;
+    margin: 5px 0 0 0;
+    font-weight: 700;
+}
+
+/* ===================================
+   CHART CONTAINER STYLES
+   =================================== */
+.chart-container {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f4f8;
+}
+
+.chart-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1e3c72;
+    margin: 0;
+}
+
+.chart-month {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0f4f8;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #666;
+}
+
+.chart-month i {
+    color: #f9cc43;
+}
+
+/* ===================================
+   RESPONSIVE DESIGN
+   =================================== */
+@media (max-width: 768px) {
+    .sidebar {
+        min-height: auto;
+        margin-bottom: 20px;
+    }
+
+    .main-content {
+        padding: 20px 15px;
+    }
+
+    .page-title {
+        font-size: 22px;
+    }
+
+    .stats-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .chart-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 576px) {
+    .logo-img {
+        width: 60px;
+        height: 60px;
+    }
+
+    .college-info h4 {
+        font-size: 14px;
+    }
+
+    .college-info p {
+        font-size: 12px;
+    }
+
+    .page-title {
+        font-size: 20px;
+    }
+
+    .stats-info h2 {
+        font-size: 28px;
+    }
+
+    .chart-container {
+        padding: 20px 15px;
+    }
+
+    .chart-title {
+        font-size: 18px;
+    }
+}
+/* ================================
+   FIXED SIDEBAR + SCROLLABLE MAIN
+   ================================ */
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevents double scrollbars */
+}
+
+/* Header stays on top */
+.header {
+  background: linear-gradient(135deg, #ffda6a, #fff7da);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 15px 0;
+  border-bottom: 3px solid #ffdd57;
+}
+
+/* Sidebar fixed on left */
+.sidebar {
+  position: fixed;
+  top: 120px; /* Height of header */
+  left: 0;
+  width: 250px; /* Sidebar width */
+  height: calc(100vh - 120px); /* Full height minus header */
+  background-color: #fff;
+  border-right: 1px solid #ddd;
+  overflow-y: auto; /* Scroll only inside sidebar if long */
+  padding: 20px;
+}
+
+/* Main content scrolls independently */
+.main-content {
+  margin-left: 250px; /* Same width as sidebar */
+  margin-top: 120px; /* Same height as header */
+  height: calc(100vh - 120px);
+  overflow-y: auto; /* Scroll only here */
+  padding: 30px;
+  background: #f8f9fa;
+}
+
+/* Optional: better scroll behavior */
+.main-content::-webkit-scrollbar {
+  width: 8px;
+}
+.main-content::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}

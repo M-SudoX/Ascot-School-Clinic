@@ -364,7 +364,6 @@ function getProfileStatus($student) {
                             <div class="card-body">
                                 <h5 class="card-title">Complete Profiles</h5>
                                 <h3><?php echo $complete_profiles; ?></h3>
-                                <small>Both Part 1 & 2</small>
                             </div>
                         </div>
                     </div>
@@ -373,7 +372,6 @@ function getProfileStatus($student) {
                             <div class="card-body">
                                 <h5 class="card-title">Incomplete Profiles</h5>
                                 <h3><?php echo $incomplete_profiles; ?></h3>
-                                <small>Missing Part 1 or 2</small>
                             </div>
                         </div>
                     </div>
@@ -382,15 +380,14 @@ function getProfileStatus($student) {
                             <div class="card-body">
                                 <h5 class="card-title">Completion Rate</h5>
                                 <h3><?php echo $total_students > 0 ? round(($complete_profiles / $total_students) * 100) : 0; ?>%</h3>
-                                <small>Overall Progress</small>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Table -->
-                <div class="card">
-                    <div class="card-body">
+                <div class="table">
+                    <div class="table">
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover text-center align-middle">
                                 <thead class="table-dark">

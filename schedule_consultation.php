@@ -104,9 +104,9 @@ function formatDate($date) {
         <!-- School Information -->
         <div class="col">
           <div class="college-info">
-            <h4>Republic of the Philippines</h4>
-            <h4>AURORA STATE COLLEGE OF TECHNOLOGY</h4>
-            <p>ONLINE SCHOOL CLINIC</p>
+                      <h4>Republic of the Philippines</h4>
+                      <h4>AURORA STATE COLLEGE OF TECHNOLOGY</h4>
+                      <p>ONLINE SCHOOL CLINIC</p>
           </div>
         </div>
       </div>
@@ -133,10 +133,19 @@ function formatDate($date) {
           <i class="fas fa-calendar-plus"></i>
           <span>Schedule Consultation</span>
         </a>
+         <a class="nav-link" href="student_report.php"><i class="fas fa-chart-bar"></i> Report</a>
+                                <a class="nav-link" href="student_announcement.php">
+        <i class="fas fa-bullhorn"></i> Announcement
+    </a>
+</nav>
+
         <div class="nav-divider"></div>
+        <br>
+        <br>
         <!-- Logout -->
         <a class="nav-link logout-link" href="logout.php">
           <i class="fas fa-sign-out-alt"></i>
+          
           <span>Logout</span>
         </a>
       </nav>
@@ -145,18 +154,13 @@ function formatDate($date) {
     <!-- Main Content Area -->
     <div class="main-content">
       <!-- Content Header (mini logo + school info) -->
-      <div class="content-header">
+      
         <div class="header-info-section">
           <div class="content-logo">
-            <img src="img/logo.png" alt="Aurora State College Logo"
-                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                
             <i class="fas fa-university" style="display: none;"></i>
           </div>
           <div class="content-header-text">
-            <h4 class="republic-small">Republic of the Philippines</h4>
-            <h2 class="college-name-small">AURORA STATE COLLEGE OF TECHNOLOGY</h2>
-            <p class="location-text">Zabali, Baler, Aurora</p>
-          </div>
         </div>
       </div>
 

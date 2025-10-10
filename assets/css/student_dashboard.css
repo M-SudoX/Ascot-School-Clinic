@@ -8,7 +8,7 @@ body {
 
 /* === HEADER === */
 .header {
-    background: linear-gradient(135deg, #ffda6a, #fff7da);
+background: linear-gradient(135deg, #ffda6a, #fff7da);
     color: #fff;
     padding: 15px 30px;
     position: fixed;
@@ -16,6 +16,8 @@ body {
     left: 0;
     width: 100%;
     z-index: 1000;
+     border-bottom: 3px solid #ffdd57;
+     border-radius: 10px;
 }
 
 .logo-img {
@@ -26,24 +28,24 @@ body {
     margin: 0;
     color: #333;
     font-size: 16px;
+    font-weight: normal;
 }
 
 /* === SIDEBAR (FIXED, DOES NOT SCROLL) === */
 .sidebar {
-    position: fixed;
-    top: 100px; /* aligns below header */
+   position: fixed;
+    top: 100px;
     left: 0;
-    width: 220px;
-    height: calc(100vh - 100px); /* full height minus header */
+    height: calc(105vh - 100px);
     background-color: #f1f3f6;
     padding: 20px 0;
     border-right: 1px solid #dee2e6;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    overflow: hidden; /* prevents sidebar scrolling */
+    overflow: hidden;
     z-index: 900;
-    border-radius: 0 15px 15px 0;
+    border-radius: 10px;
 }
 
 /* Sidebar Links */
@@ -92,6 +94,8 @@ body {
     display: flex;
     gap: 15px;
     flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
 }
 
 .quick-action-btn {
