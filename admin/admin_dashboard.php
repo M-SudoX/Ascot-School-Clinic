@@ -231,7 +231,9 @@ if (!isset($_SESSION['admin_id'])) {
                         </a>
                     </div>
                 </div>
-
+                <br>
+                <br>
+                <br>
                 <a href="../logout.php" class="nav-item logout">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>

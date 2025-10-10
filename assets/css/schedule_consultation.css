@@ -548,4 +548,8 @@ ease;
         flex-direction: column;
         text-align: center;
     }
+
+    .modal-backdrop.show {
+  display: none !important;
+}
 }

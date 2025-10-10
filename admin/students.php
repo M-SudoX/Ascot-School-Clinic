@@ -302,6 +302,11 @@ function getProfileStatus($student) {
                 </nav>
 
                 <!-- Logout -->
+                 <br>
+                 <br>
+                 <br>
+                 <br>
+
                 <div class="logout-btn">
                     <a class="nav-link text-danger" href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
