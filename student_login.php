@@ -140,8 +140,10 @@ session_start();
       </div>
 
       <div class="forgot-link">
-        Forgot your password? <a href="#">Click here</a>
+        Forgot your password? <a href="forgot_password.php">Click here</a>
       </div>
+
+
     </form>
   </div>
 
