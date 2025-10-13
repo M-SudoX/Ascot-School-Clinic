@@ -126,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mail->isHTML(true);
             $mail->Subject = 'Activate Your ASCOT Online Clinic Account';
 
-            $activation_link = "http://localhost:8080/ascot-school-clinic/activate.php?code=$activation_code";
+            $activation_link = "http://192.168.8.38:8080/ascot-school-clinic/activate.php?code=$activation_code";
 
             $mail->Body = "
                 <div style='font-family: Arial, sans-serif;'>

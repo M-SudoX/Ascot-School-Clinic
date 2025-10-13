@@ -23,8 +23,10 @@ SELECT
     c.status
 FROM consultation_requests c
 LEFT JOIN users u ON c.student_id = u.id
-WHERE c.status = 'Approved'
+WHERE c.status IN ('Approved', 'Rescheduled')
+ORDER BY c.date, c.time ASC
 ";
+
 
 $stmt = $pdo->prepare($query);
 $stmt->execute();
