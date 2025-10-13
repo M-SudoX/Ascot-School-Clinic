@@ -78,7 +78,7 @@ body {
 
 .logout-btn .nav-link {
     color: #dc3545;
-    text-align: center;
+    text-align: left;
     font-weight: 600;
 }
 
@@ -279,14 +279,15 @@ body {
 /* Sidebar fixed on left */
 .sidebar {
   position: fixed;
-  top: 120px; /* Height of header */
-  left: 0;
+  top: 100px; /* Height of header */
+  left: -20px;
   width: 250px; /* Sidebar width */
   height: calc(100vh - 120px); /* Full height minus header */
-  background-color: #fff;
+  background-color: #f1f3f6;
   border-right: 1px solid #ddd;
   overflow-y: auto; /* Scroll only inside sidebar if long */
   padding: 20px;
+  margin: 20px;
 }
 
 /* Main content scrolls independently */

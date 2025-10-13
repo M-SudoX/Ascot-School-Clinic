@@ -9,45 +9,54 @@ if (!isset($_SESSION['student_id'])) {
 }
 
 $student_id = $_SESSION['student_id'];
-$student_number = $_SESSION['student_number'] ?? '';
+
+// ✅ Fetch student_number (link between users and consultations)
+$stmt = $pdo->prepare("SELECT student_number FROM users WHERE id = ?");
+$stmt->execute([$student_id]);
+$student_number = $stmt->fetchColumn();
+
+if (!$student_number) {
+    die("Student record not found.");
+}
 
 // ✅ Get current month and year
 $currentMonth = date('m');
 $currentYear = date('Y');
 
-// ✅ Get start and end of current month
+// ✅ Get start and end of the current month
 $monthStart = date('Y-m-01');
 $monthEnd = date('Y-m-t');
 
-// ✅ Fetch all approved consultations this month for this student
+// ✅ Fetch consultations from consultations table (added by admin)
 $query = "
-    SELECT date 
-    FROM consultation_requests
-    WHERE student_id = :student_id 
-      AND status = 'Approved'
-      AND date BETWEEN :start AND :end
+    SELECT consultation_date 
+    FROM consultations
+    WHERE student_number = :student_number
+      AND consultation_date BETWEEN :start AND :end
 ";
 $stmt = $pdo->prepare($query);
 $stmt->execute([
-    'student_id' => $student_id,
+    'student_number' => $student_number,
     'start' => $monthStart,
     'end' => $monthEnd
 ]);
 $consultations = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-// ✅ Initialize 4-week array
-$consultationData = [0, 0, 0, 0];
+// ✅ Determine how many weeks are in this month (can be 4 or 5)
+$firstDay = new DateTime($monthStart);
+$lastDay = new DateTime($monthEnd);
+$numWeeks = ceil(($lastDay->format('d') + $firstDay->format('N') - 1) / 7);
 
+// ✅ Initialize week data dynamically
+$consultationData = array_fill(0, $numWeeks, 0);
+
+// ✅ Count consultations per week
 foreach ($consultations as $consultDate) {
-    $day = date('j', strtotime($consultDate));
-
-    // Determine week number of the month (1–4)
-    if ($day <= 7) $week = 0;
-    elseif ($day <= 14) $week = 1;
-    elseif ($day <= 21) $week = 2;
-    else $week = 3;
-
-    $consultationData[$week]++;
+    $day = (int)date('j', strtotime($consultDate));
+    $weekNum = (int)ceil(($day + date('N', strtotime(date('Y-m-01')))) / 7);
+    if ($weekNum >= 1 && $weekNum <= $numWeeks) {
+        $consultationData[$weekNum - 1]++;
+    }
 }
 
 $totalConsults = array_sum($consultationData);
@@ -65,7 +74,6 @@ $totalConsults = array_sum($consultationData);
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* ✅ Keep your design exactly as before */
         .chart-container {
             background: white;
             border-radius: 15px;
@@ -109,21 +117,11 @@ $totalConsults = array_sum($consultationData);
             <!-- SIDEBAR -->
             <div class="col-md-3 col-lg-2 sidebar">
                 <nav class="nav flex-column">
-                    <a class="nav-link" href="student_dashboard.php">
-                        <i class="fas fa-tachometer-alt"></i> Dashboard
-                    </a>
-                    <a class="nav-link" href="update_profile.php">
-                        <i class="fas fa-user-edit"></i> Update Profile
-                    </a>
-                    <a class="nav-link" href="schedule_consultation.php">
-                        <i class="fas fa-calendar-alt"></i> Schedule Consultation
-                    </a>
-                    <a class="nav-link active" href="student_report.php">
-                        <i class="fas fa-chart-bar"></i> Reports
-                    </a>
-                    <a class="nav-link" href="student_announcement.php">
-                        <i class="fas fa-bullhorn"></i> Announcement
-                    </a>
+                    <a class="nav-link" href="student_dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    <a class="nav-link" href="update_profile.php"><i class="fas fa-user-edit"></i> Update Profile</a>
+                    <a class="nav-link" href="schedule_consultation.php"><i class="fas fa-calendar-alt"></i> Schedule Consultation</a>
+                    <a class="nav-link active" href="student_report.php"><i class="fas fa-chart-bar"></i> Reports</a>
+                    <a class="nav-link" href="student_announcement.php"><i class="fas fa-bullhorn"></i> Announcement</a>
                 </nav>
 
                 <div class="logout-btn mt-3">
@@ -136,16 +134,13 @@ $totalConsults = array_sum($consultationData);
             <!-- MAIN CONTENT -->
             <div class="col-md-9 col-lg-10 main-content">
                 <div class="page-title">
-                    <i class="fas fa-chart-line"></i>
-                    Consultation Reports
+                    <i class="fas fa-chart-line"></i> Consultation Reports
                 </div>
                 <p class="page-subtitle">Track your weekly consultation activity this month</p>
 
                 <!-- STATS CARD -->
                 <div class="stats-card">
-                    <div class="stats-icon">
-                        <i class="fas fa-calendar-check"></i>
-                    </div>
+                    <div class="stats-icon"><i class="fas fa-calendar-check"></i></div>
                     <div class="stats-info">
                         <h5>Total Consultations This Month</h5>
                         <h2><?php echo $totalConsults; ?></h2>
@@ -171,12 +166,14 @@ $totalConsults = array_sum($consultationData);
     <script src="assets/js/bootstrap.bundle.min.js"></script>
     <script>
         const consultationData = <?php echo json_encode($consultationData); ?>;
+        const numWeeks = consultationData.length;
+        const weekLabels = Array.from({length: numWeeks}, (_, i) => `Week ${i + 1}`);
 
         const ctx = document.getElementById('consultChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                labels: weekLabels,
                 datasets: [{
                     label: 'Consultations',
                     data: consultationData,
@@ -200,9 +197,7 @@ $totalConsults = array_sum($consultationData);
                         borderColor: '#f9cc43',
                         borderWidth: 2,
                         callbacks: {
-                            label: function(context) {
-                                return 'Consultations: ' + context.parsed.y;
-                            }
+                            label: context => `Consultations: ${context.parsed.y}`
                         }
                     }
                 },

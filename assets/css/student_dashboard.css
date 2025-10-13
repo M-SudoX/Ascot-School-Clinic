@@ -74,8 +74,11 @@ background: linear-gradient(135deg, #ffda6a, #fff7da);
 
 /* Logout Button */
 .logout-btn {
-    margin-top: auto;
-    padding: 10px 20px;
+    color: #dc3545;
+    text-align: left;
+    font-weight: 600;
+    position: relative; /* or absolute/fixed */
+    top: -20px;
 }
 
 /* === MAIN CONTENT (SCROLLABLE) === */

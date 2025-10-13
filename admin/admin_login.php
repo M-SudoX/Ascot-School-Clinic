@@ -1,3 +1,7 @@
+<?php
+session_start();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,66 +9,178 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin Login - ASCOT Online School Clinic</title>
 
-  <!-- Bootstrap CSS (local copy) -->
+  <!-- BOOTSTRAP & ICONS -->
   <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/webfonts/all.min.css" rel="stylesheet">
+  <link href="../assets/css/style.css" rel="stylesheet">
 
-  <!-- Bootstrap Icons (local copy) -->
-  <link href="../assets/css/ bootstrap-icons.css" rel="stylesheet">
+  <style>
+    /* PAGE BACKGROUND & LAYOUT */
+    body {
+      background: #f8f9fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
 
-  <!-- Custom CSS -->
-  <link href="../assets/css/style.css" rel="stylesheet" />
+    /* LOGIN CARD */
+    .login-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      padding: 40px 35px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-card .logo {
+      display: block;
+      margin: 0 auto 15px;
+      width: 80px;
+    }
+
+    .login-card h5 {
+      text-align: center;
+      color: #333;
+      font-weight: 600;
+      margin-bottom: 20px;
+      line-height: 1.3;
+    }
+
+    .alert {
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+
+    .alert-danger {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .form-control:focus {
+      border-color: #ffc107;
+      box-shadow: 0 0 0 0.2rem rgba(255,193,7,0.25);
+    }
+
+    .forgot-link {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 0.9rem;
+    }
+
+    .forgot-link a {
+      color: #ffc107;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .forgot-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
 
-  <!-- Left Section -->
-  <div class="split left">
-    <!-- Logo -->
-    <img src="../img/logo.png" alt="ASCOT Logo" class="logo-left" />
+  <div class="login-card">
+    <!-- LOGO -->
+    <img src="../img/logo.png" alt="ASCOT Logo" class="logo">
 
-    <!-- Header -->
+    <!-- SCHOOL NAME -->
     <h5>
-      AURORA STATE COLLEGE OF TECHNOLOGY<br />
-      ADMIN LOGIN
+      AURORA STATE COLLEGE OF TECHNOLOGY <br>
+      <span class="text-warning">ADMIN LOGIN</span>
     </h5>
 
-    <!-- Login Form -->
-    <form action="process_admin_login.php" method="POST" class="mt-3 px-">
-      <div class="container">
-        <div class="mx-auto" style="max-width: 360px;"> 
+    <!-- ERROR MESSAGE -->
+    <?php if (isset($_SESSION['error'])): ?>
+      <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <?= htmlspecialchars($_SESSION['error']); ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
 
-          <!-- Input: Username -->
-          <div class="position-relative mb-3">
-            <input type="text" name="username" class="form-control pe-5" placeholder="Username" required>
-            <i class="bi bi-person position-absolute top-50 end-0 translate-middle-y me-3"></i>
-          </div>
+    <!-- LOGIN FORM -->
+    <form action="process_admin_login.php" method="POST" class="mt-3">
 
-          <!-- Input: Password -->
-          <div class="position-relative mb-3">
-            <input type="password" name="password" class="form-control pe-5" placeholder="********" required>
-            <i class="bi bi-eye position-absolute top-50 end-0 translate-middle-y me-3"></i>
-          </div>
+      <!-- USERNAME -->
+      <div class="position-relative mb-3">
+        <input type="text"
+               name="username"
+               class="form-control pe-5"
+               placeholder="Username"
+               value="<?= isset($_POST['username']) ? htmlspecialchars($_POST['username']) : '' ?>"
+               required>
+        <i class="bi bi-person position-absolute top-50 end-0 translate-middle-y me-3"></i>
+      </div>
 
-          <!-- Buttons -->
-          <div class="d-flex justify-content-between">
-            <a href="../index.php" class="btn btn-dark px-4">Back</a>
-            <button type="submit" class="btn btn-warning text-dark fw-bold px-4">Log in</button>
-          </div>
-        </div>
+      <!-- PASSWORD -->
+      <div class="position-relative mb-3">
+        <input type="password"
+               name="password"
+               class="form-control pe-5"
+               placeholder="********"
+               required>
+        <i class="bi bi-eye position-absolute top-50 end-0 translate-middle-y me-3"
+           style="cursor: pointer;"
+           onclick="togglePassword()"></i>
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="d-flex justify-content-between align-items-center">
+        <a href="../index.php" class="btn btn-dark px-4">Back</a>
+        <button type="submit" class="btn btn-warning text-dark fw-bold px-4">Log in</button>
+      </div>
+
+      <!-- FORGOT PASSWORD -->
+      <div class="forgot-link">
+        Forgot your password? <a href="#">Contact IT Admin</a>
       </div>
     </form>
-
-    <!-- Forgot Password -->
-    <div class="text-center mt-3">
-      <a href="#" class="small text-decoration-none">Forgot Password? Contact IT admin.</a>
-    </div>
   </div>
 
-  <!-- Right Section -->
-  <div class="split right">
-    <img src="../img/logo.png" alt="ASCOT Logo" class="logo-right" />
-  </div>
+  <!-- JS -->
+  <script src="../assets/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Bootstrap Bundle JS -->
-  <script src="../assets/css/bootstrap.bundle.min.js"></script>
+  <script>
+    // TOGGLE PASSWORD VISIBILITY
+    function togglePassword() {
+      const passwordInput = document.querySelector('input[name="password"]');
+      const eyeIcon = document.querySelector('.bi-eye, .bi-eye-slash');
+      
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.classList.replace('bi-eye', 'bi-eye-slash');
+      } else {
+        passwordInput.type = 'password';
+        eyeIcon.classList.replace('bi-eye-slash', 'bi-eye');
+      }
+    }
+
+    // AUTO HIDE ALERTS
+    setTimeout(() => {
+      const alerts = document.querySelectorAll('.alert');
+      alerts.forEach(alert => new bootstrap.Alert(alert).close());
+    }, 5000);
+
+    // FORM VALIDATION
+    document.querySelector('form').addEventListener('submit', function(e) {
+      const username = document.querySelector('input[name="username"]').value.trim();
+      const password = document.querySelector('input[name="password"]').value;
+
+      if (!username || !password) {
+        e.preventDefault();
+        if (!document.querySelector('.alert-danger')) {
+          const alertDiv = document.createElement('div');
+          alertDiv.className = 'alert alert-danger mt-2';
+          alertDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Please fill in all required fields.';
+          document.querySelector('.login-card').prepend(alertDiv);
+        }
+      }
+    });
+  </script>
 </body>
 </html>

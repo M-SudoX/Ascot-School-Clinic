@@ -109,15 +109,16 @@ body {
 
 .nav-link:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: white;
+    color: #DCDCDC;
     border-left-color: #2E8B57;
 }
 
 .nav-link.active {
-    background: rgba(46, 139, 87, 0.2);
+    background: #DCDCDC;
     color: #333;
     font-weight: bold;
     border-left-color: #2E8B57;
+    padding: 10px;
 }
 
 .nav-link i {

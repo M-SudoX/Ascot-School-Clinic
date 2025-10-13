@@ -1,17 +1,8 @@
 <?php
-
 // FRONTEND: HTML + CSS + JavaScript + Bootstrap
-
 // BACKEND: PHP + PDO + MySQL + Sessions
-
 // SECURITY: Parameter Binding + Input Validation + Session Protection
-
 // DESIGN: Responsive Layout + Professional Styling + Intuitive UI
-
-
-//Gumamit ng COMBINATION ng modern web technologies 
-
-// para gumawa ng SECURE, USER-FRIENDLY, at PROFESSIONAL
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -30,58 +21,138 @@ require_once 'includes/db_connect.php';
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Aurora State College of Technology - Online School Clinic</title>
-  
-  <!-- Bootstrap CSS (local file mula sa assets/css folder) -->
+
+  <!-- Bootstrap CSS -->
   <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
 
-  <!-- Custom CSS mo (sariling style para sa design ng system) -->
-  <link href="assets/css/style.css" rel="stylesheet" />
+  <!-- Custom CSS -->
+  <style>
+    /* Global page styling */
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #f8f9fa;
+      font-family: "Poppins", sans-serif;
+    }
+
+    .split {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    /* Layout for large screens */
+    @media (min-width: 768px) {
+      body {
+        flex-direction: row;
+      }
+      .split {
+        width: 50%;
+        height: 100vh;
+      }
+    }
+
+    .left {
+      background: linear-gradient(135deg, #00416A, #E4E5E6);
+      color: #fff;
+      text-align: center;
+    }
+
+    .right {
+      background: url('img/clinic-bg.jpg') center/cover no-repeat;
+      position: relative;
+    }
+
+    .right::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+    }
+
+    .logo-left, .logo-right {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 15px;
+      border-radius: 50%;
+      background: #fff;
+      object-fit: cover;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    h5 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      line-height: 1.5;
+      letter-spacing: 0.5px;
+      margin-bottom: 25px;
+    }
+
+    label {
+      font-weight: 500;
+      color: #fff;
+    }
+
+    select {
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .btn-next {
+      background-color: #0d6efd;
+      color: white;
+      font-weight: 500;
+      padding: 10px 25px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .btn-next:hover {
+      background-color: #0b5ed7;
+      transform: scale(1.05);
+    }
+
+    /* Responsive: center form nicely on mobile */
+    form {
+      max-width: 320px;
+      width: 100%;
+    }
+  </style>
 </head>
+
 <body>
-  <!-- Kaliwang bahagi ng screen -->
+  <!-- LEFT SIDE -->
   <div class="split left">
-    <!-- Logo ng ASCOT sa kaliwa -->
     <img src="img/logo.png" alt="ASCOT Logo" class="logo-left" />
+    <h5>
+      AURORA STATE COLLEGE OF TECHNOLOGY<br>
+      ONLINE SCHOOL CLINIC
+    </h5>
 
-    <div>
-      <!-- Title ng system -->
-      <h5>
-        AURORA STATE COLLEGE OF TECHNOLOGY<br>
-        ONLINE SCHOOL CLINIC
-      </h5>
-
-     <!-- Form where the user will choose the type (Student or Admin) -->
-
-     <!-- process_user_type.php = file that will handle the selection of user type -->
-      
-      <form method="POST" action="process_user_type.php" class="mt-4">
-
-        <!-- Label at Dropdown para pumili ng type of user -->
-        <label for="userType" class="form-label">-Select type of user to log-in-</label>
-        <select class="form-select" id="userType" name="userType" required>
-          <option value="" disabled selected>Select user type</option>
-          <option value="student">STUDENT</option>
-          <option value="admin">ADMIN</option>
-        </select>
-
-        <!-- Sign-up link (para sa mga bagong user) at Next button -->
-        <div class="d-flex justify-content-between align-items-center mt-3">
-          <!-- Link papuntang Sign-Up page -->
-          <!-- Button para magsumite ng form (dadalhin sa process_user_type.php) -->
-          <button type="submit" class="btn btn-next">Next</button>
-        </div>
-      </form>
-    </div>
+    <form method="POST" action="process_user_type.php" class="shadow-lg p-4 rounded bg-light bg-opacity-25">
+      <label for="userType" class="form-label">Select user type to log in</label>
+      <select class="form-select mb-3" id="userType" name="userType" required>
+        <option value="" disabled selected>Select user type</option>
+        <option value="student">STUDENT</option>
+        <option value="admin">ADMIN</option>
+      </select>
+      <div class="d-grid">
+        <button type="submit" class="btn btn-next">Next</button>
+      </div>
+    </form>
   </div>
 
-  <!-- Kanang bahagi ng split screen -->
+  <!-- RIGHT SIDE -->
   <div class="split right">
-    <!-- Logo ulit ng ASCOT pero nasa kanan -->
-    <img src="img/logo.png" alt="ASCOT Logo" class="logo-right" />
+    <img src="img/logo.png" alt="ASCOT Logo" class="logo-right position-absolute top-50 start-50 translate-middle" />
   </div>
 
-  <!-- Bootstrap JS Bundle (local file mula sa assets/css folder) -->
-  <!-- Naglalaman ng JS code ng Bootstrap at Popper.js para gumana ang mga interactive components -->
+  <!-- Bootstrap JS -->
   <script src="assets/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

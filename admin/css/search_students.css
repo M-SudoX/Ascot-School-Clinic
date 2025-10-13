@@ -148,6 +148,7 @@ body {
   padding: 2rem;
   background: #f5f5f5;
   overflow-y: auto;
+  
 }
 
 /* Page Header */
@@ -342,4 +343,9 @@ body {
     .btn {
         display: none;
     }
+    .dashboard-container {
+  display: block; /* remove flex layout so sidebar positioning works */
+  position: relative; /* or absolute/fixed */
+  left: 300px; /* move 30px to the right */
+}
 }

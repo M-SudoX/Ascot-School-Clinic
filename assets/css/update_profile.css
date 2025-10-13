@@ -101,9 +101,12 @@ body {
 }
 
 /* Logout Link */
-.logout-link {
-    color: #ff0000 !important;
+.logout-btn {
+    color: #dc3545;
+    text-align: left;
     font-weight: 600;
+    position: relative; /* or absolute/fixed */
+    top: -20px;
 }
 
 .logout-link:hover {

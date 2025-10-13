@@ -1,14 +1,6 @@
-
-
-<!--HTML - Form and structure -->
-
-<!--CSS/Bootstrap - Design and layout-->
-
-<!--JavaScript - Interactive features-->
-
-<!--PHP - Error handling-->
-
-
+<?php
+session_start();
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -17,150 +9,178 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Student Login - ASCOT Online School Clinic</title>
 
-  <!-- CSS FILES FOR STYLING -->
+  <!-- BOOTSTRAP & ICONS -->
   <link href="assets/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/webfonts/all.min.css" rel="stylesheet">
-  <link href="assets/css/style.css" rel="stylesheet" />
- <!-- Use a combination of HTML, CSS, PHP, JavaScript, and Bootstrap to create a secure and user-friendly login system for students. -->
+  <link href="assets/css/style.css" rel="stylesheet">
+
   <style>
-    /* CUSTOM STYLES FOR LOGIN PAGE */
+    /* PAGE BACKGROUND & LAYOUT */
+    body {
+      background: #f8f9fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* LOGIN CARD */
+    .login-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      padding: 40px 35px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-card .logo {
+      display: block;
+      margin: 0 auto 15px;
+      width: 80px;
+    }
+
+    .login-card h5 {
+      text-align: center;
+      color: #333;
+      font-weight: 600;
+      margin-bottom: 20px;
+      line-height: 1.3;
+    }
+
     .alert {
-        border: none;
-        border-radius: 8px;
-        font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
     }
+
     .alert-danger {
-        background: #f8d7da;  /* LIGHT RED BACKGROUND */
-        color: #721c24;       /* DARK RED TEXT */
+      background: #f8d7da;
+      color: #721c24;
     }
+
     .form-control:focus {
-        border-color: #ffc107; /* YELLOW BORDER WHEN CLICKED */
-        box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+      border-color: #ffc107;
+      box-shadow: 0 0 0 0.2rem rgba(255,193,7,0.25);
+    }
+
+    .signup-link, .forgot-link {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 0.9rem;
+    }
+
+    .signup-link a, .forgot-link a {
+      color: #ffc107;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .signup-link a:hover, .forgot-link a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
 
-  <!-- LEFT SIDE - LOGIN FORM -->
-  <div class="split left">
+  <div class="login-card">
     <!-- SCHOOL LOGO -->
-    <img src="img/logo.png" alt="ASCOT Logo" class="logo-left" />
+    <img src="img/logo.png" alt="ASCOT Logo" class="logo">
 
-    <!-- SCHOOL NAME HEADER -->
-    <h5>&nbsp;&nbsp;&nbsp;&nbsp;AURORA STATE COLLEGE OF TECHNOLOGY<br />
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ONLINE SCHOOL CLINIC
+    <!-- SCHOOL NAME -->
+    <h5>
+      AURORA STATE COLLEGE OF TECHNOLOGY <br>
+      ONLINE SCHOOL CLINIC
     </h5>
 
-    <!-- ERROR MESSAGE DISPLAY - DITO LUMALABAS ANG MGA ERROR -->
+    <!-- ERROR MESSAGE -->
     <?php if (isset($_SESSION['error'])): ?>
-    <div class="container mt-3">
-      <div class="mx-auto" style="max-width: 360px;">
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-          <i class="bi bi-exclamation-triangle-fill me-2"></i>
-          <?= htmlspecialchars($_SESSION['error']); ?>
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+      <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <?= htmlspecialchars($_SESSION['error']); ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
-    </div>
-    <?php unset($_SESSION['error']); ?>  <!-- TANGGALIN ANG ERROR AFTER IPAKITA -->
+      <?php unset($_SESSION['error']); ?>
     <?php endif; ?>
 
-    <!-- LOGIN FORM - DITO NAGSESEND NG DATA SA PROCESS_LOGIN.PHP -->
-    <form action="process_login.php" method="POST" class="mt-3 px-">
-      <div class="container">
-        <div class="mx-auto" style="max-width: 360px;"> 
+    <!-- LOGIN FORM -->
+    <form action="process_login.php" method="POST" class="mt-3">
+      <!-- STUDENT NUMBER -->
+      <div class="position-relative mb-3">
+        <input type="text"
+               name="student_number"
+               class="form-control pe-5"
+               placeholder="00-00-0000"
+               value="<?= isset($_POST['student_number']) ? htmlspecialchars($_POST['student_number']) : '' ?>"
+               required>
+        <i class="bi bi-person position-absolute top-50 end-0 translate-middle-y me-3"></i>
+      </div>
 
-          <!-- STUDENT NUMBER INPUT -->
-          <div class="position-relative mb-3">
-            <input type="text" 
-                   name="student_number" 
-                   class="form-control pe-5" 
-                   placeholder="00-00-0000" 
-                   value="<?= isset($_POST['student_number']) ? htmlspecialchars($_POST['student_number']) : '' ?>" 
-                   required>
-            <!-- PERSON ICON SA LOOB NG INPUT -->
-            <i class="bi bi-person position-absolute top-50 end-0 translate-middle-y me-3"></i>
-          </div>
-      
-          <!-- PASSWORD INPUT -->
-          <div class="position-relative mb-3">
-            <input type="password" 
-                   name="password" 
-                   class="form-control pe-5" 
-                   placeholder="********" 
-                   required>
-            <!-- EYE ICON PARA MA-SHOW/HIDE ANG PASSWORD -->
-            <i class="bi bi-eye position-absolute top-50 end-0 translate-middle-y me-3" 
-               style="cursor: pointer;" 
-               onclick="togglePassword()"></i>
-          </div>
+      <!-- PASSWORD -->
+      <div class="position-relative mb-3">
+        <input type="password"
+               name="password"
+               class="form-control pe-5"
+               placeholder="********"
+               required>
+        <i class="bi bi-eye position-absolute top-50 end-0 translate-middle-y me-3"
+           style="cursor: pointer;"
+           onclick="togglePassword()"></i>
+      </div>
 
-          <!-- ACTION BUTTONS -->
-          <div class="d-flex justify-content-between">
-            <a href="index.php" class="btn btn-dark px-4">Back</a>  <!-- BUMALIK SA HOME -->
-            <button type="submit" class="btn btn-warning text-dark fw-bold px-4">Log in</button>
-          </div>
-        </div>
+      <!-- ACTION BUTTONS -->
+      <div class="d-flex justify-content-between align-items-center">
+        <a href="index.php" class="btn btn-dark px-4">Back</a>
+        <button type="submit" class="btn btn-warning text-dark fw-bold px-4">Log in</button>
+      </div>
+
+      <!-- LINKS -->
+      <div class="signup-link">
+        Don’t have an account? <a href="signup.php">Sign up</a>
+      </div>
+
+      <div class="forgot-link">
+        Forgot your password? <a href="#">Click here</a>
       </div>
     </form>
-
-    <!-- FORGOT PASSWORD LINK -->
-     <br>
-            <div class="signup-link">
-          Do not have account? <a href="signup.php">SIGN UP</a>
-           </div>
-    <div class="text-center mt-1">
-      Forgot your password? <a href="#">Click here</a>
-    </div>
   </div>
 
-  <!-- RIGHT SIDE - DESIGN ONLY -->
-  <div class="split right">
-    <img src="img/logo.png" alt="ASCOT Logo" class="logo-right" />
-  </div>
-
-  <!-- JAVASCRIPT FILES -->
+  <!-- JS -->
   <script src="assets/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // FUNCTION PARA I-SHOW/HIDE ANG PASSWORD
+    // TOGGLE PASSWORD VISIBILITY
     function togglePassword() {
       const passwordInput = document.querySelector('input[name="password"]');
-      const eyeIcon = document.querySelector('.bi-eye');
+      const eyeIcon = document.querySelector('.bi-eye, .bi-eye-slash');
       
       if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';  // IPAKITA ANG PASSWORD
-        eyeIcon.classList.remove('bi-eye');
-        eyeIcon.classList.add('bi-eye-slash');  // PALITAN NG SLASHED EYE ICON
+        passwordInput.type = 'text';
+        eyeIcon.classList.replace('bi-eye', 'bi-eye-slash');
       } else {
-        passwordInput.type = 'password';  // ITAGO ANG PASSWORD
-        eyeIcon.classList.remove('bi-eye-slash');
-        eyeIcon.classList.add('bi-eye');  // BALIK SA NORMAL EYE ICON
+        passwordInput.type = 'password';
+        eyeIcon.classList.replace('bi-eye-slash', 'bi-eye');
       }
     }
 
-    // AUTO-HIDE ALERTS AFTER 5 SECONDS
+    // AUTO HIDE ALERTS
     setTimeout(() => {
       const alerts = document.querySelectorAll('.alert');
-      alerts.forEach(alert => {
-        const bsAlert = new bootstrap.Alert(alert);
-        bsAlert.close();  // SARADO AUTOMATICALLY ANG ERROR MESSAGES
-      });
+      alerts.forEach(alert => new bootstrap.Alert(alert).close());
     }, 5000);
-    
-    // FORM VALIDATION - CHECK KUNG BLANK ANG FIELDS
+
+    // VALIDATION
     document.querySelector('form').addEventListener('submit', function(e) {
       const studentNumber = document.querySelector('input[name="student_number"]').value.trim();
       const password = document.querySelector('input[name="password"]').value;
-      
+
       if (!studentNumber || !password) {
-        e.preventDefault();  // HINDI PAPAYAGAN MAG-SUBMIT
+        e.preventDefault();
         if (!document.querySelector('.alert-danger')) {
-          // GUMAWA NG ERROR MESSAGE KUNG WALA PA
           const alertDiv = document.createElement('div');
-          alertDiv.className = 'alert alert-danger';
+          alertDiv.className = 'alert alert-danger mt-2';
           alertDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i>Please fill in all required fields.';
-          document.querySelector('.container').prepend(alertDiv);
+          document.querySelector('.login-card').prepend(alertDiv);
         }
       }
     });

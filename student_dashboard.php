@@ -92,11 +92,7 @@ if (!$student_info) {
         <i class="fas fa-bullhorn"></i> Announcement
     </a>
 </nav>
-
-
                 <!-- LOGOUT BUTTON -->
-                 <br>
-                 <br>
                 <div class="logout-btn mt-3">
                     <a class="nav-link text-danger" href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>

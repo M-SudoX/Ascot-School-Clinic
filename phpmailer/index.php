@@ -1,0 +1,7 @@
+<html>
+	<head>
+		<title>Index File</title>
+	</head>
+	<body>
+	</body>
+</html>

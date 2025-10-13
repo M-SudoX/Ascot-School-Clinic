@@ -71,7 +71,7 @@
 /* ✅ FIXED SIDEBAR BELOW HEADER */
 .sidebar {
     position: fixed;
-    top: 100px;
+    top: 110px;
     left: 0;
     width: 280px;
     height: calc(100vh - 120px);
@@ -93,9 +93,6 @@
 }
 
 /* ✅ MAKE SURE DASHBOARD CONTAINER ALLOWS FREE POSITIONING */
-.dashboard-container {
-  display: block; /* remove flex layout so sidebar positioning works */
-}
 
 
 
@@ -214,8 +211,8 @@
 .nav-item.logout {
     margin-top: auto;
     color: #dc3545;
-    border-top: 1px solid #e9ecef;
-    background: #fff;
+    position: absolute;
+    bottom: -15px;
 }
 
 .nav-item.logout:hover {

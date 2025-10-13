@@ -154,19 +154,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
                     </a>
 
                     <!-- Student Management -->
-                    <a class="nav-link d-flex justify-content-between align-items-center"
-                       data-bs-toggle="collapse" href="#studentMenu" role="button"
-                       aria-expanded="true" aria-controls="studentMenu">
-                        <span><i class="fas fa-users"></i> Student Management</span>
-                        <i class="fas fa-caret-down rotate-icon"></i>
-                    </a>
-                    <div class="collapse show" id="studentMenu">
-                        <ul class="list-unstyled ms-3">
-                            <li><a href="students.php" class="nav-link">• Students</a></li>
-                            <li><a href="search_students.php" class="nav-link active">• Search Students</a></li>
-                        </ul>
+                    <div class="nav-group">
+                    <button class="nav-item dropdown-btn" data-target="studentMenu">
+                        <i class="fas fa-user-graduate"></i>
+                        <span>Student Management</span>
+                        <i class="fas fa-chevron-down arrow"></i>
+                    </button>
+                    <div class="submenu show" id="studentMenu">
+                        <a href="students.php" class="submenu-item">
+                            <i class="fas fa-id-card"></i>
+                            Students Profile
+                        </a>
+                        <a href="search_students.php" class="submenu-item">
+                            <i class="fas fa-search"></i>
+                            Search Students
+                        </a>
                     </div>
-
+                </div>
                     <!-- Other links -->
                     <a class="nav-link" href="#"><i class="fas fa-notes-medical"></i> Consultation</a>
                     <a class="nav-link" href="#"><i class="fas fa-calendar-alt"></i> Appointments</a>
