@@ -58,7 +58,7 @@ require_once 'includes/db_connect.php';
     }
 
     .left {
-      background: linear-gradient(135deg, #00416A, #E4E5E6);
+      background: linear-gradient(135deg, #ffda6a, #fff7da);
       color: #fff;
       text-align: center;
     }
@@ -76,11 +76,10 @@ require_once 'includes/db_connect.php';
     }
 
     .logo-left, .logo-right {
-      width: 100px;
-      height: 100px;
+      width: 120px;
+      height: 120px;
       margin-bottom: 15px;
       border-radius: 50%;
-      background: #fff;
       object-fit: cover;
       box-shadow: 0 0 10px rgba(0,0,0,0.3);
     }
@@ -91,11 +90,12 @@ require_once 'includes/db_connect.php';
       line-height: 1.5;
       letter-spacing: 0.5px;
       margin-bottom: 25px;
+      color: #333;
     }
 
     label {
       font-weight: 500;
-      color: #fff;
+      color: #333;
     }
 
     select {
