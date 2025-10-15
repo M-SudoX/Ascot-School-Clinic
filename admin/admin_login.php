@@ -137,7 +137,7 @@ session_start();
 
       <!-- FORGOT PASSWORD -->
       <div class="forgot-link">
-        Forgot your password? <a href="#">Contact IT Admin</a>
+        Forgot your password? <a href="admin_forget_password.php">Click here</a>
       </div>
     </form>
   </div>

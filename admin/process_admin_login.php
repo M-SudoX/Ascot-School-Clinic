@@ -1,38 +1,39 @@
 <?php
 session_start();
-require_once '../includes/db_connect.php'; // adjust path kung nasa admin folder
+require_once '../includes/db_connect.php';
 
-
-
-// WHY: Check if form was submitted via POST method
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
-
-
-     // WHY: Basic validation to prevent empty submissions
-    if (!empty($username) && !empty($password)) {
-        $stmt = $pdo->prepare("SELECT * FROM admin WHERE username = :username LIMIT 1");
-        $stmt->bindParam(':username', $username, PDO::PARAM_STR);
-        $stmt->execute();
+    $username = trim($_POST['username']);
+    $password = $_POST['password'];
+    
+    try {
+        // Check admin credentials
+        $stmt = $pdo->prepare("SELECT id, username, password, email FROM admin WHERE username = ?");
+        $stmt->execute([$username]);
         $admin = $stmt->fetch(PDO::FETCH_ASSOC);
-
+        
         if ($admin && password_verify($password, $admin['password'])) {
-            // ✅ Success login
-            $_SESSION['admin_id']       = $admin['id'];
+            // Login successful
+            $_SESSION['admin_id'] = $admin['id'];
             $_SESSION['admin_username'] = $admin['username'];
-            $_SESSION['fullname']       = $admin['fullname'] ?? $admin['username'];
-            $_SESSION['role']           = 'admin';
-
-            // Siguraduhin tama filename dito
+            $_SESSION['admin_email'] = $admin['email'];
+            $_SESSION['admin_logged_in'] = true;
+            
             header("Location: admin_dashboard.php");
             exit();
         } else {
-            echo "<script>alert('Invalid Username or Password'); window.location.href='admin_login.php';</script>";
+            $_SESSION['error'] = "Invalid username or password.";
+            header("Location: admin_login.php");
             exit();
         }
-    } else {
-        echo "<script>alert('Please enter both Username and Password'); window.location.href='admin_login.php';</script>";
+        
+    } catch (PDOException $e) {
+        $_SESSION['error'] = "Database error occurred.";
+        header("Location: admin_login.php");
         exit();
     }
+} else {
+    header("Location: admin_login.php");
+    exit();
 }
+?>
