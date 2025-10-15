@@ -1,12 +1,14 @@
 <?php
 session_start();
 require 'includes/db_connect.php';
+require 'includes/activity_logger.php';
 
-// ✅ Temporary session (for testing)
 if (!isset($_SESSION['student_id'])) {
-    $_SESSION['student_id'] = 1;
+    header("Location: student_login.php");
+    exit();
 }
 
+$student_id = $_SESSION['student_id'];
 $success_message = '';
 $error_message = '';
 
@@ -21,9 +23,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $notes = $_POST['notes'] ?? '';
 
     try {
-        $stmt = $pdo->prepare("INSERT INTO consultation_requests (student_id, date, time, requested, notes, status)
-                               VALUES (?, ?, ?, ?, ?, 'Pending')");
+        $stmt = $pdo->prepare("INSERT INTO consultation_requests (student_id, date, time, requested, notes, status) VALUES (?, ?, ?, ?, ?, 'Pending')");
         $stmt->execute([$student_id, $date, $time, $concern, $notes]);
+        
+        // ✅ SPECIFIC ACTION: Consultation Scheduled
+        logActivity($pdo, $student_id, "Scheduled consultation: " . $concern);
+        
         $_SESSION['success_message'] = 'Your consultation request has been submitted successfully!';
     } catch (PDOException $e) {
         $_SESSION['error_message'] = 'Database Error: ' . $e->getMessage();
@@ -44,10 +49,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $notes = $_POST['edit_notes'];
 
     try {
-        $stmt = $pdo->prepare("UPDATE consultation_requests 
-                               SET date = ?, time = ?, requested = ?, notes = ?
-                               WHERE id = ? AND status IN ('Pending', 'Approved')");
+        $stmt = $pdo->prepare("UPDATE consultation_requests SET date = ?, time = ?, requested = ?, notes = ? WHERE id = ? AND status IN ('Pending', 'Approved')");
         $stmt->execute([$date, $time, $concern, $notes, $id]);
+        
+        // ✅ SPECIFIC ACTION: Consultation Edited
+        logActivity($pdo, $student_id, "Edited consultation: " . $concern);
+        
         $_SESSION['success_message'] = 'Consultation updated successfully!';
     } catch (PDOException $e) {
         $_SESSION['error_message'] = 'Error updating consultation: ' . $e->getMessage();
@@ -58,6 +65,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 /* ===============================
+   ✅ CANCEL CONSULTATION
+================================= */
+if (isset($_GET['cancel'])) {
+    $id = $_GET['cancel'];
+    try {
+        // Kunin muna ang consultation details bago i-delete
+        $get_stmt = $pdo->prepare("SELECT requested FROM consultation_requests WHERE id = ?");
+        $get_stmt->execute([$id]);
+        $consultation = $get_stmt->fetch();
+        
+        $stmt = $pdo->prepare("DELETE FROM consultation_requests WHERE id = ? AND status = 'Pending'");
+        $stmt->execute([$id]);
+        
+        // ✅ SPECIFIC ACTION: Consultation Cancelled
+        if ($consultation) {
+            logActivity($pdo, $student_id, "Cancelled consultation: " . $consultation['requested']);
+        }
+        
+        $_SESSION['success_message'] = 'Consultation cancelled and deleted successfully!';
+    } catch (PDOException $e) {
+        $_SESSION['error_message'] = 'Error deleting consultation: ' . $e->getMessage();
+    }
+
+    header("Location: schedule_consultation.php");
+    exit();
+}
+
+// ... (REST OF YOUR EXISTING SCHEDULE_CONSULTATION CODE) ...
+
+/* ===============================
    ✅ CANCEL CONSULTATION (DELETE RECORD)
 ================================= */
 if (isset($_GET['cancel'])) {
@@ -65,6 +102,10 @@ if (isset($_GET['cancel'])) {
     try {
         $stmt = $pdo->prepare("DELETE FROM consultation_requests WHERE id = ? AND status = 'Pending'");
         $stmt->execute([$id]);
+        
+        // ✅ I-LOG ANG PAG-CANCEL NG CONSULTATION
+        logActivity($pdo, $student_id, "Cancelled consultation request");
+        
         $_SESSION['success_message'] = 'Consultation cancelled and deleted successfully!';
     } catch (PDOException $e) {
         $_SESSION['error_message'] = 'Error deleting consultation: ' . $e->getMessage();
@@ -75,7 +116,7 @@ if (isset($_GET['cancel'])) {
 }
 
 /* ===============================
-   ✅ DISPLAY MESSAGES
+   ✅ DISPLAY MESSAGES - FIXED VARIABLES
 ================================= */
 if (isset($_SESSION['success_message'])) {
     $success_message = $_SESSION['success_message'];
@@ -90,13 +131,23 @@ if (isset($_SESSION['error_message'])) {
    ✅ FETCH CONSULTATIONS
 ================================= */
 $student_id = $_SESSION['student_id'];
-$stmt = $pdo->prepare("SELECT * FROM consultation_requests WHERE student_id = ? ORDER BY date DESC");
-$stmt->execute([$student_id]);
-$consultations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $stmt = $pdo->prepare("SELECT * FROM consultation_requests WHERE student_id = ? ORDER BY date DESC");
+    $stmt->execute([$student_id]);
+    $consultations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $consultations = [];
+    $error_message = "Error fetching consultations: " . $e->getMessage();
+}
 
 // ✅ Helper functions
-function formatTime($time) { return date('g:i A', strtotime($time)); }
-function formatDate($date) { return date('M d', strtotime($date)); }
+function formatTime($time) { 
+    return date('g:i A', strtotime($time)); 
+}
+
+function formatDate($date) { 
+    return date('M d', strtotime($date)); 
+}
 ?>
 
 <!DOCTYPE html>
@@ -104,11 +155,91 @@ function formatDate($date) { return date('M d', strtotime($date)); }
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Consultation</title>
+  <title>Schedule Consultation - ASCOT Online School Clinic</title>
 
   <link href="assets/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/webfonts/all.min.css" rel="stylesheet">
   <link href="assets/css/schedule_consultation.css" rel="stylesheet">
+  
+  <style>
+    .status-pending { 
+        background: #fff3cd; 
+        color: #856404; 
+        padding: 4px 8px; 
+        border-radius: 4px; 
+        font-size: 12px; 
+        font-weight: bold;
+    }
+    .status-approved { 
+        background: #d4edda; 
+        color: #155724; 
+        padding: 4px 8px; 
+        border-radius: 4px; 
+        font-size: 12px; 
+        font-weight: bold;
+    }
+    .status-rejected { 
+        background: #f5c6cb; 
+        color: #842029; 
+        padding: 4px 8px; 
+        border-radius: 4px; 
+        font-size: 12px; 
+        font-weight: bold;
+    }
+    .status-completed { 
+        background: #cce7ff; 
+        color: #004085; 
+        padding: 4px 8px; 
+        border-radius: 4px; 
+        font-size: 12px; 
+        font-weight: bold;
+    }
+
+    .modal-backdrop.show { 
+        opacity: 0.5 !important; 
+    }
+    
+    .btn-action {
+        border: none;
+        background: none;
+        padding: 5px;
+        margin: 0 2px;
+        border-radius: 4px;
+        transition: all 0.3s;
+    }
+    
+    .btn-view { color: #17a2b8; }
+    .btn-edit { color: #ffc107; }
+    .btn-cancel { color: #dc3545; }
+    
+    .btn-action:hover {
+        transform: scale(1.1);
+        background: #f8f9fa;
+    }
+    
+    .consultation-form-container {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .consultation-schedule {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .schedule-title {
+        color: #333;
+        border-bottom: 2px solid #ffda6a;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        font-weight: bold;
+    }
+  </style>
 </head>
 <body>
   <!-- Header -->
@@ -121,7 +252,7 @@ function formatDate($date) { return date('M d', strtotime($date)); }
           </div>
         </div>
         <div class="col">
-          <div class="college-info">
+          <div class="college-info text-center">
             <h4>Republic of the Philippines</h4>
             <h4>AURORA STATE COLLEGE OF TECHNOLOGY</h4>
             <p>ONLINE SCHOOL CLINIC</p>
@@ -132,130 +263,200 @@ function formatDate($date) { return date('M d', strtotime($date)); }
   </div>
 
   <!-- Sidebar + Main -->
-  <div class="main-container">
-    <div class="sidebar">
-      <nav class="nav-menu">
-        <a class="nav-link" href="student_dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-        <a class="nav-link" href="update_profile.php"><i class="fas fa-user-edit"></i> Update Profile</a>
-        <a class="nav-link active" href="schedule_consultation.php"><i class="fas fa-calendar-plus"></i> Schedule Consultation</a>
-        <a class="nav-link" href="student_report.php"><i class="fas fa-chart-bar"></i> Report</a>
-        <a class="nav-link" href="student_announcement.php"><i class="fas fa-bullhorn"></i> Announcement</a>
-      </nav>
-      <div class="nav-divider"></div>
-      <a class="nav-link logout-link" href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
-    </div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-      <div class="header-info-section"></div>
-
-      <!-- Alerts -->
-      <div id="alertContainer" class="alert-container">
-        <?php if ($success_message): ?>
-          <div class="alert alert-success custom-success alert-dismissible fade show">
-            <i class="fas fa-check-circle"></i> <?= $success_message; ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        <?php elseif ($error_message): ?>
-          <div class="alert alert-danger alert-dismissible fade show">
-            <i class="fas fa-exclamation-circle"></i> <?= $error_message; ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        <?php endif; ?>
-      </div>
-
-      <!-- Consultation Form -->
-      <div class="consultation-form-container">
-        <form method="POST" action="">
-          <input type="hidden" name="action" value="create">
-          <div class="form-row">
-            <div class="form-group">
-              <label>Date:</label>
-              <input type="date" name="date" class="form-control" min="<?= date('Y-m-d'); ?>" required>
+  <div class="container-fluid">
+    <div class="row">
+        <!-- SIDEBAR NAVIGATION -->
+        <div class="col-md-3 col-lg-2 sidebar">
+            <nav class="nav flex-column">
+                <a class="nav-link" href="student_dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a class="nav-link" href="update_profile.php"><i class="fas fa-user-edit"></i> Update Profile</a>
+                <a class="nav-link active" href="schedule_consultation.php"><i class="fas fa-calendar-plus"></i> Schedule Consultation</a>
+                <a class="nav-link" href="student_report.php"><i class="fas fa-chart-bar"></i> Report</a>
+                <a class="nav-link" href="student_announcement.php"><i class="fas fa-bullhorn"></i> Announcement</a>
+                <a class="nav-link" href="activity_logs.php"><i class="fas fa-clipboard-list"></i> Activity Logs</a>
+            </nav>
+            <div class="logout-btn mt-3">
+                <a class="nav-link text-danger" href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
-            <div class="form-group">
-              <label>Time:</label>
-              <select name="time" class="form-control" required>
-                <option value="">Select Time</option>
-                <option value="08:00">8:00 AM</option>
-                <option value="08:30">8:30 AM</option>
-                <option value="09:00">9:00 AM</option>
-                <option value="09:30">9:30 AM</option>
-                <option value="10:00">10:00 AM</option>
-                <option value="13:00">1:00 PM</option>
-                <option value="14:00">2:00 PM</option>
-                <option value="15:00">3:00 PM</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Reason/Concern:</label>
-            <select name="concern" class="form-control" required>
-              <option value="">Select Concern</option>
-              <option value="Medicine">Medicine</option>
-              <option value="Medical Clearance">Medical Clearance</option>
-              <option value="General Consultation">General Consultation</option>
-              <option value="First Aid">First Aid</option>
-              <option value="Health Checkup">Health Checkup</option>
-              <option value="Emergency">Emergency</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Optional Notes:</label>
-            <textarea name="notes" class="form-control" rows="4"></textarea>
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="btn-request"><i class="fas fa-paper-plane"></i> REQUEST</button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Consultation Table -->
-      <div class="consultation-schedule">
-        <h3 class="schedule-title">CONSULTATION SCHEDULE</h3>
-        <div class="schedule-table-container">
-          <table class="schedule-table">
-            <thead>
-              <tr><th>Date</th><th>Time</th><th>Concern</th><th>Status</th><th>Actions</th></tr>
-            </thead>
-            <tbody>
-              <?php if (empty($consultations)): ?>
-                <tr><td colspan="5" class="text-center text-muted">No consultation requests yet.</td></tr>
-              <?php else: ?>
-                <?php foreach ($consultations as $c): ?>
-                  <tr>
-                    <td><?= formatDate($c['date']); ?></td>
-                    <td><?= formatTime($c['time']); ?></td>
-                    <td><?= htmlspecialchars($c['requested']); ?></td>
-                    <td><span class="status-<?= strtolower($c['status']); ?>"><?= htmlspecialchars($c['status']); ?></span></td>
-                    <td>
-                      <button class="btn-action btn-view" onclick='viewConsultation(<?= json_encode($c); ?>)'><i class="fas fa-eye"></i></button>
-                      <?php if ($c['status'] === 'Pending' || $c['status'] === 'Approved'): ?>
-                        <button class="btn-action btn-edit" onclick='openEditModal(<?= json_encode($c); ?>)'><i class="fas fa-edit"></i></button>
-                      <?php endif; ?>
-                      <?php if ($c['status'] === 'Pending'): ?>
-                        <a href="?cancel=<?= $c['id']; ?>" class="btn-action btn-cancel" onclick="return confirm('Cancel and delete this consultation?')"><i class="fas fa-times"></i></a>
-                      <?php endif; ?>
-                    </td>
-                  </tr>
-                <?php endforeach; ?>
-              <?php endif; ?>
-            </tbody>
-          </table>
         </div>
-      </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 main-content">
+            <div class="header-info-section">
+                <h3>Schedule Consultation</h3>
+                <p>Book your medical consultation with the school clinic</p>
+            </div>
+
+            <!-- Alerts - FIXED: Using properly initialized variables -->
+            <div id="alertContainer" class="alert-container">
+                <?php if (!empty($success_message)): ?>
+                    <div class="alert alert-success alert-dismissible fade show">
+                        <i class="fas fa-check-circle"></i> <strong>Success!</strong> <?= htmlspecialchars($success_message); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php elseif (!empty($error_message)): ?>
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <i class="fas fa-exclamation-circle"></i> <strong>Error!</strong> <?= htmlspecialchars($error_message); ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Consultation Form -->
+            <div class="consultation-form-container">
+                <h4 class="mb-4">New Consultation Request</h4>
+                <form method="POST" action="">
+                    <input type="hidden" name="action" value="create">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label"><strong>Date:</strong></label>
+                                <input type="date" name="date" class="form-control" 
+                                       min="<?= date('Y-m-d'); ?>" 
+                                       value="<?= date('Y-m-d'); ?>" 
+                                       required>
+                                <small class="form-text text-muted">Select your preferred date</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label"><strong>Time:</strong></label>
+                                <select name="time" class="form-control" required>
+                                    <option value="">Select Time</option>
+                                    <option value="08:00">8:00 AM</option>
+                                    <option value="08:30">8:30 AM</option>
+                                    <option value="09:00">9:00 AM</option>
+                                    <option value="09:30">9:30 AM</option>
+                                    <option value="10:00">10:00 AM</option>
+                                    <option value="10:30">10:30 AM</option>
+                                    <option value="13:00">1:00 PM</option>
+                                    <option value="13:30">1:30 PM</option>
+                                    <option value="14:00">2:00 PM</option>
+                                    <option value="14:30">2:30 PM</option>
+                                    <option value="15:00">3:00 PM</option>
+                                    <option value="15:30">3:30 PM</option>
+                                </select>
+                                <small class="form-text text-muted">Choose your preferred time</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label class="form-label"><strong>Reason/Concern:</strong></label>
+                        <select name="concern" class="form-control" required>
+                            <option value="">Select Concern</option>
+                            <option value="Medicine">Medicine</option>
+                            <option value="Medical Clearance">Medical Clearance</option>
+                            <option value="General Consultation">General Consultation</option>
+                            <option value="First Aid">First Aid</option>
+                            <option value="Health Checkup">Health Checkup</option>
+                            <option value="Emergency">Emergency</option>
+                            <option value="Dental Checkup">Dental Checkup</option>
+                            <option value="Mental Health Consultation">Mental Health Consultation</option>
+                            <option value="Vaccination">Vaccination</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <small class="form-text text-muted">What is the reason for your consultation?</small>
+                    </div>
+                    
+                    <div class="form-group mb-4">
+                        <label class="form-label"><strong>Additional Notes (Optional):</strong></label>
+                        <textarea name="notes" class="form-control" rows="4" 
+                                  placeholder="Please provide any additional information about your condition or concerns..."></textarea>
+                        <small class="form-text text-muted">Any details that might help the medical staff</small>
+                    </div>
+                    
+                    <div class="form-actions text-center">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-paper-plane"></i> SUBMIT CONSULTATION REQUEST
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Consultation Table -->
+            <div class="consultation-schedule">
+                <h3 class="schedule-title">YOUR CONSULTATION SCHEDULE</h3>
+                
+                <?php if (empty($consultations)): ?>
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No consultation requests yet</h5>
+                        <p class="text-muted">Schedule your first consultation using the form above.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="schedule-table-container">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Concern</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($consultations as $c): ?>
+                                    <tr>
+                                        <td><strong><?= htmlspecialchars(formatDate($c['date'])); ?></strong></td>
+                                        <td><?= htmlspecialchars(formatTime($c['time'])); ?></td>
+                                        <td><?= htmlspecialchars($c['requested']); ?></td>
+                                        <td>
+                                            <span class="status-<?= strtolower($c['status']); ?>">
+                                                <?= htmlspecialchars($c['status']); ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button class="btn-action btn-view" 
+                                                    onclick='viewConsultation(<?= json_encode($c); ?>)'
+                                                    title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            
+                                            <?php if ($c['status'] === 'Pending' || $c['status'] === 'Approved'): ?>
+                                                <button class="btn-action btn-edit" 
+                                                        onclick='openEditModal(<?= json_encode($c); ?>)'
+                                                        title="Edit Consultation">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($c['status'] === 'Pending'): ?>
+                                                <a href="?cancel=<?= $c['id']; ?>" 
+                                                   class="btn-action btn-cancel" 
+                                                   onclick="return confirm('Are you sure you want to cancel this consultation?')"
+                                                   title="Cancel Consultation">
+                                                    <i class="fas fa-times"></i>
+                                                </a>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
   </div>
 
   <!-- View Modal -->
   <div class="modal fade" id="viewModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
       <div class="modal-content">
-        <div class="modal-header">
-          <h5>Consultation Details</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Consultation Details</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body" id="viewBody"></div>
+        <div class="modal-body" id="viewBody">
+            <!-- Content will be loaded by JavaScript -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
       </div>
     </div>
   </div>
@@ -266,21 +467,30 @@ function formatDate($date) { return date('M d', strtotime($date)); }
       <form method="POST" class="modal-content">
         <input type="hidden" name="action" value="edit">
         <input type="hidden" name="consultation_id" id="edit_consultation_id">
-        <div class="modal-header">
-          <h5>Edit Consultation</h5>
+        <div class="modal-header bg-warning">
+          <h5 class="modal-title">Edit Consultation</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <label>Date:</label>
-          <input type="date" id="edit_date" name="edit_date" class="form-control" required>
-          <label class="mt-2">Time:</label>
-          <input type="time" id="edit_time" name="edit_time" class="form-control" required>
-          <label class="mt-2">Concern:</label>
-          <input type="text" id="edit_concern" name="edit_concern" class="form-control" required>
-          <label class="mt-2">Notes:</label>
-          <textarea id="edit_notes" name="edit_notes" class="form-control"></textarea>
+          <div class="mb-3">
+            <label class="form-label"><strong>Date:</strong></label>
+            <input type="date" id="edit_date" name="edit_date" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><strong>Time:</strong></label>
+            <input type="time" id="edit_time" name="edit_time" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><strong>Concern:</strong></label>
+            <input type="text" id="edit_concern" name="edit_concern" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><strong>Notes:</strong></label>
+            <textarea id="edit_notes" name="edit_notes" class="form-control" rows="3"></textarea>
+          </div>
         </div>
         <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Changes</button>
         </div>
       </form>
@@ -295,12 +505,27 @@ function formatDate($date) { return date('M d', strtotime($date)); }
     function viewConsultation(c) {
       const body = document.getElementById('viewBody');
       body.innerHTML = `
-        <p><strong>Date:</strong> ${c.date}</p>
-        <p><strong>Time:</strong> ${c.time}</p>
-        <p><strong>Concern:</strong> ${c.requested}</p>
-        <p><strong>Status:</strong> ${c.status}</p>
-        ${c.notes ? `<p><strong>Notes:</strong> ${c.notes}</p>` : ''}
-        <p><strong>Created:</strong> ${c.created_at}</p>`;
+        <div class="consultation-details">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Date:</strong><br>${c.date}</p>
+                    <p><strong>Time:</strong><br>${c.time}</p>
+                    <p><strong>Status:</strong><br><span class="status-${c.status.toLowerCase()}">${c.status}</span></p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Concern:</strong><br>${c.requested}</p>
+                    <p><strong>Created:</strong><br>${c.created_at}</p>
+                </div>
+            </div>
+            ${c.notes ? `
+            <div class="row mt-3">
+                <div class="col-12">
+                    <p><strong>Additional Notes:</strong></p>
+                    <div class="alert alert-info">${c.notes}</div>
+                </div>
+            </div>` : ''}
+        </div>
+      `;
       viewModal.show();
     }
 
@@ -313,24 +538,18 @@ function formatDate($date) { return date('M d', strtotime($date)); }
       editModal.show();
     }
 
-    // ✅ FIX: Always remove modal backdrop after closing
-    ['viewModal', 'editModal'].forEach(id => {
-      const el = document.getElementById(id);
-      el.addEventListener('hidden.bs.modal', () => {
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        const backdrop = document.querySelector('.modal-backdrop');
-        if (backdrop) backdrop.remove();
+    // Auto-hide alerts after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+      const alerts = document.querySelectorAll('.alert');
+      alerts.forEach(alert => {
+        setTimeout(() => {
+          if (alert) {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+          }
+        }, 5000);
       });
     });
   </script>
-
-  <style>
-    .status-pending { background: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-    .status-approved { background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-    .status-rejected { background: #f5c6cb; color: #842029; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-
-    .modal-backdrop.show { opacity: 0 !important; display: none !important; }
-  </style>
 </body>
 </html>

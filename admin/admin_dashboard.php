@@ -1,136 +1,573 @@
-<?php
-
-//<!-- CLIENT-SIDE TECHNOLOGIES -->
-
-//HTML5 - Page structure and semantics
-//CSS3 + Bootstrap 5 - Responsive design and styling
-//JavaScript - Interactive features and dynamic content
-//Font Awesome - Icons for better user interface
-
-// SERVER-SIDE TECHNOLOGIES
-
-//PHP - Server-side processing and logic
-//PDO (PHP Data Objects) - Secure database operations
-//MySQL - Data storage and retrieval
-//Sessions - Admin authentication and state management
-
-// START SESSION TO ACCESS SESSION VARIABLES
-session_start();
-// CHECK IF ADMIN IS LOGGED IN BY VERIFYING ADMIN_ID SESSION EXISTS
-if (!isset($_SESSION['admin_id'])) {
-    // IF NOT LOGGED IN, REDIRECT TO LOGIN PAGE
-    header("Location: admin_login.php");
-    exit(); // TERMINATE SCRIPT EXECUTION
-}
-
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - ASCOT Clinic</title>
-    <!-- BOOTSTRAP CSS FOR STYLING COMPONENTS -->
-    <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FONT AWESOME FOR ICONS -->
-    <link href="../assets/webfonts/all.min.css" rel="stylesheet">
-    <!-- CUSTOM CSS FOR ADMIN DASHBOARD -->
-    <link href="../admin/css/admin_dashboard.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Notification button styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f6fa;
+        }
+
+        /* Header Styles */
+        .top-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+
+        .school-info {
+            flex: 1;
+        }
+
+        .republic {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        .school-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0.2rem 0;
+        }
+
+        .clinic-title {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 100px;
+            left: 20px;
+            z-index: 1001;
+            background: #667eea;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-toggle:hover {
+            transform: scale(1.1);
+            background: #764ba2;
+        }
+
+        /* Dashboard Container */
+        .dashboard-container {
+            display: flex;
+            min-height: calc(100vh - 100px);
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 280px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            padding: 2rem 0;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            color: #444;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background: #f8f9fa;
+            color: #667eea;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
+            color: #667eea;
+            border-left: 4px solid #667eea;
+        }
+
+        .nav-item i {
+            width: 25px;
+            margin-right: 1rem;
+        }
+
+        .nav-item span {
+            flex: 1;
+        }
+
+        .nav-item .arrow {
+            margin-left: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-item .arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .submenu.show {
+            max-height: 500px;
+        }
+
+        .submenu-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem 0.75rem 3.5rem;
+            color: #666;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .submenu-item:hover {
+            background: #e9ecef;
+            color: #667eea;
+        }
+
+        .submenu-item i {
+            width: 20px;
+            margin-right: 0.75rem;
+        }
+
+        .nav-item.logout {
+            color: #dc3545;
+            margin-top: auto;
+        }
+
+        .nav-item.logout:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        /* Notification Styles */
         .notification-dropdown {
             position: relative;
         }
 
         .notification-btn {
-            background: none;
+            background: white;
             border: none;
             font-size: 1.5rem;
             cursor: pointer;
             color: #444;
-            margin top: 15px;
+            padding: 0.5rem 1rem;
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
 
         .notification-btn:hover {
-            color: #007bff;
+            color: #667eea;
+            transform: scale(1.1);
         }
 
         .notification-btn .badge {
             position: absolute;
-            top: -8px;
-            right: -5px;
+            top: 0;
+            right: 0;
             background-color: #dc3545;
             color: white;
             font-size: 0.7rem;
             border-radius: 50%;
             padding: 3px 6px;
+            min-width: 20px;
         }
 
-        /* Notification dropdown menu */
         .notification-menu {
             display: none;
             position: absolute;
-            top: 40px;
+            top: 60px;
             right: 0;
-            background: #fff;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             border-radius: 10px;
-            width: 250px;
+            width: 300px;
             z-index: 999;
         }
 
         .notification-menu.show {
             display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .notification-menu .notif-title {
             font-weight: bold;
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
         }
 
         .notification-menu .notif-list {
             list-style: none;
             margin: 0;
             padding: 0;
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
         }
 
         .notification-menu .notif-list li {
-            padding: 10px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 1rem;
+            border-bottom: 1px solid #f8f9fa;
             font-size: 0.9rem;
             color: #333;
+            transition: background 0.3s ease;
+        }
+
+        .notification-menu .notif-list li:hover {
+            background: #f8f9fa;
         }
 
         .notification-menu .notif-list li i {
-            color: #007bff;
-            margin-right: 5px;
+            color: #667eea;
+            margin-right: 0.5rem;
         }
 
         .notification-menu .view-all {
             display: block;
             text-align: center;
-            padding: 8px;
-            font-size: 0.85rem;
-            color: #007bff;
+            padding: 1rem;
+            font-size: 0.9rem;
+            color: #667eea;
             text-decoration: none;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #e9ecef;
+            font-weight: 500;
         }
 
         .notification-menu .view-all:hover {
             background: #f8f9fa;
         }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            background: white;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #444;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(102,126,234,0.3);
+            color: #667eea;
+        }
+
+        .action-btn i {
+            font-size: 1.5rem;
+            color: #667eea;
+        }
+
+        /* Dashboard Card */
+        .dashboard-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+
+        .stat-item i {
+            font-size: 2rem;
+            opacity: 0.9;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #e9ecef, transparent);
+            margin: 2rem 0;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            color: #444;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            color: #667eea;
+        }
+
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .activity-item i {
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .link-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #444;
+            transition: all 0.3s ease;
+        }
+
+        .link-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .link-btn i {
+            color: #667eea;
+            transition: color 0.3s ease;
+        }
+
+        .link-btn:hover i {
+            color: white;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .school-name {
+                font-size: 1rem;
+            }
+
+            .logo-img {
+                width: 50px;
+                height: 50px;
+            }
+
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100vh;
+                z-index: 1000;
+                transform: translateX(-100%);
+                overflow-y: auto;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            .main-content {
+                padding: 1rem;
+                width: 100%;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .notification-menu {
+                width: 280px;
+                right: -40px;
+            }
+
+            .header-content {
+                padding: 0 1rem;
+            }
+
+            .school-name {
+                font-size: 0.85rem;
+            }
+
+            .republic, .clinic-title {
+                font-size: 0.65rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .action-btn {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .dashboard-card {
+                padding: 1rem;
+            }
+
+            .stat-item {
+                padding: 1rem;
+            }
+
+            .stat-value {
+                font-size: 1.2rem;
+            }
+
+            .notification-menu {
+                width: 250px;
+                right: -20px;
+            }
+
+            .quick-links {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- HEADER SECTION WITH LOGO AND SCHOOL INFORMATION -->
+    <!-- Mobile Menu Toggle Button -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Header -->
     <header class="top-header">
         <div class="container-fluid">
-            <div class="header-content d-flex align-items-center">
-                <!-- ASCOT LOGO -->
-                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img">
+            <div class="header-content">
+                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img"> <!-- SCHOOL LOGO -->
                 <div class="school-info">
                     <div class="republic">Republic of the Philippines</div>
                     <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
@@ -140,10 +577,9 @@ if (!isset($_SESSION['admin_id'])) {
         </div>
     </header>
 
-    <!-- MAIN DASHBOARD CONTAINER -->
     <div class="dashboard-container">
-        <!-- SIDEBAR NAVIGATION MENU -->
-        <aside class="sidebar">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item active">
                     <i class="fas fa-home"></i>
@@ -161,7 +597,7 @@ if (!isset($_SESSION['admin_id'])) {
                             <i class="fas fa-id-card"></i>
                             Students Profile
                         </a>
-                        <a href="search_students.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-search"></i>
                             Search Students
                         </a>
@@ -175,7 +611,7 @@ if (!isset($_SESSION['admin_id'])) {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="consultationMenu">
-                        <a href="view_records.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-folder-open"></i>
                             View Records
                         </a>
@@ -189,11 +625,11 @@ if (!isset($_SESSION['admin_id'])) {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="appointmentsMenu">
-                        <a href="calendar_view.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-calendar-alt"></i>
                             Calendar View
                         </a>
-                        <a href="approvals.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-check-circle"></i>
                             Approvals
                         </a>
@@ -207,7 +643,7 @@ if (!isset($_SESSION['admin_id'])) {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="reportsMenu">
-                        <a href="monthly_summary.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-file-invoice"></i>
                             Monthly Summary
                         </a>
@@ -221,36 +657,47 @@ if (!isset($_SESSION['admin_id'])) {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="adminMenu">
-                        <a href="user_management.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-users-cog"></i>
                             User Management
                         </a>
-                        <a href="access_logs.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-clipboard-list"></i>
                             Access Logs
                         </a>
                     </div>
                 </div>
-                <br>
-                <br>
-                <br>
-                <a href="../logout.php" class="nav-item logout">
+
+                <div class="nav-group">
+                    <button class="nav-item dropdown-btn" data-target="announcementMenu">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Announcement</span>
+                        <i class="fas fa-chevron-down arrow"></i>
+                    </button>
+                    <div class="submenu" id="announcementMenu">
+                        <a href="#" class="submenu-item">
+                            <i class="fas fa-plus-circle"></i>
+                            New Announcement
+                        </a>
+                        <a href="#" class="submenu-item">
+                            <i class="fas fa-history"></i>
+                            History
+                        </a>
+                    </div>
+                </div>
+                
+                <a href="#" class="nav-item logout">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
             </nav>
         </aside>
 
-        <!-- MAIN CONTENT AREA -->
+        <!-- Main Content -->
         <main class="main-content">
-            <!-- Notification button floating right above quick-actions -->
-             <br>
-             <br>
-             <br>
-             <br>
-            <div style="display:flex; justify-content:flex-end; margin:4px 20px 0 0;">
+            <div style="display:flex; justify-content:flex-end; margin-bottom: 1.5rem;">
                 <div class="notification-dropdown">
-                    <button class="notification-btn" id="notifBtn" style="top:-4px;">
+                    <button class="notification-btn" id="notifBtn">
                         <i class="fas fa-bell"></i>
                         <span class="badge" id="notifCount">3</span>
                     </button>
@@ -261,23 +708,27 @@ if (!isset($_SESSION['admin_id'])) {
                             <li><i class="fas fa-calendar-check"></i> Appointment pending approval</li>
                             <li><i class="fas fa-stethoscope"></i> Consultation completed</li>
                         </ul>
-                        <a href="notifications.php" class="view-all">View all</a>
+                        <a href="#" class="view-all">View all</a>
                     </div>
                 </div>
             </div>
 
             <div class="quick-actions">
-                <a href="new_consultation.php" class="action-btn">
+                <a href="#" class="action-btn">
                     <i class="fas fa-plus-circle"></i>
                     <span>New Consultation</span>
                 </a>
-                <a href="search_students.php" class="action-btn">
+                <a href="#" class="action-btn">
                     <i class="fas fa-search"></i>
                     <span>Search Students</span>
                 </a>
-                <a href="reports.php" class="action-btn">
+                <a href="#" class="action-btn">
                     <i class="fas fa-file-alt"></i>
                     <span>Generate Reports</span>
+                </a>
+                <a href="#" class="action-btn">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>New Announcement</span>
                 </a>
             </div>
 
@@ -288,6 +739,13 @@ if (!isset($_SESSION['admin_id'])) {
                         <div>
                             <div class="stat-label">Today:</div>
                             <div class="stat-value">5 Consults</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-bullhorn"></i>
+                        <div>
+                            <div class="stat-label">Active:</div>
+                            <div class="stat-value">3 Announcements</div>
                         </div>
                     </div>
                 </div>
@@ -312,29 +770,35 @@ if (!isset($_SESSION['admin_id'])) {
                             <i class="fas fa-user-check"></i>
                             <span>Student profile updated (1:15 pm)</span>
                         </div>
+                        <div class="activity-item">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>New announcement posted (12:45 pm)</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="divider"></div>
 
                 <div class="quick-links">
-                    <a href="students.php" class="link-btn">
+                    <a href="#" class="link-btn">
                         <i class="fas fa-users"></i>
                         View All Students
                     </a>
-                    <a href="reports.php" class="link-btn">
+                    <a href="#" class="link-btn">
                         <i class="fas fa-archive"></i>
                         Reports Archive
+                    </a>
+                    <a href="#" class="link-btn">
+                        <i class="fas fa-bullhorn"></i>
+                        Announcement History
                     </a>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- BOOTSTRAP JAVASCRIPT BUNDLE -->
-    <script src="../assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS
+        // Dropdown functionality
         document.querySelectorAll('.dropdown-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const targetId = this.getAttribute('data-target');
@@ -356,34 +820,46 @@ if (!isset($_SESSION['admin_id'])) {
             });
         });
 
-        // QUICK ACTION BUTTONS FUNCTIONALITY (CURRENTLY SHOWS ALERTS)
-        document.querySelectorAll('.action-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const actionText = this.querySelector('span').textContent;
-                alert(`Redirecting to: ${actionText}`);
-            });
+        // Mobile menu functionality
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        mobileMenuToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+            const icon = this.querySelector('i');
+            icon.classList.toggle('fa-bars');
+            icon.classList.toggle('fa-times');
         });
 
-        // QUICK LINKS FUNCTIONALITY (CURRENTLY SHOWS ALERTS)
-        document.querySelectorAll('.link-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const linkText = this.textContent.trim();
-                alert(`Navigating to: ${linkText}`);
-            });
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+            mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
         });
 
-        // NOTIFICATION DROPDOWN FUNCTIONALITY
+        // Close sidebar when clicking submenu items on mobile
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.submenu-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    sidebarOverlay.classList.remove('active');
+                    mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+                });
+            });
+        }
+
+        // Notification dropdown
         const notifBtn = document.getElementById('notifBtn');
         const notifMenu = document.getElementById('notifMenu');
 
-        notifBtn.addEventListener('click', function (e) {
+        notifBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             notifMenu.classList.toggle('show');
         });
 
-        document.addEventListener('click', function (e) {
+        document.addEventListener('click', function(e) {
             if (!notifMenu.contains(e.target) && !notifBtn.contains(e.target)) {
                 notifMenu.classList.remove('show');
             }

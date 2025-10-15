@@ -100,6 +100,9 @@ $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <a class="nav-link" href="schedule_consultation.php"><i class="fas fa-calendar-alt"></i> Schedule Consultation</a>
                     <a class="nav-link" href="student_report.php"><i class="fas fa-chart-bar"></i> Reports</a>
                     <a class="nav-link active" href="student_announcement.php"><i class="fas fa-bullhorn"></i> Announcement</a>
+                    <a class="nav-link" href="activity_logs.php"><i class="fas fa-clipboard-list"></i> Activity Logs
+                    </a>
+                 </nav>
                 </nav>
 
                 <!-- LOGOUT BUTTON -->

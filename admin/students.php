@@ -2,9 +2,6 @@
 //i use session authentication for admin only
 //PDO for - SQL injection protection
 
-
-
-
 // START SESSION TO ACCESS SESSION VARIABLES AND MAINTAIN USER STATE
 session_start();
 
@@ -25,10 +22,6 @@ $error = '';
 // DELETE STUDENT
 if (isset($_GET['delete_id'])) {
     $delete_id = $_GET['delete_id'];
-
-
-
-
 
     //PDO for Secure Data Access - Protected database operations for sensitive student information
     
@@ -210,6 +203,99 @@ function getProfileStatus($student) {
     <link href="../admin/css/students.css" rel="stylesheet">
     
     <style>
+        /* SAME SIDEBAR STYLES AS ADMIN DASHBOARD */
+        .dashboard-container {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            position: relative;
+        }
+        
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .nav-item {
+            color: #ecf0f1;
+            padding: 12px 20px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        .nav-group {
+            margin-bottom: 5px;
+        }
+        
+        .dropdown-btn {
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .dropdown-btn .arrow {
+            margin-left: auto;
+            transition: transform 0.3s ease;
+        }
+        
+        .dropdown-btn .arrow.rotate {
+            transform: rotate(180deg);
+        }
+        
+        .submenu {
+            background: rgba(0,0,0,0.2);
+            display: none;
+        }
+        
+        .submenu.show {
+            display: block;
+        }
+        
+        .submenu-item {
+            padding: 10px 20px 10px 50px;
+            color: #bdc3c7;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+        
+        .submenu-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        .logout {
+            margin-top: auto;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        /* EXISTING STUDENT TABLE STYLES */
         .incomplete-profile {
             background-color: #fff3cd !important;
         }
@@ -250,241 +336,358 @@ function getProfileStatus($student) {
             cursor: help;
             border-bottom: 1px dotted #6c757d;
         }
+
+        /* HEADER STYLES */
+        .top-header {
+            background: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .logo-img {
+            height: 60px;
+            width: 60px;
+        }
+        
+        .school-info {
+            flex: 1;
+        }
+        
+        .republic {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 2px;
+        }
+        
+        .school-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .clinic-title {
+            font-size: 1em;
+            color: #e74c3c;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
+    <!-- HEADER SECTION WITH LOGO AND SCHOOL INFORMATION -->
+    <header class="top-header">
         <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <img src="../img/logo.png" alt="Logo" class="logo-img">
-                </div>
-                <div class="col">
-                   <div class="republic">Republic of the Philippines</div>
+            <div class="header-content">
+                <!-- ASCOT LOGO -->
+                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img">
+                <div class="school-info">
+                    <div class="republic">Republic of the Philippines</div>
                     <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
                     <div class="clinic-title">ONLINE SCHOOL CLINIC</div>
                 </div>
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- Layout -->
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 sidebar position-relative">
-                <nav class="nav flex-column">
-                    <!-- Dashboard -->
-                    <a class="nav-link" href="admin_dashboard.php">
-                        <i class="fas fa-tachometer-alt"></i> Dashboard
-                    </a>
+    <!-- MAIN DASHBOARD CONTAINER -->
+    <div class="dashboard-container">
+        <!-- SIDEBAR NAVIGATION MENU -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="admin_dashboard.php" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
 
-                    <!-- Student Management -->
-                    <a class="nav-link d-flex justify-content-between align-items-center active"
-                       data-bs-toggle="collapse" href="#studentMenu" role="button"
-                       aria-expanded="true" aria-controls="studentMenu">
-                        <span><i class="fas fa-users"></i> Student Management</span>
-                        <i class="fas fa-caret-down rotate-icon"></i>
-                    </a>
-                    <div class="collapse show" id="studentMenu">
-                        <ul class="list-unstyled ms-3">
-                            <li><a href="students.php" class="nav-link active">• Students</a></li>
-                            <li><a href="search_students.php" class="nav-link">• Search Students</a></li>
-                        </ul>
+                <div class="nav-group">
+                    <button class="nav-item dropdown-btn active" data-target="studentMenu">
+                        <i class="fas fa-user-graduate"></i>
+                        <span>Student Management</span>
+                        <i class="fas fa-chevron-down arrow"></i>
+                    </button>
+                    <div class="submenu show" id="studentMenu">
+                        <a href="students.php" class="submenu-item active">
+                            <i class="fas fa-id-card"></i>
+                            Students Profile
+                        </a>
+                        <a href="search_students.php" class="submenu-item">
+                            <i class="fas fa-search"></i>
+                            Search Students
+                        </a>
                     </div>
+                </div>
 
-                    <!-- Other links -->
-                    <a class="nav-link" href="#"><i class="fas fa-notes-medical"></i> Consultation</a>
-                    <a class="nav-link" href="#"><i class="fas fa-calendar-alt"></i> Appointments</a>
-                    <a class="nav-link" href="#"><i class="fas fa-chart-bar"></i> Reports</a>
-                    <a class="nav-link" href="#"><i class="fas fa-tools"></i> Admin Tools</a>
-                </nav>
+                <div class="nav-group">
+                    <button class="nav-item dropdown-btn" data-target="consultationMenu">
+                        <i class="fas fa-stethoscope"></i>
+                        <span>Consultation</span>
+                        <i class="fas fa-chevron-down arrow"></i>
+                    </button>
+                    <div class="submenu" id="consultationMenu">
+                        <a href="view_records.php" class="submenu-item">
+                            <i class="fas fa-folder-open"></i>
+                            View Records
+                        </a>
+                    </div>
+                </div>
 
-                <!-- Logout -->
-                 <br>
-                 <br>
-                 <br>
-                 <br>
+                <div class="nav-group">
+                    <button class="nav-item dropdown-btn" data-target="appointmentsMenu">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Appointments</span>
+                        <i class="fas fa-chevron-down arrow"></i>
+                    </button>
+                    <div class="submenu" id="appointmentsMenu">
+                        <a href="calendar_view.php" class="submenu-item">
+                            <i class="fas fa-calendar-alt"></i>
+                            Calendar View
+                        </a>
+                        <a href="approvals.php" class="submenu-item">
+                            <i class="fas fa-check-circle"></i>
+                            Approvals
+                        </a>
+                    </div>
+                </div>
 
-                <div class="logout-btn">
-                    <a class="nav-link text-danger" href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <div class="nav-group">
+                    <button class="nav-item dropdown-btn" data-target="reportsMenu">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Reports</span>
+                        <i class="fas fa-chevron-down arrow"></i>
+                    </button>
+                    <div class="submenu" id="reportsMenu">
+                        <a href="monthly_summary.php" class="submenu-item">
+                            <i class="fas fa-file-invoice"></i>
+                            Monthly Summary
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <button class="nav-item dropdown-btn" data-target="adminMenu">
+                        <i class="fas fa-cog"></i>
+                        <span>Admin Tools</span>
+                        <i class="fas fa-chevron-down arrow"></i>
+                    </button>
+                    <div class="submenu" id="adminMenu">
+                        <a href="user_management.php" class="submenu-item">
+                            <i class="fas fa-users-cog"></i>
+                            User Management
+                        </a>
+                        <a href="access_logs.php" class="submenu-item">
+                            <i class="fas fa-clipboard-list"></i>
+                            Access Logs
+                        </a>
+                    </div>
+                </div>
+
+                <!-- ANNOUNCEMENT SECTION -->
+                <div class="nav-group">
+                    <button class="nav-item dropdown-btn" data-target="announcementMenu">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Announcement</span>
+                        <i class="fas fa-chevron-down arrow"></i>
+                    </button>
+                    <div class="submenu" id="announcementMenu">
+                        <a href="new_announcement.php" class="submenu-item">
+                            <i class="fas fa-plus-circle"></i>
+                            New Announcement
+                        </a>
+                        <a href="announcement_history.php" class="submenu-item">
+                            <i class="fas fa-history"></i>
+                            History
+                        </a>
+                    </div>
+                </div>
+                
+                <br>
+                <br>
+                <br>
+                <a href="../logout.php" class="nav-item logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users"></i> Student Management</h2>
+            </div>
+
+            <!-- Success/Error Messages -->
+            <?php if ($success): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> <?php echo $success; ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
+            
+            <?php if ($error): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle"></i> <?php echo $error; ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
+
+            <!-- Filters -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="btn-group" role="group">
+                        <a href="students.php?filter=all&department=<?php echo $department_filter; ?>" 
+                           class="btn btn-outline-primary <?php echo $filter === 'all' ? 'filter-active' : ''; ?>">
+                            All Students
+                            <span class="badge bg-secondary filter-badge"><?php echo $total_students; ?></span>
+                        </a>
+                        <a href="students.php?filter=incomplete&department=<?php echo $department_filter; ?>" 
+                           class="btn btn-outline-warning <?php echo $filter === 'incomplete' ? 'filter-active' : ''; ?>">
+                            Incomplete Profiles
+                            <span class="badge bg-warning filter-badge"><?php echo $incomplete_profiles; ?></span>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-4">
                 </div>
             </div>
 
-            <!-- Main Content -->
-            <div class="col-md-9 col-lg-10 main-content">
-                <!-- Page Header -->
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2><i class="fas fa-users"></i> Student Management</h2>
-                </div>
-
-                <!-- Success/Error Messages -->
-                <?php if ($success): ?>
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="fas fa-check-circle"></i> <?php echo $success; ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                <?php endif; ?>
-                
-                <?php if ($error): ?>
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-circle"></i> <?php echo $error; ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                <?php endif; ?>
-
-                <!-- Filters -->
-                <div class="row mb-4">
-                    <div class="col-md-8">
-                        <div class="btn-group" role="group">
-                            <a href="students.php?filter=all&department=<?php echo $department_filter; ?>" 
-                               class="btn btn-outline-primary <?php echo $filter === 'all' ? 'filter-active' : ''; ?>">
-                                All Students
-                                <span class="badge bg-secondary filter-badge"><?php echo $total_students; ?></span>
-                            </a>
-                            <a href="students.php?filter=incomplete&department=<?php echo $department_filter; ?>" 
-                               class="btn btn-outline-warning <?php echo $filter === 'incomplete' ? 'filter-active' : ''; ?>">
-                                Incomplete Profiles
-                                <span class="badge bg-warning filter-badge"><?php echo $incomplete_profiles; ?></span>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                    </div>
-                </div>
-
-                <!-- Student Statistics -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="card bg-primary text-white">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Students</h5>
-                                <h3><?php echo $total_students; ?></h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card bg-success text-white">
-                            <div class="card-body">
-                                <h5 class="card-title">Complete Profiles</h5>
-                                <h3><?php echo $complete_profiles; ?></h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card bg-warning text-white">
-                            <div class="card-body">
-                                <h5 class="card-title">Incomplete Profiles</h5>
-                                <h3><?php echo $incomplete_profiles; ?></h3>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card bg-info text-white">
-                            <div class="card-body">
-                                <h5 class="card-title">Completion Rate</h5>
-                                <h3><?php echo $total_students > 0 ? round(($complete_profiles / $total_students) * 100) : 0; ?>%</h3>
-                            </div>
+            <!-- Student Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Students</h5>
+                            <h3><?php echo $total_students; ?></h3>
                         </div>
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Complete Profiles</h5>
+                            <h3><?php echo $complete_profiles; ?></h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Incomplete Profiles</h5>
+                            <h3><?php echo $incomplete_profiles; ?></h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Completion Rate</h5>
+                            <h3><?php echo $total_students > 0 ? round(($complete_profiles / $total_students) * 100) : 0; ?>%</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                <!-- Table -->
+            <!-- Table -->
+            <div class="table">
                 <div class="table">
-                    <div class="table">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover text-center align-middle">
-                                <thead class="table-dark">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover text-center align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Student ID</th>
+                                    <th>Name</th>
+                                    <th>Course/Year</th>
+                                    <th>Email</th>
+                                    <th>Contact</th>
+                                    <th>Status</th>
+                                    <th>Completion</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($students)): ?>
                                     <tr>
-                                        <th>Student ID</th>
-                                        <th>Name</th>
-                                        <th>Course/Year</th>
-                                        <th>Email</th>
-                                        <th>Contact</th>
-                                        <th>Status</th>
-                                        <th>Completion</th>
-                                        <th>Actions</th>
+                                        <td colspan="8" class="text-center py-4">
+                                            <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                                            <p class="text-muted">No students found with current filters.</p>
+                                            <a href="students.php" class="btn btn-primary">
+                                                <i class="fas fa-refresh"></i> Reset Filters
+                                            </a>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (empty($students)): ?>
-                                        <tr>
-                                            <td colspan="8" class="text-center py-4">
-                                                <i class="fas fa-users fa-2x text-muted mb-2"></i>
-                                                <p class="text-muted">No students found with current filters.</p>
-                                                <a href="students.php" class="btn btn-primary">
-                                                    <i class="fas fa-refresh"></i> Reset Filters
-                                                </a>
+                                <?php else: ?>
+                                    <?php foreach ($students as $student): 
+                                        $status = getProfileStatus($student);
+                                        $isComplete = $status['is_complete'];
+                                        $rowClass = $isComplete ? '' : 'incomplete-profile';
+                                        $studentId = $student['id'] ?? $student['user_id'] ?? 0;
+                                    ?>
+                                        <tr class="<?php echo $rowClass; ?>">
+                                            <td><?php echo htmlspecialchars($student['student_number'] ?? 'N/A'); ?></td>
+                                            <td><?php echo htmlspecialchars($student['fullname'] ?? 'Unknown'); ?></td>
+                                            <td><?php echo htmlspecialchars($student['course_year'] ?? 'Not set'); ?></td>
+                                            <td><?php echo htmlspecialchars($student['email'] ?? 'N/A'); ?></td>
+                                            <td><?php echo htmlspecialchars($student['cellphone_number'] ?? 'Not set'); ?></td>
+                                            <td>
+                                                <?php if ($isComplete): ?>
+                                                    <span class="badge bg-success status-badge">Complete</span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-warning status-badge">Incomplete</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <div class="completion-details">
+                                                    <div>
+                                                        <span class="part-status <?php echo $status['part1_complete'] ? 'part-complete' : 'part-incomplete'; ?>"></span>
+                                                        Part 1: <?php echo $status['part1_complete'] ? 'Complete' : 'Incomplete'; ?>
+                                                    </div>
+                                                    <div>
+                                                        <span class="part-status <?php echo $status['part2_complete'] ? 'part-complete' : 'part-incomplete'; ?>"></span>
+                                                        Part 2: <?php echo $status['part2_complete'] ? 'Complete' : 'Incomplete'; ?>
+                                                    </div>
+                                                    <?php if (!$isComplete && !empty($status['missing_fields'])): ?>
+                                                        <small class="text-danger missing-fields-tooltip" title="Missing: <?php echo implode(', ', $status['missing_fields']); ?>">
+                                                            Missing <?php echo count($status['missing_fields']); ?> fields
+                                                        </small>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <?php if ($studentId && $studentId > 0): ?>
+                                                        <a href="view_student.php?id=<?php echo $studentId; ?>" class="btn btn-success btn-sm" title="View">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="consultation_history.php?id=<?php echo $studentId; ?>" class="btn btn-info btn-sm" title="Consultation History">
+                                                            <i class="fas fa-file-medical"></i>
+                                                        </a>
+                                                        <button class="btn btn-danger btn-sm delete-student" 
+                                                                data-id="<?php echo $studentId; ?>" 
+                                                                data-name="<?php echo htmlspecialchars($student['fullname']); ?>"
+                                                                title="Delete">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </button>
+                                                    <?php else: ?>
+                                                        <span class="text-muted small">Edit via Search</span>
+                                                    <?php endif; ?>
+                                                </div>
                                             </td>
                                         </tr>
-                                    <?php else: ?>
-                                        <?php foreach ($students as $student): 
-                                            $status = getProfileStatus($student);
-                                            $isComplete = $status['is_complete'];
-                                            $rowClass = $isComplete ? '' : 'incomplete-profile';
-                                            $studentId = $student['id'] ?? $student['user_id'] ?? 0;
-                                        ?>
-                                            <tr class="<?php echo $rowClass; ?>">
-                                                <td><?php echo htmlspecialchars($student['student_number'] ?? 'N/A'); ?></td>
-                                                <td><?php echo htmlspecialchars($student['fullname'] ?? 'Unknown'); ?></td>
-                                                <td><?php echo htmlspecialchars($student['course_year'] ?? 'Not set'); ?></td>
-                                                <td><?php echo htmlspecialchars($student['email'] ?? 'N/A'); ?></td>
-                                                <td><?php echo htmlspecialchars($student['cellphone_number'] ?? 'Not set'); ?></td>
-                                                <td>
-                                                    <?php if ($isComplete): ?>
-                                                        <span class="badge bg-success status-badge">Complete</span>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-warning status-badge">Incomplete</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td>
-                                                    <div class="completion-details">
-                                                        <div>
-                                                            <span class="part-status <?php echo $status['part1_complete'] ? 'part-complete' : 'part-incomplete'; ?>"></span>
-                                                            Part 1: <?php echo $status['part1_complete'] ? 'Complete' : 'Incomplete'; ?>
-                                                        </div>
-                                                        <div>
-                                                            <span class="part-status <?php echo $status['part2_complete'] ? 'part-complete' : 'part-incomplete'; ?>"></span>
-                                                            Part 2: <?php echo $status['part2_complete'] ? 'Complete' : 'Incomplete'; ?>
-                                                        </div>
-                                                        <?php if (!$isComplete && !empty($status['missing_fields'])): ?>
-                                                            <small class="text-danger missing-fields-tooltip" title="Missing: <?php echo implode(', ', $status['missing_fields']); ?>">
-                                                                Missing <?php echo count($status['missing_fields']); ?> fields
-                                                            </small>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="btn-group" role="group">
-                                                        <?php if ($studentId && $studentId > 0): ?>
-                                                            <a href="view_student.php?id=<?php echo $studentId; ?>" class="btn btn-success btn-sm" title="View">
-                                                                <i class="fas fa-eye"></i>
-                                                            </a>
-                                                            <a href="consultation_history.php?id=<?php echo $studentId; ?>" class="btn btn-info btn-sm" title="Consultation History">
-                                                                <i class="fas fa-file-medical"></i>
-                                                            </a>
-                                                            <button class="btn btn-danger btn-sm delete-student" 
-                                                                    data-id="<?php echo $studentId; ?>" 
-                                                                    data-name="<?php echo htmlspecialchars($student['fullname']); ?>"
-                                                                    title="Delete">
-                                                                <i class="fas fa-trash-alt"></i>
-                                                            </button>
-                                                        <?php else: ?>
-                                                            <span class="text-muted small">Edit via Search</span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <!-- Delete Confirmation Modal -->
@@ -512,12 +715,25 @@ function getProfileStatus($student) {
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const collapseLinks = document.querySelectorAll('[data-bs-toggle="collapse"]');
-            collapseLinks.forEach(link => {
-                link.addEventListener('click', function() {
-                    const icon = this.querySelector('.rotate-icon');
-                    icon.style.transition = 'transform 0.3s ease';
-                    icon.style.transform = icon.style.transform === 'rotate(180deg)' ? 'rotate(0deg)' : 'rotate(180deg)';
+            // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS
+            document.querySelectorAll('.dropdown-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const submenu = document.getElementById(targetId);
+                    const arrow = this.querySelector('.arrow');
+
+                    document.querySelectorAll('.submenu').forEach(menu => {
+                        if (menu.id !== targetId && menu.classList.contains('show')) {
+                            menu.classList.remove('show');
+                            const otherBtn = document.querySelector(`[data-target="${menu.id}"]`);
+                            if (otherBtn) {
+                                otherBtn.querySelector('.arrow').classList.remove('rotate');
+                            }
+                        }
+                    });
+
+                    submenu.classList.toggle('show');
+                    arrow.classList.toggle('rotate');
                 });
             });
             
@@ -556,43 +772,3 @@ function getProfileStatus($student) {
     </script>
 </body>
 </html>
-
-<!-- 
-SUMMARY OF HOW THIS CODE WORKS:
-
-1. AUTHENTICATION & SESSION MANAGEMENT:
-   - session_start() INITIATES OR RESUMES EXISTING SESSION
-   - CHECKS IF student_id EXISTS IN SESSION TO VERIFY LOGIN STATUS
-   - REDIRECTS TO LOGIN PAGE IF USER IS NOT AUTHENTICATED
-
-2. DATABASE OPERATIONS (USING MYSQLI - NOT PDO):
-   - INCLUDES DATABASE CONNECTION FILE
-   - EXECUTES MULTIPLE SQL QUERIES TO FETCH STUDENT DATA AND APPOINTMENT COUNTS
-   - USES mysqli_query() TO EXECUTE QUERIES
-   - USES mysqli_fetch_assoc() TO RETRIEVE RESULTS AS ASSOCIATIVE ARRAYS
-   - CLOSES DATABASE CONNECTION AFTER USE
-
-3. DATA FLOW:
-   - GETS student_id FROM SESSION
-   - FETCHES STUDENT PROFILE INFORMATION FROM DATABASE
-   - COUNTS TOTAL, PENDING, AND COMPLETED APPOINTMENTS
-   - DISPLAYS PERSONALIZED WELCOME MESSAGE WITH STUDENT NAME
-
-4. FRONTEND STRUCTURE:
-   - RESPONSIVE DASHBOARD WITH SIDEBAR NAVIGATION
-   - QUICK ACTION BUTTONS FOR FREQUENT TASKS
-   - STATISTICS CARDS SHOWING APPOINTMENT METRICS
-   - RECENT ACTIVITY FEED
-
-5. SECURITY FEATURES:
-   - SESSION-BASED AUTHENTICATION
-   - INPUT SANITIZATION USING htmlspecialchars() WHEN OUTPUTTING DATA
-   - PROPER REDIRECTION FOR UNAUTHENTICATED USERS
-
-6. JAVASCRIPT FUNCTIONALITY:
-   - DROPDOWN MENU TOGGLE FOR SIDEBAR NAVIGATION
-   - INTERACTIVE QUICK ACTION BUTTONS
-
-NOTE: THIS IS A STUDENT DASHBOARD THAT PROVIDES PERSONALIZED ACCESS TO 
-MEDICAL SERVICES AND APPOINTMENT MANAGEMENT WITHIN THE SCHOOL CLINIC SYSTEM.
--->
