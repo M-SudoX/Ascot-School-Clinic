@@ -116,14 +116,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
+            padding-top: 100px; /* Added for fixed header */
         }
 
-        /* Header Styles - SAME AS ADMIN DASHBOARD */
+        /* Header Styles - FIXED */
         .top-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: fixed; /* Added */
+            top: 0; /* Added */
+            left: 0; /* Added */
+            right: 0; /* Added */
+            z-index: 1000; /* Added */
+            height: 100px; /* Added */
         }
 
         .header-content {
@@ -158,11 +165,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
             opacity: 0.9;
         }
 
-        /* Mobile Menu Toggle - SAME AS ADMIN DASHBOARD */
+        /* Mobile Menu Toggle - FIXED */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 100px;
+            top: 100px; /* Adjusted for fixed header */
             left: 20px;
             z-index: 1001;
             background: #667eea;
@@ -181,24 +188,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
             background: #764ba2;
         }
 
-        /* Dashboard Container - SAME AS ADMIN DASHBOARD */
+        /* Dashboard Container - FIXED */
         .dashboard-container {
             display: flex;
             min-height: calc(100vh - 100px);
         }
 
-        /* Sidebar Styles - SAME AS ADMIN DASHBOARD */
+        /* Sidebar Styles - FIXED */
         .sidebar {
             width: 280px;
             background: white;
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             padding: 2rem 0;
             transition: transform 0.3s ease;
+            position: fixed; /* Added */
+            top: 100px; /* Added */
+            left: 0; /* Added */
+            bottom: 0; /* Added */
+            overflow-y: auto; /* Added */
+            z-index: 999; /* Added */
         }
 
         .sidebar-nav {
             display: flex;
             flex-direction: column;
+            height: 100%; /* Added */
         }
 
         .nav-item {
@@ -284,18 +298,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
             background: rgba(220, 53, 69, 0.1);
         }
 
-        /* Main Content - SAME AS ADMIN DASHBOARD */
+        /* Main Content - FIXED */
         .main-content {
             flex: 1;
             padding: 2rem;
             overflow-x: hidden;
+            margin-left: 280px; /* Added for sidebar space */
+            margin-top: 0; /* Added */
         }
 
-        /* Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD */
+        /* Sidebar Overlay for Mobile - FIXED */
         .sidebar-overlay {
             display: none;
             position: fixed;
-            top: 0;
+            top: 100px; /* Adjusted for fixed header */
             left: 0;
             right: 0;
             bottom: 0;
@@ -333,7 +349,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
             padding: 0;
         }
 
-        /* Responsive Design - SAME AS ADMIN DASHBOARD */
+        /* Responsive Design - FIXED */
         @media (max-width: 992px) {
             .school-name {
                 font-size: 1rem;
@@ -353,11 +369,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 0;
-                height: 100vh;
+                top: 100px; /* Adjusted for fixed header */
+                height: calc(100vh - 100px); /* Adjusted for fixed header */
                 z-index: 1000;
                 transform: translateX(-100%);
                 overflow-y: auto;
+                width: 280px; /* Added */
             }
 
             .sidebar.active {
@@ -371,6 +388,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
             .main-content {
                 padding: 1rem;
                 width: 100%;
+                margin-left: 0; /* Reset margin for mobile */
             }
 
             .header-content {
@@ -408,15 +426,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - SAME AS ADMIN DASHBOARD -->
+    <!-- Mobile Menu Toggle Button - FIXED -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD -->
+    <!-- Sidebar Overlay for Mobile - FIXED -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - SAME AS ADMIN DASHBOARD -->
+    <!-- Header - FIXED -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -431,7 +449,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar - SAME AS ADMIN DASHBOARD -->
+        <!-- Sidebar - FIXED -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">
@@ -728,7 +746,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - SAME AS ADMIN DASHBOARD
+            // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - FIXED
             document.querySelectorAll('.dropdown-btn').forEach(button => {
                 button.addEventListener('click', function() {
                     const targetId = this.getAttribute('data-target');
@@ -750,7 +768,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
                 });
             });
 
-            // MOBILE MENU FUNCTIONALITY - SAME AS ADMIN DASHBOARD
+            // MOBILE MENU FUNCTIONALITY - FIXED
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -798,42 +816,3 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
     </script>
 </body>
 </html>
-
-<!-- 
-SUMMARY OF HOW THIS CODE WORKS:
-
-1. AUTHENTICATION & SECURITY:
-   - USES SESSION MANAGEMENT TO VERIFY ADMIN LOGIN
-   - REDIRECTS UNAUTHENTICATED USERS TO LOGIN PAGE
-   - USES PDO PREPARED STATEMENTS TO PREVENT SQL INJECTION
-   - USES htmlspecialchars() TO PREVENT XSS ATTACKS
-
-2. DATABASE OPERATIONS (USES PDO - PHP DATA OBJECTS):
-   - require_once FOR DATABASE CONNECTION
-   - PDO PREPARED STATEMENTS WITH PARAMETER BINDING
-   - DYNAMIC QUERY BUILDING WITH WHERE CONDITIONS
-   - LEFT JOIN BETWEEN student_information AND users TABLES
-
-3. SEARCH FUNCTIONALITY:
-   - MULTI-FIELD SEARCH (STUDENT NUMBER, NAME, EMAIL, COURSE, PHONE)
-   - ADVANCED FILTERING BY YEAR LEVEL, GENDER, AND STATUS
-   - DYNAMIC SQL QUERY BUILDING BASED ON USER INPUT
-   - RESULTS COUNT DISPLAY AND PAGINATION-READY STRUCTURE
-
-4. USER INTERFACE:
-   - RESPONSIVE BOOTSTRAP LAYOUT WITH SIDEBAR NAVIGATION
-   - SUCCESS/ERROR MESSAGE DISPLAY
-   - INTERACTIVE TABLE WITH ACTION BUTTONS (VIEW, EDIT, DELETE)
-   - CLEAR FILTERS FUNCTIONALITY
-   - EMPTY STATE HANDLING WITH HELPFUL MESSAGES
-
-5. JAVASCRIPT ENHANCEMENTS:
-   - AUTO-FOCUS ON SEARCH INPUT
-   - ENTER KEY SUBMISSION
-   - COLLAPSIBLE MENU ANIMATIONS
-   - DELETE CONFIRMATION DIALOGS
-
-NOTE: THIS CODE USES PDO (PHP DATA OBJECTS) FOR DATABASE OPERATIONS, 
-WHICH PROVIDES BETTER SECURITY AND FEATURES COMPARED TO MYSQLI.
-THE SEARCH SYSTEM IS DESIGNED TO BE FLEXIBLE AND USER-FRIENDLY FOR ADMINISTRATORS.
--->

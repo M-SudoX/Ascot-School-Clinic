@@ -615,7 +615,7 @@
                             <i class="fas fa-id-card"></i>
                             Students Profile
                         </a>
-                        <a href="search_student.php" class="submenu-item">
+                        <a href="search_students.php" class="submenu-item">
                             <i class="fas fa-search"></i>
                             Search Students
                         </a>
@@ -629,7 +629,7 @@
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="consultationMenu">
-                        <a href="#" class="submenu-item">
+                        <a href="view_records.php" class="submenu-item">
                             <i class="fas fa-folder-open"></i>
                             View Records
                         </a>
@@ -704,7 +704,7 @@
                     </div>
                 </div>
                 
-                <a href="#" class="nav-item logout">
+                <a href="admin_login.php" class="nav-item logout">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>

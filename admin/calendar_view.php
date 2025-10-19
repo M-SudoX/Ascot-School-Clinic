@@ -52,14 +52,21 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
+            padding-top: 100px; /* Added for fixed header */
         }
 
-        /* Header Styles - SAME AS ADMIN DASHBOARD */
+        /* Header Styles - FIXED */
         .top-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: fixed; /* Added */
+            top: 0; /* Added */
+            left: 0; /* Added */
+            right: 0; /* Added */
+            z-index: 1000; /* Added */
+            height: 100px; /* Added */
         }
 
         .header-content {
@@ -94,11 +101,11 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             opacity: 0.9;
         }
 
-        /* Mobile Menu Toggle - SAME AS ADMIN DASHBOARD */
+        /* Mobile Menu Toggle - FIXED */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 100px;
+            top: 100px; /* Adjusted for fixed header */
             left: 20px;
             z-index: 1001;
             background: #667eea;
@@ -117,24 +124,31 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: #764ba2;
         }
 
-        /* Dashboard Container - SAME AS ADMIN DASHBOARD */
+        /* Dashboard Container - FIXED */
         .dashboard-container {
             display: flex;
             min-height: calc(100vh - 100px);
         }
 
-        /* Sidebar Styles - SAME AS ADMIN DASHBOARD */
+        /* Sidebar Styles - FIXED */
         .sidebar {
             width: 280px;
             background: white;
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             padding: 2rem 0;
             transition: transform 0.3s ease;
+            position: fixed; /* Added */
+            top: 100px; /* Added */
+            left: 0; /* Added */
+            bottom: 0; /* Added */
+            overflow-y: auto; /* Added */
+            z-index: 999; /* Added */
         }
 
         .sidebar-nav {
             display: flex;
             flex-direction: column;
+            height: 100%; /* Added */
         }
 
         .nav-item {
@@ -220,20 +234,22 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: rgba(220, 53, 69, 0.1);
         }
 
-        /* Main Content - SAME AS ADMIN DASHBOARD */
+        /* Main Content - FIXED */
         .main-content {
             flex: 1;
             padding: 2rem;
             overflow-x: hidden;
             background: linear-gradient(135deg, #ffda6a 0%, #764ba2 100%);
             min-height: calc(100vh - 100px);
+            margin-left: 280px; /* Added for sidebar space */
+            margin-top: 0; /* Added */
         }
 
-        /* Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD */
+        /* Sidebar Overlay for Mobile - FIXED */
         .sidebar-overlay {
             display: none;
             position: fixed;
-            top: 0;
+            top: 100px; /* Adjusted for fixed header */
             left: 0;
             right: 0;
             bottom: 0;
@@ -622,7 +638,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             opacity: 0.5;
         }
         
-        /* Responsive Design */
+        /* Responsive Design - FIXED */
         @media (max-width: 1024px) {
             .calendar-container {
                 padding: 30px;
@@ -646,11 +662,12 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 0;
-                height: 100vh;
+                top: 100px; /* Adjusted for fixed header */
+                height: calc(100vh - 100px); /* Adjusted for fixed header */
                 z-index: 1000;
                 transform: translateX(-100%);
                 overflow-y: auto;
+                width: 280px; /* Added */
             }
 
             .sidebar.active {
@@ -664,6 +681,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             .main-content {
                 padding: 1rem;
                 width: 100%;
+                margin-left: 0; /* Reset margin for mobile */
             }
 
             .header-content {
@@ -727,15 +745,15 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - SAME AS ADMIN DASHBOARD -->
+    <!-- Mobile Menu Toggle Button - FIXED -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD -->
+    <!-- Sidebar Overlay for Mobile - FIXED -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- HEADER - SAME AS ADMIN DASHBOARD -->
+    <!-- HEADER - FIXED -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -749,9 +767,9 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </header>
 
-    <!-- DASHBOARD CONTAINER - SAME AS ADMIN DASHBOARD -->
+    <!-- DASHBOARD CONTAINER - FIXED -->
     <div class="dashboard-container">
-        <!-- SIDEBAR - SAME AS ADMIN DASHBOARD -->
+        <!-- SIDEBAR - FIXED -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">
@@ -891,7 +909,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- JS -->
     <script src="../assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        // MOBILE MENU FUNCTIONALITY - SAME AS ADMIN DASHBOARD
+        // MOBILE MENU FUNCTIONALITY - FIXED
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -921,7 +939,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             });
         }
 
-        // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - SAME AS ADMIN DASHBOARD
+        // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - FIXED
         document.querySelectorAll('.dropdown-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const targetId = this.getAttribute('data-target');
