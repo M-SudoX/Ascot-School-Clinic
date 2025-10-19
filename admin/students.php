@@ -203,96 +203,207 @@ function getProfileStatus($student) {
     <link href="../admin/css/students.css" rel="stylesheet">
     
     <style>
-        /* SAME SIDEBAR STYLES AS ADMIN DASHBOARD */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f6fa;
+        }
+
+        /* Header Styles - SAME AS ADMIN DASHBOARD */
+        .top-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+
+        .school-info {
+            flex: 1;
+        }
+
+        .republic {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            color: white;
+        }
+
+        .school-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0.2rem 0;
+            color: white;
+        }
+
+        .clinic-title {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            color: white;
+        }
+
+        /* Mobile Menu Toggle - SAME AS ADMIN DASHBOARD */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 100px;
+            left: 20px;
+            z-index: 1001;
+            background: #667eea;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-toggle:hover {
+            transform: scale(1.1);
+            background: #764ba2;
+        }
+
+        /* Dashboard Container - SAME AS ADMIN DASHBOARD */
         .dashboard-container {
             display: flex;
-            min-height: calc(100vh - 80px);
+            min-height: calc(100vh - 100px);
         }
-        
+
+        /* Sidebar Styles - SAME AS ADMIN DASHBOARD */
         .sidebar {
             width: 280px;
-            background: #2c3e50;
-            color: white;
-            padding: 20px 0;
-            position: relative;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            padding: 2rem 0;
+            transition: transform 0.3s ease;
         }
-        
+
         .sidebar-nav {
             display: flex;
             flex-direction: column;
         }
-        
+
         .nav-item {
-            color: #ecf0f1;
-            padding: 12px 20px;
-            text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 10px;
+            padding: 1rem 1.5rem;
+            color: #444;
+            text-decoration: none;
+            transition: all 0.3s ease;
             border: none;
             background: none;
             width: 100%;
             text-align: left;
-            transition: all 0.3s ease;
-        }
-        
-        .nav-item:hover,
-        .nav-item.active {
-            background: rgba(255,255,255,0.1);
-            color: white;
-        }
-        
-        .nav-group {
-            margin-bottom: 5px;
-        }
-        
-        .dropdown-btn {
             cursor: pointer;
-            position: relative;
         }
-        
-        .dropdown-btn .arrow {
+
+        .nav-item:hover {
+            background: #f8f9fa;
+            color: #667eea;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
+            color: #667eea;
+            border-left: 4px solid #667eea;
+        }
+
+        .nav-item i {
+            width: 25px;
+            margin-right: 1rem;
+        }
+
+        .nav-item span {
+            flex: 1;
+        }
+
+        .nav-item .arrow {
             margin-left: auto;
             transition: transform 0.3s ease;
         }
-        
-        .dropdown-btn .arrow.rotate {
+
+        .nav-item .arrow.rotate {
             transform: rotate(180deg);
         }
-        
+
         .submenu {
-            background: rgba(0,0,0,0.2);
-            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: #f8f9fa;
         }
-        
+
         .submenu.show {
-            display: block;
+            max-height: 500px;
         }
-        
+
         .submenu-item {
-            padding: 10px 20px 10px 50px;
-            color: #bdc3c7;
-            text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 0.9em;
+            padding: 0.75rem 1.5rem 0.75rem 3.5rem;
+            color: #666;
+            text-decoration: none;
             transition: all 0.3s ease;
+            font-size: 0.9rem;
         }
-        
+
         .submenu-item:hover {
-            background: rgba(255,255,255,0.1);
-            color: white;
+            background: #e9ecef;
+            color: #667eea;
         }
-        
-        .logout {
+
+        .submenu-item i {
+            width: 20px;
+            margin-right: 0.75rem;
+        }
+
+        .nav-item.logout {
+            color: #dc3545;
             margin-top: auto;
         }
-        
+
+        .nav-item.logout:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        /* Main Content - SAME AS ADMIN DASHBOARD */
         .main-content {
             flex: 1;
-            padding: 20px;
-            background: #f8f9fa;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
         }
 
         /* EXISTING STUDENT TABLE STYLES */
@@ -337,55 +448,107 @@ function getProfileStatus($student) {
             border-bottom: 1px dotted #6c757d;
         }
 
-        /* HEADER STYLES */
-        .top-header {
-            background: white;
-            padding: 15px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        /* Responsive Design - SAME AS ADMIN DASHBOARD */
+        @media (max-width: 992px) {
+            .school-name {
+                font-size: 1rem;
+            }
+
+            .logo-img {
+                width: 50px;
+                height: 50px;
+            }
         }
-        
-        .header-content {
-            display: flex;
-            align-items: center;
-            gap: 20px;
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100vh;
+                z-index: 1000;
+                transform: translateX(-100%);
+                overflow-y: auto;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            .main-content {
+                padding: 1rem;
+                width: 100%;
+            }
+
+            .header-content {
+                padding: 0 1rem;
+            }
+
+            .school-name {
+                font-size: 0.85rem;
+            }
+
+            .republic, .clinic-title {
+                font-size: 0.65rem;
+            }
+
+            /* Table responsive adjustments */
+            .table-responsive {
+                font-size: 0.8rem;
+            }
+            
+            .btn-group .btn {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.7rem;
+            }
         }
-        
-        .logo-img {
-            height: 60px;
-            width: 60px;
-        }
-        
-        .school-info {
-            flex: 1;
-        }
-        
-        .republic {
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 2px;
-        }
-        
-        .school-name {
-            font-size: 1.4em;
-            font-weight: bold;
-            color: #2c3e50;
-            margin: 0;
-        }
-        
-        .clinic-title {
-            font-size: 1em;
-            color: #e74c3c;
-            font-weight: bold;
+
+        @media (max-width: 480px) {
+            .action-btn {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .dashboard-card {
+                padding: 1rem;
+            }
+
+            .stat-item {
+                padding: 1rem;
+            }
+
+            .stat-value {
+                font-size: 1.2rem;
+            }
+
+            .quick-links {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- HEADER SECTION WITH LOGO AND SCHOOL INFORMATION -->
+    <!-- Mobile Menu Toggle Button - SAME AS ADMIN DASHBOARD -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Header - SAME AS ADMIN DASHBOARD -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
-                <!-- ASCOT LOGO -->
-                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img">
+                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img"> <!-- SCHOOL LOGO -->
                 <div class="school-info">
                     <div class="republic">Republic of the Philippines</div>
                     <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
@@ -395,10 +558,9 @@ function getProfileStatus($student) {
         </div>
     </header>
 
-    <!-- MAIN DASHBOARD CONTAINER -->
     <div class="dashboard-container">
-        <!-- SIDEBAR NAVIGATION MENU -->
-        <aside class="sidebar">
+        <!-- Sidebar - SAME AS ADMIN DASHBOARD -->
+        <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">
                     <i class="fas fa-home"></i>
@@ -506,9 +668,6 @@ function getProfileStatus($student) {
                     </div>
                 </div>
                 
-                <br>
-                <br>
-                <br>
                 <a href="../logout.php" class="nav-item logout">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
@@ -715,7 +874,7 @@ function getProfileStatus($student) {
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS
+            // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - SAME AS ADMIN DASHBOARD
             document.querySelectorAll('.dropdown-btn').forEach(button => {
                 button.addEventListener('click', function() {
                     const targetId = this.getAttribute('data-target');
@@ -736,6 +895,36 @@ function getProfileStatus($student) {
                     arrow.classList.toggle('rotate');
                 });
             });
+
+            // MOBILE MENU FUNCTIONALITY - SAME AS ADMIN DASHBOARD
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+            mobileMenuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+                const icon = this.querySelector('i');
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-times');
+            });
+
+            sidebarOverlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+                mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+            });
+
+            // Close sidebar when clicking submenu items on mobile
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('.submenu-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        sidebar.classList.remove('active');
+                        sidebarOverlay.classList.remove('active');
+                        mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+                    });
+                });
+            }
             
             // Delete student confirmation
             const deleteButtons = document.querySelectorAll('.delete-student');

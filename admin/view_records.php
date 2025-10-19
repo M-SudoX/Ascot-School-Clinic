@@ -50,11 +50,509 @@ try {
     <title>View Records - ASCOT Clinic</title>
     <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
     <link href="../assets/webfonts/all.min.css" rel="stylesheet">
-    <link href="../admin/css/admin_dashboard.css" rel="stylesheet">
-    <link href="../admin/css/view_records.css" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f6fa;
+        }
+
+        /* Header Styles - SAME AS ADMIN DASHBOARD */
+        .top-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+
+        .school-info {
+            flex: 1;
+        }
+
+        .republic {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        .school-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0.2rem 0;
+        }
+
+        .clinic-title {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        /* Mobile Menu Toggle - SAME AS ADMIN DASHBOARD */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 100px;
+            left: 20px;
+            z-index: 1001;
+            background: #667eea;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-toggle:hover {
+            transform: scale(1.1);
+            background: #764ba2;
+        }
+
+        /* Dashboard Container - SAME AS ADMIN DASHBOARD */
+        .dashboard-container {
+            display: flex;
+            min-height: calc(100vh - 100px);
+        }
+
+        /* Sidebar Styles - SAME AS ADMIN DASHBOARD */
+        .sidebar {
+            width: 280px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            padding: 2rem 0;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            color: #444;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background: #f8f9fa;
+            color: #667eea;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
+            color: #667eea;
+            border-left: 4px solid #667eea;
+        }
+
+        .nav-item i {
+            width: 25px;
+            margin-right: 1rem;
+        }
+
+        .nav-item span {
+            flex: 1;
+        }
+
+        .nav-item .arrow {
+            margin-left: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-item .arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .submenu.show {
+            max-height: 500px;
+        }
+
+        .submenu-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem 0.75rem 3.5rem;
+            color: #666;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .submenu-item:hover {
+            background: #e9ecef;
+            color: #667eea;
+        }
+
+        .submenu-item i {
+            width: 20px;
+            margin-right: 0.75rem;
+        }
+
+        .nav-item.logout {
+            color: #dc3545;
+            margin-top: auto;
+        }
+
+        .nav-item.logout:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        /* Main Content - SAME AS ADMIN DASHBOARD */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* View Records Specific Styles */
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            border: none;
+        }
+
+        .search-section {
+            margin-bottom: 2rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .search-btn, .clear-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .search-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .clear-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .clear-btn:hover {
+            background: #5a6268;
+        }
+
+        .records-count {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .records-table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .records-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .records-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .records-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .view-btn, .edit-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .view-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .view-btn:hover {
+            background: #218838;
+        }
+
+        .edit-btn {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .edit-btn:hover {
+            background: #e0a800;
+        }
+
+        /* Modal Styles */
+        .detail-section {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .section-title {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .detail-item {
+            display: flex;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 150px;
+        }
+
+        .detail-value {
+            color: #6c757d;
+            flex: 1;
+        }
+
+        .vital-signs-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .vital-sign {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .vital-icon {
+            font-size: 1.5rem;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .vital-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            display: block;
+        }
+
+        .vital-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            display: block;
+        }
+
+        .notes-container {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        .no-notes {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        /* Responsive Design - SAME AS ADMIN DASHBOARD */
+        @media (max-width: 992px) {
+            .school-name {
+                font-size: 1rem;
+            }
+
+            .logo-img {
+                width: 50px;
+                height: 50px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100vh;
+                z-index: 1000;
+                transform: translateX(-100%);
+                overflow-y: auto;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            .main-content {
+                padding: 1rem;
+                width: 100%;
+            }
+
+            .header-content {
+                padding: 0 1rem;
+            }
+
+            .school-name {
+                font-size: 0.85rem;
+            }
+
+            .republic, .clinic-title {
+                font-size: 0.65rem;
+            }
+
+            .card, .records-table-container {
+                padding: 1rem;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-box input {
+                width: 100%;
+            }
+
+            .records-table {
+                font-size: 0.8rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .vital-signs-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .records-count {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- Mobile Menu Toggle Button - SAME AS ADMIN DASHBOARD -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Header - SAME AS ADMIN DASHBOARD -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -69,8 +567,8 @@ try {
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
+        <!-- Sidebar - SAME AS ADMIN DASHBOARD -->
+        <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">
                     <i class="fas fa-home"></i>
@@ -96,13 +594,12 @@ try {
                 </div>
 
                 <div class="nav-group">
-                    <button class="nav-item dropdown-btn" data-target="consultationMenu">
+                    <button class="nav-item dropdown-btn active" data-target="consultationMenu">
                         <i class="fas fa-stethoscope"></i>
                         <span>Consultation</span>
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu show" id="consultationMenu">
-                        </a>
                         <a href="view_records.php" class="submenu-item active">
                             <i class="fas fa-folder-open"></i>
                             View Records
@@ -117,7 +614,7 @@ try {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="appointmentsMenu">
-                        <a href="calendar.php" class="submenu-item">
+                        <a href="calendar_view.php" class="submenu-item">
                             <i class="fas fa-calendar-alt"></i>
                             Calendar View
                         </a>
@@ -173,9 +670,10 @@ try {
 
         <!-- Main Content -->
         <main class="main-content">
-            <div class="page-header">
-                <h1><i class="fas fa-folder-open"></i> View Records</h1>
-                <p>Manage and view all consultation records</p>
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-folder-open"></i> Consultation Records</h2>
+                <p class="text-muted mb-0">Manage and view all consultation records</p>
             </div>
 
             <?php if (isset($_GET['success'])): ?>
@@ -192,29 +690,25 @@ try {
                 </div>
             <?php endif; ?>
 
-            <!-- Filter Text -->
-            <div class="filter-text">
-                <small class="text-muted">
-                    <i class="fas fa-info-circle"></i> 
-                    Showing all consultation records. Use the search below to filter results.
-                </small>
-            </div>
-
             <!-- Search Section -->
-            <form method="GET" class="search-section" id="searchForm">
-                <div class="search-box">
-                    <input type="text" name="search" id="searchInput" placeholder="Search by student name, diagnosis, or student ID..." 
-                           value="<?php echo htmlspecialchars($search); ?>">
-                    <button type="submit" class="search-btn">
-                        <i class="fas fa-search"></i> Search
-                    </button>
-                    <?php if (!empty($search)): ?>
-                        <a href="view_records.php" class="clear-btn">
-                            <i class="fas fa-times"></i> Clear Search
-                        </a>
-                    <?php endif; ?>
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="search-section" id="searchForm">
+                        <div class="search-box">
+                            <input type="text" name="search" id="searchInput" placeholder="Search by student name, diagnosis, or student ID..." 
+                                   value="<?php echo htmlspecialchars($search); ?>">
+                            <button type="submit" class="search-btn">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                            <?php if (!empty($search)): ?>
+                                <a href="view_records.php" class="clear-btn">
+                                    <i class="fas fa-times"></i> Clear Search
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
 
             <!-- Records Count -->
             <div class="records-count">
@@ -432,14 +926,13 @@ try {
     <!-- Bootstrap Bundle -->
     <script src="../assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Dropdown toggle functionality
+        // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - SAME AS ADMIN DASHBOARD
         document.querySelectorAll('.dropdown-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const targetId = this.getAttribute('data-target');
                 const submenu = document.getElementById(targetId);
                 const arrow = this.querySelector('.arrow');
-                
-                // Close other submenus
+
                 document.querySelectorAll('.submenu').forEach(menu => {
                     if (menu.id !== targetId && menu.classList.contains('show')) {
                         menu.classList.remove('show');
@@ -449,12 +942,41 @@ try {
                         }
                     }
                 });
-                
-                // Toggle current submenu
+
                 submenu.classList.toggle('show');
                 arrow.classList.toggle('rotate');
             });
         });
+
+        // MOBILE MENU FUNCTIONALITY - SAME AS ADMIN DASHBOARD
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        mobileMenuToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+            const icon = this.querySelector('i');
+            icon.classList.toggle('fa-bars');
+            icon.classList.toggle('fa-times');
+        });
+
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+            mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+        });
+
+        // Close sidebar when clicking submenu items on mobile
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.submenu-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    sidebarOverlay.classList.remove('active');
+                    mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+                });
+            });
+        }
 
         // Record Modal functionality
         const recordModal = document.getElementById('recordModal');

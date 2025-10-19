@@ -1,0 +1,256 @@
+/* ===================================
+   STUDENT ANNOUNCEMENT PAGE STYLES
+   =================================== */
+
+/* PAGE HEADER */
+.page-header {
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+    border-bottom: 3px solid #ffdd57;
+    border-radius: 10px;
+    position: relative; /* or absolute/fixed */
+    left: 8px; 
+}
+
+.page-header h2 {
+    color: #333;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-header h2 i {
+    color: #ffda6a;
+}
+
+/* ANNOUNCEMENTS CONTAINER */
+.announcements-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ANNOUNCEMENT CARD */
+.announcement-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-left: 5px solid #ffda6a;
+}
+
+.announcement-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+}
+
+/* ANNOUNCEMENT HEADER */
+.announcement-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.announcement-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #ffda6a, #fff7da);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.announcement-icon i {
+    font-size: 24px;
+    color: #333;
+}
+
+/* ANNOUNCEMENT META */
+.announcement-meta {
+    flex: 1;
+}
+
+.announcement-meta h4 {
+    color: #333;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+}
+
+.announcement-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #666;
+}
+
+.announcement-date i {
+    color: #ffda6a;
+}
+
+/* URGENT BADGE */
+.badge-urgent {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: linear-gradient(135deg, #ff6b6b, #ff5252);
+    color: white;
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* ANNOUNCEMENT BODY */
+.announcement-body {
+    margin: 15px 0;
+    padding: 15px 0;
+    border-top: 1px solid #f1f3f6;
+    border-bottom: 1px solid #f1f3f6;
+}
+
+.announcement-body p {
+    color: #444;
+    font-size: 15px;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* ANNOUNCEMENT FOOTER */
+.announcement-footer {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.announcement-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f8f9fa;
+    padding: 6px 15px;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #555;
+    font-weight: 500;
+}
+
+.announcement-category i {
+    color: #778899;
+}
+
+/* NO ANNOUNCEMENTS STATE */
+.no-announcements {
+    text-align: center;
+    padding: 80px 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.no-announcements i {
+    font-size: 80px;
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.no-announcements h4 {
+    color: #666;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.no-announcements p {
+    color: #999;
+    font-size: 16px;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+    .page-header h2 {
+        font-size: 24px;
+    }
+
+    .announcement-card {
+        padding: 20px;
+    }
+
+    .announcement-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .announcement-icon {
+        width: 45px;
+        height: 45px;
+    }
+
+    .announcement-icon i {
+        font-size: 20px;
+    }
+
+    .announcement-meta h4 {
+        font-size: 18px;
+    }
+
+    .badge-urgent {
+        position: relative;
+        margin-top: 10px;
+        display: inline-block;
+    }
+
+    .no-announcements {
+        padding: 60px 15px;
+    }
+
+    .no-announcements i {
+        font-size: 60px;
+    }
+
+    .no-announcements h4 {
+        font-size: 20px;
+    }
+}
+
+/* CATEGORY COLORS */
+.announcement-category.health {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.announcement-category.schedule {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.announcement-category.reminder {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.announcement-category.important {
+    background: #ffebee;
+    color: #c62828;
+}

@@ -1,0 +1,328 @@
+/* === GLOBAL RESET === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Poppins', sans-serif;
+    overflow-x: hidden;
+}
+
+/* === HEADER === */
+.header {
+    background: linear-gradient(135deg, #ffda6a, #fff7da);
+    color: #fff;
+    padding: 15px 30px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+     border-bottom: 3px solid #ffdd57;
+     border-radius: 10px;
+}
+
+.logo-img {
+    width: 80px;
+    
+}
+
+.college-info h4, .college-info p {
+    margin: 0;
+    color: #333;
+    font-size: 16px;
+}
+
+/* === MAIN CONTAINER === */
+.main-container {
+    min-height: calc(100vh - 90px);
+    position: relative;
+    margin-top: 100px;
+}
+
+/* === SIDEBAR (MATCHED TO DASHBOARD) === */
+.sidebar {
+    position: fixed;
+    top: 100px;
+    left: 0;
+    height: calc(105vh - 100px);
+    background-color: #f1f3f6;
+    padding: 20px 0;
+    border-right: 1px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    z-index: 900;
+    border-radius: 10px;
+}
+
+.nav-link {
+    color: #333;
+    padding: 15px 25px;
+    font-weight: 500;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.nav-link i {
+    margin-right: 12px;
+    width: 18px;
+    text-align: center;
+    font-size: 16px;
+}
+
+.nav-link:hover {
+    background-color: #778899;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.nav-link.active {
+    background-color: #778899;
+    color: white;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+/* Divider */
+.nav-divider {
+    height: 1px;
+    background-color: #dee2e6;
+    margin: 15px 25px;
+}
+
+/* Logout Link */
+.logout-btn {
+    color: #dc3545;
+    text-align: left;
+    font-weight: 600;
+    position: relative; /* or absolute/fixed */
+    top: -20px;
+}
+
+.logout-link:hover {
+    background-color: #f8d7da !important;
+    color: #721c24 !important;
+    border-radius: 8px;
+}
+
+/* === MAIN CONTENT === */
+.main-content {
+    margin-left: 280px;
+    padding: 25px;
+    overflow-y: auto;
+    height: calc(100vh - 100px);
+    background-color: #f8f9fa;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+/* === FORM HEADER === */
+.form-header {
+    background: linear-gradient(135deg, #ffda6a, #fff7de);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    
+}
+
+.form-logo {
+    width: 80px;
+    height: 80px;
+    margin-right: 20px;
+}
+
+.header-text h4 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.header-text p {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 0;
+}
+
+/* === FORM CONTAINER === */
+.form-container {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.form-title {
+    background-color: #f8f9fa;
+    padding: 20px 30px;
+    border-bottom: 2px solid #dee2e6;
+    text-align: center;
+}
+
+.form-title h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #333;
+    margin-top: -20px; 
+    text-align: center;
+}
+
+/* === FORM SECTIONS === */
+.form-section {
+    padding: 30px;
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 20px;
+    padding: 10px 15px;
+    background-color: #f8f9fa;
+    border-left: 4px solid #007bff;
+    border-radius: 4px;
+}
+
+/* === FORM INPUTS === */
+.form-label {
+    font-weight: 600;
+    color: #333;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.form-control,
+.form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+
+/* === FORM ACTIONS === */
+.form-actions {
+    padding: 20px 30px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    text-align: center;
+}
+
+.form-actions .btn {
+    margin: 0 10px;
+    padding: 12px 25px;
+    font-weight: 600;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+/* === BUTTONS === */
+.btn-primary {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,123,255,0.4);
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border: none;
+    color: #fff;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+}
+
+/* === SCROLLBAR (Sidebar Only) === */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: #f8f9fa;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #dee2e6;
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #ced4da;
+}
+
+/* === MOBILE RESPONSIVE === */
+@media (max-width: 767px) {
+    .sidebar {
+        transform: translateX(-100%);
+        width: 280px;
+        height: 100vh;
+        top: 0;
+        background-color: #fff;
+        box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        padding-top: 20px;
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 20px;
+        height: auto;
+    }
+
+    .form-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .form-logo {
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+        margin: 5px 0;
+    }
+
+}
+.college-info h4{
+    font-size: 1.20rem;
+    font-weight: bold;
+
+}
+h3 {
+    font-size: 1.20rem;
+    font-weight: bold;
+}

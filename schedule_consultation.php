@@ -223,6 +223,7 @@ function formatDate($date) {
         border-radius: 10px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         margin-bottom: 30px;
+        transform: translateY(30px);
     }
     
     .consultation-schedule {

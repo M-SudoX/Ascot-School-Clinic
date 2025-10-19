@@ -1,9 +1,119 @@
+<?php
+session_start();
+require_once '../includes/db_connect.php';
+
+// Check if admin is logged in
+if (!isset($_SESSION['admin_logged_in'])) {
+    header('Location: admin_login.php');
+    exit;
+}
+
+// Handle delete action
+if (isset($_GET['delete_id'])) {
+    $delete_id = $_GET['delete_id'];
+    try {
+        $stmt = $pdo->prepare("DELETE FROM announcements WHERE id = ?");
+        $stmt->execute([$delete_id]);
+        $_SESSION['success_message'] = 'Announcement deleted successfully!';
+        header('Location: announcement_history.php');
+        exit;
+    } catch (PDOException $e) {
+        $error_message = "Error deleting announcement: " . $e->getMessage();
+    }
+}
+
+// Handle expire action - SET is_active = 0
+if (isset($_GET['expire_id'])) {
+    $expire_id = $_GET['expire_id'];
+    try {
+        $stmt = $pdo->prepare("UPDATE announcements SET is_active = 0 WHERE id = ?");
+        $stmt->execute([$expire_id]);
+        $_SESSION['success_message'] = 'Announcement expired successfully!';
+        header('Location: announcement_history.php');
+        exit;
+    } catch (PDOException $e) {
+        $error_message = "Error expiring announcement: " . $e->getMessage();
+    }
+}
+
+// Handle activate action - SET is_active = 1
+if (isset($_GET['activate_id'])) {
+    $activate_id = $_GET['activate_id'];
+    try {
+        $stmt = $pdo->prepare("UPDATE announcements SET is_active = 1 WHERE id = ?");
+        $stmt->execute([$activate_id]);
+        $_SESSION['success_message'] = 'Announcement activated successfully!';
+        header('Location: announcement_history.php');
+        exit;
+    } catch (PDOException $e) {
+        $error_message = "Error activating announcement: " . $e->getMessage();
+    }
+}
+
+// Fetch all announcements from database
+$announcements = [];
+try {
+    $stmt = $pdo->prepare("
+        SELECT id, title, content, sent_by, recipient_type, send_email, post_on_front, 
+               attachment, is_active, created_at 
+        FROM announcements 
+        ORDER BY created_at DESC
+    ");
+    $stmt->execute();
+    $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $error_message = "Error fetching announcements: " . $e->getMessage();
+}
+
+// Function to determine status
+function getAnnouncementStatus($created_at, $is_active) {
+    if (!$is_active) {
+        return 'Expired';
+    }
+    
+    $created_time = strtotime($created_at);
+    $current_time = time();
+    $days_diff = ($current_time - $created_time) / (60 * 60 * 24);
+    
+    if ($days_diff > 30) {
+        return 'Expired';
+    }
+    
+    return 'Active';
+}
+
+// Function to get announcement type
+function getAnnouncementType($send_email, $post_on_front) {
+    $types = [];
+    if ($send_email) {
+        $types[] = 'Email';
+    }
+    if ($post_on_front) {
+        $types[] = 'Post';
+    }
+    return implode(' & ', $types) ?: 'None';
+}
+
+// Function to get recipient display name
+function getRecipientDisplay($recipient_type) {
+    switch ($recipient_type) {
+        case 'all':
+            return 'All Students';
+        case 'specific':
+            return 'Specific Students';
+        case 'attendees':
+            return 'Attendees';
+        default:
+            return 'All Students';
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - ASCOT Clinic</title>
+    <title>Announcement History - ASCOT Clinic</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -16,7 +126,6 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
-            padding-top: 100px; /* Added for fixed header */
         }
 
         /* Header Styles */
@@ -25,12 +134,6 @@
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: fixed; /* Added */
-            top: 0; /* Added */
-            left: 0; /* Added */
-            right: 0; /* Added */
-            z-index: 1000; /* Added */
-            height: 100px; /* Added */
         }
 
         .header-content {
@@ -101,18 +204,11 @@
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             padding: 2rem 0;
             transition: transform 0.3s ease;
-            position: fixed; /* Added */
-            top: 100px; /* Added */
-            left: 0; /* Added */
-            bottom: 0; /* Added */
-            overflow-y: auto; /* Added */
-            z-index: 999; /* Added */
         }
 
         .sidebar-nav {
             display: flex;
             flex-direction: column;
-            height: 100%; /* Added */
         }
 
         .nav-item {
@@ -184,6 +280,11 @@
             color: #667eea;
         }
 
+        .submenu-item.active {
+            color: #667eea;
+            font-weight: 500;
+        }
+
         .submenu-item i {
             width: 20px;
             margin-right: 0.75rem;
@@ -203,8 +304,6 @@
             flex: 1;
             padding: 2rem;
             overflow-x: hidden;
-            margin-left: 280px; /* Added for sidebar space */
-            margin-top: 0; /* Added */
         }
 
         /* Notification Styles */
@@ -315,149 +414,125 @@
             background: #f8f9fa;
         }
 
-        /* Quick Actions */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .action-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem 1.5rem;
-            background: white;
-            border-radius: 10px;
-            text-decoration: none;
-            color: #444;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(102,126,234,0.3);
-            color: #667eea;
-        }
-
-        .action-btn i {
-            font-size: 1.5rem;
-            color: #667eea;
-        }
-
-        /* Dashboard Card */
-        .dashboard-card {
+        /* Content Section */
+        .content {
             background: white;
             border-radius: 15px;
             padding: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            margin-top: 1rem;
         }
 
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-item {
+        .content-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 1rem;
-            padding: 1.5rem;
+            margin-bottom: 30px;
+        }
+
+        .content-header h2 {
+            color: #1a3a5f;
+            font-size: 24px;
+        }
+
+        /* Table Styles */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .history-table th {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-radius: 10px;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
         }
 
-        .stat-item i {
-            font-size: 2rem;
-            opacity: 0.9;
+        .history-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
         }
 
-        .stat-label {
+        .history-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
             font-size: 0.85rem;
-            opacity: 0.9;
+            font-weight: 500;
         }
 
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
+        .status-expired {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
         }
 
-        .divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #e9ecef, transparent);
-            margin: 2rem 0;
-        }
-
-        .section-title {
-            font-size: 1.2rem;
-            color: #444;
-            margin-bottom: 1rem;
+        .action-buttons {
             display: flex;
-            align-items: center;
             gap: 0.5rem;
         }
 
-        .section-title i {
-            color: #667eea;
-        }
-
-        .activity-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 3px solid #667eea;
-        }
-
-        .activity-item i {
-            color: #667eea;
-            font-size: 1.2rem;
-        }
-
-        .quick-links {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .link-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            text-decoration: none;
-            color: #444;
+        .btn-action {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
             transition: all 0.3s ease;
         }
 
-        .link-btn:hover {
-            background: #667eea;
+        .btn-view {
+            background: #17a2b8;
             color: white;
-            transform: translateX(5px);
         }
 
-        .link-btn i {
-            color: #667eea;
-            transition: color 0.3s ease;
+        .btn-view:hover {
+            background: #138496;
         }
 
-        .link-btn:hover i {
+        .btn-edit {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-edit:hover {
+            background: #e0a800;
+        }
+
+        .btn-expire {
+            background: #dc3545;
             color: white;
+        }
+
+        .btn-expire:hover {
+            background: #c82333;
+        }
+
+        .btn-activate {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-activate:hover {
+            background: #218838;
+        }
+
+        .btn-delete {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #5a6268;
         }
 
         /* Responsive Design */
@@ -470,14 +545,6 @@
                 width: 50px;
                 height: 50px;
             }
-
-            .quick-actions {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .stats-row {
-                grid-template-columns: 1fr;
-            }
         }
 
         @media (max-width: 768px) {
@@ -488,12 +555,11 @@
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 100px; /* Adjusted for fixed header */
-                height: calc(100vh - 100px); /* Adjusted for fixed header */
+                top: 0;
+                height: 100vh;
                 z-index: 1000;
                 transform: translateX(-100%);
                 overflow-y: auto;
-                width: 280px; /* Added */
             }
 
             .sidebar.active {
@@ -503,7 +569,7 @@
             .sidebar-overlay {
                 display: none;
                 position: fixed;
-                top: 100px; /* Adjusted for fixed header */
+                top: 0;
                 left: 0;
                 right: 0;
                 bottom: 0;
@@ -518,11 +584,6 @@
             .main-content {
                 padding: 1rem;
                 width: 100%;
-                margin-left: 0; /* Reset margin for mobile */
-            }
-
-            .quick-actions {
-                grid-template-columns: 1fr;
             }
 
             .notification-menu {
@@ -541,33 +602,30 @@
             .republic, .clinic-title {
                 font-size: 0.65rem;
             }
+
+            .history-table {
+                display: block;
+                overflow-x: auto;
+            }
         }
 
         @media (max-width: 480px) {
-            .action-btn {
-                padding: 0.75rem 1rem;
-                font-size: 0.9rem;
-            }
-
-            .dashboard-card {
-                padding: 1rem;
-            }
-
-            .stat-item {
-                padding: 1rem;
-            }
-
-            .stat-value {
-                font-size: 1.2rem;
-            }
-
             .notification-menu {
                 width: 250px;
                 right: -20px;
             }
 
-            .quick-links {
-                grid-template-columns: 1fr;
+            .content {
+                padding: 1rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn-action {
+                width: 100%;
+                margin-bottom: 0.25rem;
             }
         }
     </style>
@@ -585,7 +643,7 @@
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
-                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img"> <!-- SCHOOL LOGO -->
+                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img">
                 <div class="school-info">
                     <div class="republic">Republic of the Philippines</div>
                     <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
@@ -599,7 +657,7 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
-                <a href="admin_dashboard.php" class="nav-item active">
+                <a href="admin_dashboard.php" class="nav-item">
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
@@ -610,12 +668,12 @@
                         <span>Student Management</span>
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
-                    <div class="submenu show" id="studentMenu">
+                    <div class="submenu" id="studentMenu">
                         <a href="students.php" class="submenu-item">
                             <i class="fas fa-id-card"></i>
                             Students Profile
                         </a>
-                        <a href="search_student.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-search"></i>
                             Search Students
                         </a>
@@ -643,7 +701,7 @@
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="appointmentsMenu">
-                        <a href="calendar_view.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-calendar-alt"></i>
                             Calendar View
                         </a>
@@ -692,12 +750,12 @@
                         <span>Announcement</span>
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
-                    <div class="submenu" id="announcementMenu">
+                    <div class="submenu show" id="announcementMenu">
                         <a href="new_announcement.php" class="submenu-item">
                             <i class="fas fa-plus-circle"></i>
                             New Announcement
                         </a>
-                        <a href="announcement_history.php" class="submenu-item">
+                        <a href="announcement_history.php" class="submenu-item active">
                             <i class="fas fa-history"></i>
                             History
                         </a>
@@ -731,91 +789,177 @@
                 </div>
             </div>
 
-            <div class="quick-actions">
-                <a href="#" class="action-btn">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>New Consultation</span>
-                </a>
-                <a href="#" class="action-btn">
-                    <i class="fas fa-search"></i>
-                    <span>Search Students</span>
-                </a>
-                <a href="#" class="action-btn">
-                    <i class="fas fa-file-alt"></i>
-                    <span>Generate Reports</span>
-                </a>
-                <a href="#" class="action-btn">
-                    <i class="fas fa-bullhorn"></i>
-                    <span>New Announcement</span>
-                </a>
-            </div>
-
-            <div class="dashboard-card">
-                <div class="stats-row">
-                    <div class="stat-item">
-                        <i class="fas fa-calendar-day"></i>
-                        <div>
-                            <div class="stat-label">Today:</div>
-                            <div class="stat-value">5 Consults</div>
-                        </div>
-                    </div>
-                    <div class="stat-item">
-                        <i class="fas fa-bullhorn"></i>
-                        <div>
-                            <div class="stat-label">Active:</div>
-                            <div class="stat-value">3 Announcements</div>
-                        </div>
-                    </div>
+            <div class="content">
+                <div class="content-header">
+                    <h2><i class="fas fa-history me-2"></i>Announcement History</h2>
                 </div>
 
-                <div class="divider"></div>
-
-                <div class="activity-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-history"></i>
-                        Recent Activity
-                    </h3>
-                    <div class="activity-list">
-                        <div class="activity-item">
-                            <i class="fas fa-user-md"></i>
-                            <span>Dr. James added consult (3:00 pm)</span>
-                        </div>
-                        <div class="activity-item">
-                            <i class="fas fa-clipboard-check"></i>
-                            <span>New appointment request received (2:30 pm)</span>
-                        </div>
-                        <div class="activity-item">
-                            <i class="fas fa-user-check"></i>
-                            <span>Student profile updated (1:15 pm)</span>
-                        </div>
-                        <div class="activity-item">
-                            <i class="fas fa-bullhorn"></i>
-                            <span>New announcement posted (12:45 pm)</span>
-                        </div>
+                <?php if (isset($_SESSION['success_message'])): ?>
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <?php echo $_SESSION['success_message']; ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                </div>
+                    <?php unset($_SESSION['success_message']); ?>
+                <?php endif; ?>
 
-                <div class="divider"></div>
+                <?php if (isset($error_message)): ?>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <?php echo $error_message; ?>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
 
-                <div class="quick-links">
-                    <a href="#" class="link-btn">
-                        <i class="fas fa-users"></i>
-                        View All Students
-                    </a>
-                    <a href="#" class="link-btn">
-                        <i class="fas fa-archive"></i>
-                        Reports Archive
-                    </a>
-                    <a href="#" class="link-btn">
-                        <i class="fas fa-bullhorn"></i>
-                        Announcement History
-                    </a>
+                <div class="table-responsive">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Recipient</th>
+                                <th>Type</th>
+                                <th>Date Sent</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($announcements)): ?>
+                                <tr>
+                                    <td colspan="7" style="text-align: center; padding: 2rem;">
+                                        <i class="fas fa-inbox" style="font-size: 3rem; color: #dee2e6; margin-bottom: 1rem;"></i>
+                                        <p>No announcements found</p>
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($announcements as $announcement): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($announcement['id']); ?></td>
+                                        <td><?php echo htmlspecialchars($announcement['title']); ?></td>
+                                        <td><?php echo getRecipientDisplay($announcement['recipient_type']); ?></td>
+                                        <td><?php echo getAnnouncementType($announcement['send_email'], $announcement['post_on_front']); ?></td>
+                                        <td><?php echo date('m-d-Y', strtotime($announcement['created_at'])); ?></td>
+                                        <td>
+                                            <?php 
+                                            $status = getAnnouncementStatus($announcement['created_at'], $announcement['is_active']);
+                                            $status_class = 'status-' . strtolower($status);
+                                            ?>
+                                            <span class="<?php echo $status_class; ?>">
+                                                <?php echo $status; ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="btn-action btn-view" 
+                                                        title="View Details" 
+                                                        onclick="viewAnnouncement(<?php echo $announcement['id']; ?>)">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn-action btn-edit" 
+                                                        title="Edit Announcement"
+                                                        onclick="editAnnouncement(<?php echo $announcement['id']; ?>)">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                
+                                                <!-- EXPIRED/ACTIVATE BUTTON -->
+                                                <?php if ($announcement['is_active']): ?>
+                                                    <button class="btn-action btn-expire" 
+                                                            title="Mark as Expired"
+                                                            onclick="expireAnnouncement(<?php echo $announcement['id']; ?>, '<?php echo htmlspecialchars($announcement['title']); ?>')">
+                                                        <i class="fas fa-ban"></i>
+                                                    </button>
+                                                <?php else: ?>
+                                                    <button class="btn-action btn-activate" 
+                                                            title="Activate Announcement"
+                                                            onclick="activateAnnouncement(<?php echo $announcement['id']; ?>, '<?php echo htmlspecialchars($announcement['title']); ?>')">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                <?php endif; ?>
+                                                
+                                                <button class="btn-action btn-delete" 
+                                                        title="Delete Announcement"
+                                                        onclick="deleteAnnouncement(<?php echo $announcement['id']; ?>, '<?php echo htmlspecialchars($announcement['title']); ?>')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Mobile menu functionality
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        mobileMenuToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+            const icon = this.querySelector('i');
+            icon.classList.toggle('fa-bars');
+            icon.classList.toggle('fa-times');
+        });
+
+        sidebarOverlay.addEventListener('click', function() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+            mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+        });
+
+        // Notification dropdown
+        const notifBtn = document.getElementById('notifBtn');
+        const notifMenu = document.getElementById('notifMenu');
+
+        notifBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            notifMenu.classList.toggle('show');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!notifMenu.contains(e.target) && !notifBtn.contains(e.target)) {
+                notifMenu.classList.remove('show');
+            }
+        });
+
+        // View Announcement Function
+        function viewAnnouncement(id) {
+            alert('Viewing announcement ID: ' + id);
+            // You can implement modal view here
+        }
+
+        // Edit Announcement Function  
+        function editAnnouncement(id) {
+            alert('Edit feature coming soon! Announcement ID: ' + id);
+        }
+
+        // EXPIRE Announcement Function - SET is_active = 0
+        function expireAnnouncement(id, title) {
+            if (confirm(`Are you sure you want to mark "${title}" as EXPIRED?\n\nThis will remove it from student view.`)) {
+                window.location.href = `announcement_history.php?expire_id=${id}`;
+            }
+        }
+
+        // ACTIVATE Announcement Function - SET is_active = 1  
+        function activateAnnouncement(id, title) {
+            if (confirm(`Are you sure you want to ACTIVATE "${title}"?\n\nThis will make it visible to students again.`)) {
+                window.location.href = `announcement_history.php?activate_id=${id}`;
+            }
+        }
+
+        // DELETE Announcement Function
+        function deleteAnnouncement(id, title) {
+            if (confirm(`Are you sure you want to PERMANENTLY DELETE "${title}"?\n\nThis action cannot be undone!`)) {
+                window.location.href = `announcement_history.php?delete_id=${id}`;
+            }
+        }
+
         // Dropdown functionality
         document.querySelectorAll('.dropdown-btn').forEach(button => {
             button.addEventListener('click', function() {
@@ -838,25 +982,6 @@
             });
         });
 
-        // Mobile menu functionality
-        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-        const sidebar = document.getElementById('sidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-
-        mobileMenuToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('active');
-            sidebarOverlay.classList.toggle('active');
-            const icon = this.querySelector('i');
-            icon.classList.toggle('fa-bars');
-            icon.classList.toggle('fa-times');
-        });
-
-        sidebarOverlay.addEventListener('click', function() {
-            sidebar.classList.remove('active');
-            sidebarOverlay.classList.remove('active');
-            mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
-        });
-
         // Close sidebar when clicking submenu items on mobile
         if (window.innerWidth <= 768) {
             document.querySelectorAll('.submenu-item').forEach(item => {
@@ -867,21 +992,6 @@
                 });
             });
         }
-
-        // Notification dropdown
-        const notifBtn = document.getElementById('notifBtn');
-        const notifMenu = document.getElementById('notifMenu');
-
-        notifBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            notifMenu.classList.toggle('show');
-        });
-
-        document.addEventListener('click', function(e) {
-            if (!notifMenu.contains(e.target) && !notifBtn.contains(e.target)) {
-                notifMenu.classList.remove('show');
-            }
-        });
     </script>
 </body>
 </html>

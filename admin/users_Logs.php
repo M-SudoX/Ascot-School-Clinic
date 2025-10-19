@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - ASCOT Clinic</title>
+    <title>User Logs - ASCOT Clinic</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -16,7 +16,6 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
-            padding-top: 100px; /* Added for fixed header */
         }
 
         /* Header Styles */
@@ -25,12 +24,6 @@
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: fixed; /* Added */
-            top: 0; /* Added */
-            left: 0; /* Added */
-            right: 0; /* Added */
-            z-index: 1000; /* Added */
-            height: 100px; /* Added */
         }
 
         .header-content {
@@ -43,6 +36,9 @@
             width: 80px;
             height: 80px;
             object-fit: contain;
+            background-color: white;
+            border-radius: 50%;
+            padding: 5px;
         }
 
         .school-info {
@@ -101,18 +97,12 @@
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             padding: 2rem 0;
             transition: transform 0.3s ease;
-            position: fixed; /* Added */
-            top: 100px; /* Added */
-            left: 0; /* Added */
-            bottom: 0; /* Added */
-            overflow-y: auto; /* Added */
-            z-index: 999; /* Added */
         }
 
         .sidebar-nav {
             display: flex;
             flex-direction: column;
-            height: 100%; /* Added */
+            height: 100%;
         }
 
         .nav-item {
@@ -184,6 +174,11 @@
             color: #667eea;
         }
 
+        .submenu-item.active {
+            color: #667eea;
+            font-weight: 500;
+        }
+
         .submenu-item i {
             width: 20px;
             margin-right: 0.75rem;
@@ -203,8 +198,6 @@
             flex: 1;
             padding: 2rem;
             overflow-x: hidden;
-            margin-left: 280px; /* Added for sidebar space */
-            margin-top: 0; /* Added */
         }
 
         /* Notification Styles */
@@ -315,149 +308,231 @@
             background: #f8f9fa;
         }
 
-        /* Quick Actions */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .action-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem 1.5rem;
-            background: white;
-            border-radius: 10px;
-            text-decoration: none;
-            color: #444;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(102,126,234,0.3);
-            color: #667eea;
-        }
-
-        .action-btn i {
-            font-size: 1.5rem;
-            color: #667eea;
-        }
-
-        /* Dashboard Card */
-        .dashboard-card {
+        /* Content Section */
+        .content {
             background: white;
             border-radius: 15px;
             padding: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            margin-top: 1rem;
         }
 
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-item {
+        .content-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 1rem;
-            padding: 1.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
+            margin-bottom: 20px;
         }
 
-        .stat-item i {
-            font-size: 2rem;
-            opacity: 0.9;
+        .content-header h2 {
+            color: #1a3a5f;
+            font-size: 24px;
         }
 
-        .stat-label {
-            font-size: 0.85rem;
-            opacity: 0.9;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        .divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #e9ecef, transparent);
-            margin: 2rem 0;
-        }
-
-        .section-title {
-            font-size: 1.2rem;
-            color: #444;
-            margin-bottom: 1rem;
+        /* Search Bar Styles */
+        .search-container {
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
-        .section-title i {
-            color: #667eea;
-        }
-
-        .activity-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 3px solid #667eea;
-        }
-
-        .activity-item i {
-            color: #667eea;
-            font-size: 1.2rem;
-        }
-
-        .quick-links {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .link-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            text-decoration: none;
-            color: #444;
+        .search-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 250px;
             transition: all 0.3s ease;
         }
 
-        .link-btn:hover {
-            background: #667eea;
-            color: white;
-            transform: translateX(5px);
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
         }
 
-        .link-btn i {
-            color: #667eea;
-            transition: color 0.3s ease;
+        .search-btn {
+            background-color: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s ease;
         }
 
-        .link-btn:hover i {
+        .search-btn:hover {
+            background-color: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .clear-btn {
+            background-color: #6c757d;
             color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+
+        .clear-btn:hover {
+            background-color: #5a6268;
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #1a3a5f;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .user-type {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .user-type.admin {
+            background-color: #e7f3ff;
+            color: #0066cc;
+        }
+
+        .user-type.student {
+            background-color: #f0f9ff;
+            color: #0c6;
+        }
+
+        .action-type {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .action-type.create {
+            background-color: #e6f7ee;
+            color: #0c6;
+        }
+
+        .action-type.update {
+            background-color: #fff4e6;
+            color: #f90;
+        }
+
+        .action-type.delete {
+            background-color: #ffe6e6;
+            color: #f00;
+        }
+
+        .action-type.view {
+            background-color: #e6f3ff;
+            color: #06c;
+        }
+
+        .action-type.login {
+            background-color: #f0e6ff;
+            color: #90f;
+        }
+
+        .action-type.logout {
+            background-color: #f5f5f5;
+            color: #666;
+        }
+
+        .action-type.cancel {
+            background-color: #fff0f0;
+            color: #c00;
+        }
+
+        .export-btn {
+            background-color: #667eea;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            background-color: #5a6fd8;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pagination-info {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-btn {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            background-color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-btn:hover {
+            background-color: #f8f9fa;
+        }
+
+        .pagination-btn.active {
+            background-color: #667eea;
+            color: white;
+            border-color: #667eea;
         }
 
         /* Responsive Design */
@@ -470,14 +545,6 @@
                 width: 50px;
                 height: 50px;
             }
-
-            .quick-actions {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .stats-row {
-                grid-template-columns: 1fr;
-            }
         }
 
         @media (max-width: 768px) {
@@ -488,12 +555,11 @@
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 100px; /* Adjusted for fixed header */
-                height: calc(100vh - 100px); /* Adjusted for fixed header */
+                top: 0;
+                height: 100vh;
                 z-index: 1000;
                 transform: translateX(-100%);
                 overflow-y: auto;
-                width: 280px; /* Added */
             }
 
             .sidebar.active {
@@ -503,7 +569,7 @@
             .sidebar-overlay {
                 display: none;
                 position: fixed;
-                top: 100px; /* Adjusted for fixed header */
+                top: 0;
                 left: 0;
                 right: 0;
                 bottom: 0;
@@ -518,11 +584,6 @@
             .main-content {
                 padding: 1rem;
                 width: 100%;
-                margin-left: 0; /* Reset margin for mobile */
-            }
-
-            .quick-actions {
-                grid-template-columns: 1fr;
             }
 
             .notification-menu {
@@ -541,33 +602,33 @@
             .republic, .clinic-title {
                 font-size: 0.65rem;
             }
+
+            .search-container {
+                flex-direction: column;
+            }
+
+            .search-input {
+                min-width: 100%;
+            }
+
+            .pagination {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
 
         @media (max-width: 480px) {
-            .action-btn {
-                padding: 0.75rem 1rem;
-                font-size: 0.9rem;
-            }
-
-            .dashboard-card {
-                padding: 1rem;
-            }
-
-            .stat-item {
-                padding: 1rem;
-            }
-
-            .stat-value {
-                font-size: 1.2rem;
-            }
-
             .notification-menu {
                 width: 250px;
                 right: -20px;
             }
 
-            .quick-links {
-                grid-template-columns: 1fr;
+            .content {
+                padding: 1rem;
+            }
+
+            th, td {
+                padding: 8px 10px;
             }
         }
     </style>
@@ -599,7 +660,7 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
-                <a href="admin_dashboard.php" class="nav-item active">
+                <a href="admin_dashboard.php" class="nav-item">
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
@@ -610,12 +671,12 @@
                         <span>Student Management</span>
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
-                    <div class="submenu show" id="studentMenu">
+                    <div class="submenu" id="studentMenu">
                         <a href="students.php" class="submenu-item">
                             <i class="fas fa-id-card"></i>
                             Students Profile
                         </a>
-                        <a href="search_student.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-search"></i>
                             Search Students
                         </a>
@@ -643,7 +704,7 @@
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="appointmentsMenu">
-                        <a href="calendar_view.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-calendar-alt"></i>
                             Calendar View
                         </a>
@@ -674,8 +735,8 @@
                         <span>Admin Tools</span>
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
-                    <div class="submenu" id="adminMenu">
-                        <a href="users_logs.php" class="submenu-item">
+                    <div class="submenu show" id="adminMenu">
+                        <a href="users_logs.php" class="submenu-item active">
                             <i class="fas fa-users-cog"></i>
                             Users Logs
                         </a>
@@ -693,11 +754,11 @@
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="announcementMenu">
-                        <a href="new_announcement.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-plus-circle"></i>
                             New Announcement
                         </a>
-                        <a href="announcement_history.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-history"></i>
                             History
                         </a>
@@ -731,91 +792,167 @@
                 </div>
             </div>
 
-            <div class="quick-actions">
-                <a href="#" class="action-btn">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>New Consultation</span>
-                </a>
-                <a href="#" class="action-btn">
-                    <i class="fas fa-search"></i>
-                    <span>Search Students</span>
-                </a>
-                <a href="#" class="action-btn">
-                    <i class="fas fa-file-alt"></i>
-                    <span>Generate Reports</span>
-                </a>
-                <a href="#" class="action-btn">
-                    <i class="fas fa-bullhorn"></i>
-                    <span>New Announcement</span>
-                </a>
-            </div>
-
-            <div class="dashboard-card">
-                <div class="stats-row">
-                    <div class="stat-item">
-                        <i class="fas fa-calendar-day"></i>
-                        <div>
-                            <div class="stat-label">Today:</div>
-                            <div class="stat-value">5 Consults</div>
-                        </div>
-                    </div>
-                    <div class="stat-item">
-                        <i class="fas fa-bullhorn"></i>
-                        <div>
-                            <div class="stat-label">Active:</div>
-                            <div class="stat-value">3 Announcements</div>
-                        </div>
-                    </div>
+            <div class="content">
+                <div class="content-header">
+                    <h2>User Activity Logs</h2>
                 </div>
-
-                <div class="divider"></div>
-
-                <div class="activity-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-history"></i>
-                        Recent Activity
-                    </h3>
-                    <div class="activity-list">
-                        <div class="activity-item">
-                            <i class="fas fa-user-md"></i>
-                            <span>Dr. James added consult (3:00 pm)</span>
-                        </div>
-                        <div class="activity-item">
-                            <i class="fas fa-clipboard-check"></i>
-                            <span>New appointment request received (2:30 pm)</span>
-                        </div>
-                        <div class="activity-item">
-                            <i class="fas fa-user-check"></i>
-                            <span>Student profile updated (1:15 pm)</span>
-                        </div>
-                        <div class="activity-item">
-                            <i class="fas fa-bullhorn"></i>
-                            <span>New announcement posted (12:45 pm)</span>
-                        </div>
-                    </div>
+                
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search by name, user ID, or action...">
+                    <button class="search-btn" id="searchBtn">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                    <button class="clear-btn" id="clearBtn">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
                 </div>
-
-                <div class="divider"></div>
-
-                <div class="quick-links">
-                    <a href="#" class="link-btn">
-                        <i class="fas fa-users"></i>
-                        View All Students
-                    </a>
-                    <a href="#" class="link-btn">
-                        <i class="fas fa-archive"></i>
-                        Reports Archive
-                    </a>
-                    <a href="#" class="link-btn">
-                        <i class="fas fa-bullhorn"></i>
-                        Announcement History
-                    </a>
+                
+                <div class="table-container">
+                    <table id="userLogsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date & Time</th>
+                                <th>User ID</th>
+                                <th>Name</th>
+                                <th>User Type</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Table will be empty initially -->
+                            <tr>
+                                <td colspan="7" class="no-results">No user logs available</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button class="export-btn">Export to CSV</button>
+                
+                <div class="pagination">
+                    <div class="pagination-info" id="paginationInfo">
+                        Showing 0 of 0 entries
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="pagination-btn" id="prevBtn">Previous</button>
+                        <button class="pagination-btn active">1</button>
+                        <button class="pagination-btn">2</button>
+                        <button class="pagination-btn">3</button>
+                        <button class="pagination-btn">4</button>
+                        <button class="pagination-btn">5</button>
+                        <button class="pagination-btn" id="nextBtn">Next</button>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
+        // Empty data for user logs - ready to be populated from backend
+        const userLogsData = [];
+
+        // DOM elements
+        const tableBody = document.getElementById('tableBody');
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const paginationInfo = document.getElementById('paginationInfo');
+
+        // Action type mapping
+        const actionTypes = {
+            'create': { text: 'Create', class: 'create' },
+            'update': { text: 'Update', class: 'update' },
+            'delete': { text: 'Delete', class: 'delete' },
+            'view': { text: 'View', class: 'view' },
+            'login': { text: 'Login', class: 'login' },
+            'logout': { text: 'Logout', class: 'logout' },
+            'cancel': { text: 'Cancel', class: 'cancel' },
+            'change_password': { text: 'Change Password', class: 'update' }
+        };
+
+        // Initialize the table with empty data
+        function initializeTable() {
+            renderTable(userLogsData);
+            updatePaginationInfo(userLogsData.length, userLogsData.length);
+        }
+
+        // Render table with provided data
+        function renderTable(data) {
+            tableBody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="no-results">No user logs available</td></tr>';
+                return;
+            }
+            
+            data.forEach(log => {
+                const row = document.createElement('tr');
+                const actionInfo = actionTypes[log.action] || { text: log.action, class: 'view' };
+                
+                row.innerHTML = `
+                    <td>${log.id}</td>
+                    <td>${log.date}</td>
+                    <td>${log.userId}</td>
+                    <td>${log.name}</td>
+                    <td><span class="user-type ${log.userType}">${log.userType.charAt(0).toUpperCase() + log.userType.slice(1)}</span></td>
+                    <td><span class="action-type ${actionInfo.class}">${actionInfo.text}</span></td>
+                    <td>${log.details}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Search function
+        function searchLogs() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            if (searchTerm === '') {
+                renderTable(userLogsData);
+                updatePaginationInfo(userLogsData.length, userLogsData.length);
+                return;
+            }
+            
+            const filteredData = userLogsData.filter(log => 
+                log.name.toLowerCase().includes(searchTerm) || 
+                log.userId.toLowerCase().includes(searchTerm) ||
+                log.details.toLowerCase().includes(searchTerm) ||
+                (actionTypes[log.action] && actionTypes[log.action].text.toLowerCase().includes(searchTerm)) ||
+                log.userType.toLowerCase().includes(searchTerm)
+            );
+            
+            renderTable(filteredData);
+            updatePaginationInfo(filteredData.length, userLogsData.length);
+        }
+
+        // Update pagination info
+        function updatePaginationInfo(displayed, total) {
+            paginationInfo.textContent = `Showing ${displayed} of ${total} entries`;
+        }
+
+        // Clear search
+        function clearSearch() {
+            searchInput.value = '';
+            renderTable(userLogsData);
+            updatePaginationInfo(userLogsData.length, userLogsData.length);
+        }
+
+        // Event listeners
+        searchBtn.addEventListener('click', searchLogs);
+        clearBtn.addEventListener('click', clearSearch);
+
+        // Search on Enter key
+        searchInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') {
+                searchLogs();
+            }
+        });
+
+        // Initialize the table when page loads
+        document.addEventListener('DOMContentLoaded', initializeTable);
+
         // Dropdown functionality
         document.querySelectorAll('.dropdown-btn').forEach(button => {
             button.addEventListener('click', function() {
@@ -882,6 +1019,29 @@
                 notifMenu.classList.remove('show');
             }
         });
+
+        // Export button functionality
+        document.querySelector('.export-btn').addEventListener('click', function() {
+            alert('Exporting user logs to CSV file...');
+        });
+
+        // Function to add a new log entry (for backend integration)
+        function addLogEntry(logData) {
+            userLogsData.push(logData);
+            renderTable(userLogsData);
+            updatePaginationInfo(userLogsData.length, userLogsData.length);
+        }
+
+        // Example of how to add a log entry (for testing)
+        // addLogEntry({
+        //     id: 1,
+        //     date: "2025-01-15 10:30:45",
+        //     userId: "22-01-0087",
+        //     name: "Maria Janell De Padua",
+        //     userType: "student",
+        //     action: "login",
+        //     details: "Logged into the system"
+        // });
     </script>
 </body>
 </html>

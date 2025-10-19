@@ -510,7 +510,10 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                         <input type="tel" name="cellphone_number" class="form-control underlined"
                                value="<?php echo htmlspecialchars($student_info['cellphone_number'] ?? ''); ?>"
                                <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                               placeholder="09XXXXXXXXX" pattern="[0-9]{11}" required>
+                               placeholder="0917 123 4567" 
+                               pattern="[0-9]{4} [0-9]{3} [0-9]{4}" 
+                               title="Please enter phone number in 4-3-4 format (e.g., 0917 123 4567)" 
+                               required>
                       </div>
                     </div>
                   </div>
@@ -700,24 +703,46 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         });
       }
 
-      // Auto-format phone number
+      // Auto-format phone number to 4-3-4 format (11 numbers only, no dash)
       const phoneInput = document.querySelector('input[name="cellphone_number"]');
       if (phoneInput) {
         phoneInput.addEventListener('input', function(e) {
           let value = e.target.value.replace(/\D/g, '');
+          
+          // Limit to 11 digits
+          if (value.length > 11) {
+            value = value.substring(0, 11);
+          }
+          
+          // Apply 4-3-4 formatting
           if (value.length > 0) {
-            if (value.length <= 3) {
+            if (value.length <= 4) {
               value = value;
-            } else if (value.length <= 6) {
-              value = value.replace(/(\d{3})(\d{0,3})/, '$1-$2');
-            } else if (value.length <= 10) {
-              value = value.replace(/(\d{3})(\d{3})(\d{0,4})/, '$1-$2-$3');
+            } else if (value.length <= 7) {
+              value = value.replace(/(\d{4})(\d{0,3})/, '$1 $2');
             } else {
-              value = value.substring(0, 11);
-              value = value.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+              value = value.replace(/(\d{4})(\d{3})(\d{0,4})/, '$1 $2 $3');
             }
           }
           e.target.value = value;
+        });
+
+        // Also handle paste events to clean up pasted content
+        phoneInput.addEventListener('paste', function(e) {
+          e.preventDefault();
+          const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+          const cleaned = pastedText.replace(/\D/g, '').substring(0, 11);
+          
+          // Apply formatting to pasted content
+          if (cleaned.length > 0) {
+            if (cleaned.length <= 4) {
+              this.value = cleaned;
+            } else if (cleaned.length <= 7) {
+              this.value = cleaned.replace(/(\d{4})(\d{0,3})/, '$1 $2');
+            } else {
+              this.value = cleaned.replace(/(\d{4})(\d{3})(\d{0,4})/, '$1 $2 $3');
+            }
+          }
         });
       }
 

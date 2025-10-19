@@ -21,19 +21,28 @@ body {
     left: 0;
     width: 100%;
     z-index: 1000;
-     border-bottom: 3px solid #ffdd57;
-     border-radius: 10px;
+    border-bottom: 3px solid #ffdd57;
+    border-radius: 10px;
 }
 
 .logo-img {
     width: 80px;
-    
 }
 
 .college-info h4, .college-info p {
     margin: 0;
     color: #333;
     font-size: 16px;
+}
+
+.college-info h4 {
+    font-size: 1.20rem;
+    font-weight: bold;
+}
+
+h3 {
+    font-size: 1.20rem;
+    font-weight: bold;
 }
 
 /* === MAIN CONTAINER === */
@@ -43,7 +52,7 @@ body {
     margin-top: 100px;
 }
 
-/* === SIDEBAR (MATCHED TO DASHBOARD) === */
+/* === SIDEBAR === */
 .sidebar {
     position: fixed;
     top: 100px;
@@ -105,7 +114,7 @@ body {
     color: #dc3545;
     text-align: left;
     font-weight: 600;
-    position: relative; /* or absolute/fixed */
+    position: relative;
     top: -20px;
 }
 
@@ -134,7 +143,6 @@ body {
     display: flex;
     align-items: center;
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    
 }
 
 .form-logo {
@@ -164,6 +172,14 @@ body {
     overflow: hidden;
 }
 
+.health-form-container {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    overflow: hidden;
+    padding: 20px;
+}
+
 .form-title {
     background-color: #f8f9fa;
     padding: 20px 30px;
@@ -175,24 +191,34 @@ body {
     font-size: 22px;
     font-weight: 700;
     color: #333;
-    margin-top: -20px; 
+    margin-top: -20px;
     text-align: center;
+}
+
+.form-subtitle {
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+    margin-top: 5px;
 }
 
 /* === FORM SECTIONS === */
 .form-section {
     padding: 30px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 25px;
 }
 
 .section-title {
     font-size: 14px;
     font-weight: 700;
-    color: #333;
+    color: #fff;
     margin-bottom: 20px;
-    padding: 10px 15px;
-    background-color: #f8f9fa;
-    border-left: 4px solid #007bff;
-    border-radius: 4px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border-radius: 8px;
 }
 
 /* === FORM INPUTS === */
@@ -200,7 +226,7 @@ body {
     font-weight: 600;
     color: #333;
     font-size: 13px;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
 }
 
 .form-control,
@@ -213,10 +239,64 @@ body {
     background-color: #fff;
 }
 
+.form-control.underlined,
+.form-select.underlined {
+    border: none;
+    border-bottom: 2px solid #dee2e6;
+    border-radius: 0;
+    padding: 8px 0;
+    background: transparent;
+}
+
 .form-control:focus,
 .form-select:focus {
     border-color: #007bff;
     box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+
+.form-control.underlined:focus,
+.form-select.underlined:focus {
+    box-shadow: none;
+    border-bottom-color: #007bff;
+    background: transparent;
+}
+
+.form-control:read-only,
+.form-select:disabled {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+/* === MEDICAL QUESTIONS === */
+.medical-question {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.question-text {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.instruction-text {
+    font-style: italic;
+    color: #6c757d;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.conditions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.form-check-custom {
+    padding: 5px 0;
 }
 
 /* === FORM ACTIONS === */
@@ -227,17 +307,56 @@ body {
     text-align: center;
 }
 
-.form-actions .btn {
-    margin: 0 10px;
-    padding: 12px 25px;
-    font-weight: 600;
-    border-radius: 6px;
+.action-buttons {
+    padding: 20px 0;
+    border-top: 2px solid #e9ecef;
+    text-align: center;
+}
+
+/* === BUTTONS === */
+.btn-edit {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 10px 30px;
+    border: none;
+    border-radius: 25px;
+    font-weight: bold;
     text-decoration: none;
     display: inline-block;
     transition: all 0.3s ease;
 }
 
-/* === BUTTONS === */
+.btn-save {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 10px 30px;
+    border: none;
+    border-radius: 25px;
+    font-weight: bold;
+    margin-right: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+    padding: 10px 30px;
+    border: none;
+    border-radius: 25px;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.btn-edit:hover,
+.btn-save:hover,
+.btn-cancel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    color: white;
+}
+
 .btn-primary {
     background: linear-gradient(135deg, #007bff, #0056b3);
     border: none;
@@ -261,6 +380,16 @@ body {
     transform: translateY(-2px);
 }
 
+.form-actions .btn {
+    margin: 0 10px;
+    padding: 12px 25px;
+    font-weight: 600;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
 /* === SCROLLBAR (Sidebar Only) === */
 .sidebar::-webkit-scrollbar {
     width: 6px;
@@ -279,8 +408,58 @@ body {
     background: #ced4da;
 }
 
-/* === MOBILE RESPONSIVE === */
+/* === TABLET RESPONSIVE (768px - 991px) === */
+@media (max-width: 991px) {
+    .main-content {
+        margin-left: 0;
+        padding: 20px 15px;
+    }
+
+    .sidebar {
+        width: 250px;
+    }
+
+    .form-header-with-logo .logo-img {
+        height: 70px;
+    }
+
+    .form-header-with-logo .college-info h4 {
+        font-size: 1rem;
+    }
+
+    .form-header-with-logo .college-info h3 {
+        font-size: 1.1rem;
+    }
+
+    .form-section {
+        padding: 20px;
+    }
+
+    .conditions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* === MOBILE RESPONSIVE (MAX 767px) === */
 @media (max-width: 767px) {
+    /* Header Adjustments */
+    .header {
+        padding: 10px 15px;
+    }
+
+    .logo-img {
+        width: 50px;
+    }
+
+    .college-info h4 {
+        font-size: 0.75rem;
+    }
+
+    .college-info p {
+        font-size: 0.65rem;
+    }
+
+    /* Sidebar - Hidden by default, slide-in on toggle */
     .sidebar {
         transform: translateX(-100%);
         width: 280px;
@@ -288,27 +467,137 @@ body {
         top: 0;
         background-color: #fff;
         box-shadow: 0 0 20px rgba(0,0,0,0.3);
-        padding-top: 20px;
+        padding-top: 80px;
+        z-index: 1050;
     }
 
     .sidebar.show {
         transform: translateX(0);
     }
 
+    /* Main Content - Full width on mobile */
     .main-content {
         margin-left: 0;
-        padding: 20px;
+        padding: 15px 10px;
         height: auto;
+        margin-top: 80px;
     }
 
-    .form-header {
+    /* Form Header with Logo */
+    .form-header-with-logo {
+        padding: 15px 10px;
         flex-direction: column;
         text-align: center;
     }
 
-    .form-logo {
-        margin-right: 0;
+    .form-header-with-logo .logo-section {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .form-header-with-logo .logo-img {
+        height: 60px;
+        margin: 0 auto;
+    }
+
+    .form-header-with-logo .college-info h4 {
+        font-size: 0.8rem;
+    }
+
+    .form-header-with-logo .college-info h3 {
+        font-size: 0.9rem;
+    }
+
+    .form-header-with-logo .college-info p {
+        font-size: 0.75rem;
+    }
+
+    /* Form Container */
+    .health-form-container {
+        padding: 10px;
+    }
+
+    .form-title h3 {
+        font-size: 1.1rem;
+        margin-top: 0;
+    }
+
+    .form-subtitle {
+        font-size: 0.8rem;
+    }
+
+    /* Form Sections */
+    .form-section {
+        padding: 15px 10px;
+        margin-bottom: 15px;
+    }
+
+    .section-title {
+        font-size: 0.9rem;
+        padding: 10px 15px;
+    }
+
+    /* Form Labels and Inputs */
+    .form-label {
+        font-size: 0.85rem;
+        margin-bottom: 5px;
+    }
+
+    .form-control,
+    .form-select {
+        font-size: 0.85rem;
+        padding: 8px 10px;
+    }
+
+    /* Stack all form rows vertically */
+    .row.mb-3 .col-md-2,
+    .row.mb-3 .col-md-3,
+    .row.mb-3 .col-md-6 {
+        margin-bottom: 15px;
+    }
+
+    /* Medical Questions */
+    .medical-question {
+        padding: 15px;
+    }
+
+    .question-text {
+        font-size: 0.9rem;
+    }
+
+    .instruction-text {
+        font-size: 0.8rem;
+    }
+
+    /* Conditions Grid - Single column */
+    .conditions-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    /* Radio and Checkbox Options */
+    .radio-options,
+    .form-check-inline {
+        display: block;
         margin-bottom: 10px;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        padding: 15px 0;
+    }
+
+    .btn-edit,
+    .btn-save,
+    .btn-cancel {
+        width: 100%;
+        margin: 5px 0;
+        padding: 12px 20px;
+        font-size: 0.9rem;
+    }
+
+    .btn-save {
+        margin-right: 0;
     }
 
     .form-actions .btn {
@@ -316,13 +605,60 @@ body {
         margin: 5px 0;
     }
 
+    /* Alert Messages */
+    .alert {
+        font-size: 0.85rem;
+        padding: 10px;
+    }
 }
-.college-info h4{
-    font-size: 1.20rem;
-    font-weight: bold;
 
-}
-h3 {
-    font-size: 1.20rem;
-    font-weight: bold;
+/* === EXTRA SMALL MOBILE (MAX 480px) === */
+@media (max-width: 480px) {
+    .header {
+        padding: 8px 10px;
+    }
+
+    .logo-img {
+        width: 40px;
+    }
+
+    .college-info h4 {
+        font-size: 0.65rem;
+    }
+
+    .college-info p {
+        font-size: 0.6rem;
+    }
+
+    .main-content {
+        padding: 10px 5px;
+    }
+
+    .form-header-with-logo {
+        padding: 10px 5px;
+    }
+
+    .form-header-with-logo .logo-img {
+        height: 50px;
+    }
+
+    .form-title h3 {
+        font-size: 1rem;
+    }
+
+    .form-section {
+        padding: 10px 8px;
+    }
+
+    .section-title {
+        font-size: 0.85rem;
+        padding: 8px 12px;
+    }
+
+    .btn-edit,
+    .btn-save,
+    .btn-cancel {
+        padding: 10px 15px;
+        font-size: 0.85rem;
+    }
 }
