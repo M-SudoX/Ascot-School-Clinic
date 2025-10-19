@@ -152,10 +152,7 @@
         .nav-item .arrow {
             margin-left: auto;
             transition: transform 0.3s ease;
-        }
-
-        .nav-item .arrow.rotate {
-            transform: rotate(180deg);
+    
         }
 
         .submenu {

@@ -36,7 +36,7 @@ try {
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aurora State College of Technology - Online School Clinic</title>
 
   <!-- Bootstrap CSS -->
@@ -46,7 +46,19 @@ try {
 
   <!-- Custom CSS -->
   <style>
-    /* Global page styling */
+    /* ========== GLOBAL STYLES ========== */
+    :root {
+      --primary-color: #667eea;
+      --secondary-color: #764ba2;
+      --accent-color: #ffda6a;
+      --text-dark: #2c3e50;
+      --text-light: #6c757d;
+      --bg-light: #f8f9fa;
+      --white: #ffffff;
+      --shadow: 0 8px 32px rgba(0,0,0,0.1);
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -54,160 +66,231 @@ try {
     }
 
     body {
-      display: flex;
-      flex-direction: column;
       min-height: 100vh;
-      margin: 0;
-      background-color: #f8f9fa;
-      font-family: "Poppins", sans-serif;
+      background-color: var(--bg-light);
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
       overflow-x: hidden;
     }
 
-    .split {
+    /* ========== LAYOUT STYLES ========== */
+    .main-container {
       display: flex;
-      flex: 1;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 20px;
-      position: relative;
+      min-height: 100vh;
     }
 
-    /* Layout for large screens */
-    @media (min-width: 768px) {
-      body {
+    @media (min-width: 992px) {
+      .main-container {
         flex-direction: row;
       }
-      .split {
-        width: 50%;
-        height: 100vh;
-      }
     }
 
-    .left {
-      background: linear-gradient(135deg, #ffda6a, #fff7da);
-      color: #fff;
-      text-align: center;
-      position: relative;
-    }
-
-    .right {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      position: relative;
+    .split-section {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 2rem 1.5rem;
+      position: relative;
       overflow: hidden;
     }
 
-    .right::before {
+    .login-section {
+      background: linear-gradient(135deg, var(--accent-color), #fff7da);
+      min-height: 50vh;
+    }
+
+    .announcements-section {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      min-height: 50vh;
+      position: relative;
+    }
+
+    .announcements-section::before {
       content: "";
       position: absolute;
       inset: 0;
-      background: rgba(0,0,0,0.3);
+      background: rgba(0,0,0,0.1);
+      backdrop-filter: blur(2px);
     }
 
-    .logo-left {
-      width: 120px;
-      height: 120px;
-      margin-bottom: 15px;
+    @media (min-width: 992px) {
+      .split-section {
+        height: 100vh;
+        padding: 3rem 2rem;
+      }
+      
+      .login-section {
+        min-height: 100vh;
+      }
+      
+      .announcements-section {
+        min-height: 100vh;
+      }
+    }
+
+    /* ========== LOGIN SECTION STYLES ========== */
+    .school-brand {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .logo-img {
+      width: 140px;
+      height: 140px;
       border-radius: 50%;
       object-fit: cover;
-      box-shadow: 0 0 20px rgba(0,0,0,0.2);
-      border: 3px solid white;
+      border: 4px solid var(--white);
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5rem;
+      transition: var(--transition);
     }
 
-    h5 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      line-height: 1.5;
-      letter-spacing: 0.5px;
-      margin-bottom: 25px;
-      color: #333;
+    .logo-img:hover {
+      transform: scale(1.05);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
     }
 
-    label {
-      font-weight: 500;
-      color: #333;
-    }
-
-    select {
-      border-radius: 8px;
-      padding: 10px;
-      border: 2px solid #e9ecef;
-      transition: all 0.3s ease;
-    }
-
-    select:focus {
-      border-color: #0d6efd;
-      box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    }
-
-    .btn-next {
-      background: linear-gradient(135deg, #0d6efd, #0b5ed7);
-      color: white;
-      font-weight: 500;
-      padding: 12px 30px;
-      border-radius: 8px;
-      transition: all 0.3s ease;
-      border: none;
-      font-size: 1rem;
-    }
-
-    .btn-next:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(13, 110, 253, 0.4);
-    }
-
-    /* Announcements Section - Positioned on right side */
-    .announcements-container {
-      position: relative;
-      z-index: 10;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 20px;
-      padding: 30px;
-      width: 90%;
-      max-width: 500px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-
-    .announcements-header {
-      text-align: center;
-      margin-bottom: 25px;
-      padding-bottom: 20px;
-      border-bottom: 3px solid #667eea;
-      background: linear-gradient(135deg, #667eea, #764ba2);
+    .school-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      line-height: 1.4;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--text-dark), #495057);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
-    .announcements-header h3 {
+    .school-subtitle {
+      font-size: 1.1rem;
+      color: var(--text-light);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .login-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 2.5rem;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      max-width: 450px;
+      width: 100%;
+      animation: slideInLeft 0.8s ease-out;
+    }
+
+    .form-label {
       font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .form-label i {
+      color: var(--primary-color);
+    }
+
+    .form-select {
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      border: 2px solid #e9ecef;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: var(--transition);
+      background-color: var(--white);
+    }
+
+    .form-select:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 0.3rem rgba(102, 126, 234, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .btn-login {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: var(--white);
+      font-weight: 600;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      border: none;
+      font-size: 1.1rem;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
+      margin-top: 1.5rem;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+      color: var(--white);
+    }
+
+    .btn-login:active {
+      transform: translateY(-1px);
+    }
+
+    /* ========== ANNOUNCEMENTS SECTION STYLES ========== */
+    .announcements-container {
+      position: relative;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 550px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      animation: slideInRight 0.8s ease-out;
+    }
+
+    .announcements-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 3px solid var(--primary-color);
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .announcements-header h2 {
+      font-weight: 800;
       margin: 0;
-      font-size: 1.8rem;
-      margin-bottom: 8px;
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
     }
 
     .announcements-header p {
-      color: #666;
+      color: var(--text-light);
       margin: 0;
-      font-size: 1rem;
+      font-size: 1.1rem;
       font-weight: 500;
     }
 
     .announcement-item {
-      background: white;
-      border-radius: 15px;
-      padding: 25px;
-      margin-bottom: 20px;
-      border-left: 5px solid #667eea;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-      transition: all 0.3s ease;
+      background: var(--white);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      border-left: 6px solid var(--primary-color);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+      transition: var(--transition);
       border: 1px solid #f0f0f0;
       position: relative;
       overflow: hidden;
@@ -220,8 +303,8 @@ try {
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
-      transition: left 0.5s ease;
+      background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.05), transparent);
+      transition: left 0.6s ease;
     }
 
     .announcement-item:hover::before {
@@ -230,22 +313,28 @@ try {
 
     .announcement-item:hover {
       transform: translateY(-5px);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.15);
     }
 
     .announcement-title {
       font-weight: 700;
-      color: #1a3a5f;
-      margin-bottom: 12px;
+      color: var(--text-dark);
+      margin-bottom: 1rem;
       font-size: 1.3rem;
       line-height: 1.4;
-      border-bottom: 2px solid #f8f9fa;
-      padding-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .announcement-title i {
+      color: var(--primary-color);
+      font-size: 1.2rem;
     }
 
     .announcement-content {
-      color: #555;
-      margin-bottom: 15px;
+      color: var(--text-light);
+      margin-bottom: 1.5rem;
       line-height: 1.7;
       font-size: 1rem;
     }
@@ -255,42 +344,96 @@ try {
       justify-content: space-between;
       align-items: center;
       font-size: 0.9rem;
-      color: #888;
-      padding-top: 15px;
+      color: var(--text-light);
+      padding-top: 1.25rem;
       border-top: 2px solid #f8f9fa;
     }
 
     .announcement-sender {
       font-weight: 600;
-      color: #667eea;
+      color: var(--primary-color);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 0.5rem;
     }
 
     .announcement-date {
       color: #999;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 0.5rem;
     }
 
+    /* ========== ATTACHMENT STYLES ========== */
+    .attachment-container {
+      margin-top: 1.25rem;
+    }
+
+    .image-attachment img {
+      transition: var(--transition);
+      border: 3px solid #f8f9fa;
+      border-radius: 12px;
+      max-height: 300px;
+      width: auto;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .image-attachment img:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+
+    .video-attachment video {
+      background: #000;
+      border-radius: 12px;
+      max-height: 300px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .attachment-indicator {
+      background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+      border: 1px solid #dee2e6;
+      font-weight: 600;
+      color: var(--text-dark);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .attachment-indicator:hover {
+      background: linear-gradient(135deg, #e9ecef, #dee2e6);
+      transform: translateX(5px);
+      color: var(--primary-color);
+    }
+
+    .attachment-indicator i {
+      color: var(--primary-color);
+      font-size: 1.1rem;
+    }
+
+    /* ========== NO ANNOUNCEMENTS STYLES ========== */
     .no-announcements {
       text-align: center;
-      padding: 60px 20px;
-      color: #666;
+      padding: 3rem 2rem;
+      color: var(--text-light);
     }
 
     .no-announcements i {
-      font-size: 5rem;
-      margin-bottom: 25px;
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
       color: #e9ecef;
       opacity: 0.7;
     }
 
     .no-announcements h4 {
-      color: #888;
-      margin-bottom: 15px;
+      color: var(--text-light);
+      margin-bottom: 1rem;
       font-weight: 600;
       font-size: 1.5rem;
     }
@@ -301,90 +444,33 @@ try {
       line-height: 1.6;
     }
 
-    /* Attachment Styling */
-    .attachment-container {
-      margin-top: 15px;
-    }
-
-    .image-attachment img {
-      transition: transform 0.3s ease;
-      border: 3px solid #f8f9fa;
-      border-radius: 8px;
-      max-height: 300px;
-      width: auto;
-      cursor: pointer;
-    }
-
-    .image-attachment img:hover {
-      transform: scale(1.02);
-    }
-
-    .video-attachment video {
-      background: #000;
-      border-radius: 8px;
-      max-height: 300px;
-    }
-
-    .attachment-indicator {
-      background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-      padding: 10px 15px;
-      border-radius: 8px;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 10px;
-      border: 1px solid #dee2e6;
-      font-weight: 500;
-      color: #495057;
-      transition: all 0.3s ease;
-    }
-
-    .attachment-indicator:hover {
-      background: linear-gradient(135deg, #e9ecef, #dee2e6);
-      transform: translateX(5px);
-    }
-
-    .attachment-indicator i {
-      color: #667eea;
-      font-size: 1.1rem;
-    }
-
-    /* Modal styling */
+    /* ========== MODAL STYLES ========== */
     .modal-content {
-      border-radius: 15px;
+      border-radius: 20px;
       border: none;
+      box-shadow: var(--shadow);
     }
 
     .modal-header {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: var(--white);
       border-bottom: none;
+      border-radius: 20px 20px 0 0;
+      padding: 1.5rem 2rem;
     }
 
     .modal-header .btn-close {
       filter: invert(1);
+      opacity: 0.8;
+      transition: var(--transition);
     }
 
-    /* Login form styling */
-    .login-form {
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      padding: 30px;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      max-width: 400px;
-      width: 90%;
+    .modal-header .btn-close:hover {
+      opacity: 1;
+      transform: scale(1.1);
     }
 
-    .form-label {
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 10px;
-      font-size: 1.1rem;
-    }
-
-    /* Scrollbar styling for announcements */
+    /* ========== SCROLLBAR STYLING ========== */
     .announcements-container::-webkit-scrollbar {
       width: 8px;
     }
@@ -395,7 +481,7 @@ try {
     }
 
     .announcements-container::-webkit-scrollbar-thumb {
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
       border-radius: 10px;
     }
 
@@ -403,57 +489,7 @@ try {
       background: linear-gradient(135deg, #5a6fd8, #6a4a9a);
     }
 
-    /* Mobile responsiveness */
-    @media (max-width: 767px) {
-      body {
-        flex-direction: column;
-      }
-      
-      .split {
-        width: 100%;
-        height: 50vh;
-        padding: 30px 15px;
-      }
-      
-      .announcements-container {
-        max-width: 95%;
-        max-height: 60vh;
-        padding: 20px;
-        margin: 10px;
-      }
-      
-      .announcement-item {
-        padding: 20px;
-      }
-      
-      .announcement-title {
-        font-size: 1.2rem;
-      }
-      
-      .announcements-header h3 {
-        font-size: 1.5rem;
-      }
-      
-      .login-form {
-        padding: 25px;
-      }
-      
-      .logo-left {
-        width: 100px;
-        height: 100px;
-      }
-      
-      h5 {
-        font-size: 1rem;
-      }
-
-      .image-attachment img,
-      .video-attachment video {
-        max-height: 200px;
-      }
-    }
-
-    /* Animation for page load */
+    /* ========== ANIMATIONS ========== */
     @keyframes fadeInUp {
       from {
         opacity: 0;
@@ -465,152 +501,320 @@ try {
       }
     }
 
-    .announcements-container,
-    .login-form {
-      animation: fadeInUp 0.8s ease-out;
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
 
-    /* School info styling */
-    .school-info {
-      margin-bottom: 30px;
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
 
-    .school-info h5 {
-      background: linear-gradient(135deg, #333, #555);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      font-weight: 700;
+    /* ========== RESPONSIVE DESIGN ========== */
+    @media (max-width: 768px) {
+      .split-section {
+        padding: 1.5rem 1rem;
+        min-height: auto;
+      }
+      
+      .login-card {
+        padding: 2rem 1.5rem;
+        margin: 1rem 0;
+      }
+      
+      .announcements-container {
+        padding: 1.5rem;
+        max-height: 70vh;
+        margin: 1rem 0;
+      }
+      
+      .logo-img {
+        width: 120px;
+        height: 120px;
+      }
+      
+      .school-title {
+        font-size: 1.2rem;
+      }
+      
+      .school-subtitle {
+        font-size: 1rem;
+      }
+      
+      .announcements-header h2 {
+        font-size: 1.6rem;
+      }
+      
+      .announcement-item {
+        padding: 1.5rem;
+      }
+      
+      .announcement-title {
+        font-size: 1.1rem;
+      }
+      
+      .form-label {
+        font-size: 1.1rem;
+      }
+      
+      .image-attachment img,
+      .video-attachment video {
+        max-height: 200px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .split-section {
+        padding: 1rem 0.75rem;
+      }
+      
+      .login-card,
+      .announcements-container {
+        padding: 1.5rem 1rem;
+        border-radius: 20px;
+      }
+      
+      .logo-img {
+        width: 100px;
+        height: 100px;
+      }
+      
+      .school-title {
+        font-size: 1.1rem;
+      }
+      
+      .announcements-header h2 {
+        font-size: 1.4rem;
+      }
+      
+      .announcement-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+      }
+      
+      .announcement-item {
+        padding: 1.25rem;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .school-title {
+        font-size: 1rem;
+      }
+      
+      .announcements-header h2 {
+        font-size: 1.3rem;
+      }
+      
+      .announcement-title {
+        font-size: 1rem;
+      }
+    }
+
+    /* ========== ACCESSIBILITY & INTERACTION ========== */
+    .focus-visible {
+      outline: 3px solid var(--primary-color);
+      outline-offset: 2px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Loading state */
+    .loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    /* Success state */
+    .success-message {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      text-align: center;
+      animation: fadeInUp 0.5s ease-out;
     }
   </style>
 </head>
 
 <body>
-  <!-- LEFT SIDE - Login Form -->
-  <div class="split left">
-    <div class="school-info">
-      <img src="img/logo.png" alt="ASCOT Logo" class="logo-left" />
-      <h5>
-        AURORA STATE COLLEGE OF TECHNOLOGY<br>
-        ONLINE SCHOOL CLINIC
-      </h5>
-    </div>
+  <div class="main-container">
+    <!-- LOGIN SECTION -->
+    <section class="split-section login-section" aria-labelledby="login-title">
+      <div class="container-fluid">
+        <div class="row justify-content-center">
+          <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+            <div class="school-brand">
+              <img src="img/logo.png" alt="ASCOT Logo" class="logo-img" />
+              <h1 class="school-title">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
+              <p class="school-subtitle">ONLINE SCHOOL CLINIC</p>
+            </div>
 
-    <form method="POST" action="process_user_type.php" class="login-form">
-      <label for="userType" class="form-label">Select user type to log in</label>
-      <select class="form-select mb-4" id="userType" name="userType" required>
-        <option value="" disabled selected>Select user type</option>
-        <option value="student">STUDENT</option>
-        <option value="admin">ADMIN</option>
-      </select>
-      <div class="d-grid">
-        <button type="submit" class="btn btn-next">
-          <i class="fas fa-arrow-right me-2"></i>Next
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <!-- RIGHT SIDE - Announcements Display -->
-  <div class="split right">
-    <div class="announcements-container">
-      <div class="announcements-header">
-        <h3><i class="fas fa-bullhorn me-2"></i>Latest Announcements</h3>
-        <p>Stay updated with the latest news and updates</p>
-      </div>
-
-      <?php if (empty($announcements)): ?>
-        <div class="no-announcements">
-          <i class="fas fa-bullhorn"></i>
-          <h4>No Announcements Available</h4>
-          <p>Check back later for updates from the school clinic.</p>
+            <form method="POST" action="process_user_type.php" class="login-card">
+              <h2 id="login-title" class="sr-only">Login Form</h2>
+              
+              <label for="userType" class="form-label">
+                <i class="fas fa-user-circle"></i>
+                Select user type to log in
+              </label>
+              
+              <select class="form-select mb-4" id="userType" name="userType" required aria-required="true">
+                <option value="" disabled selected>Choose your role...</option>
+                <option value="student">👨‍🎓 STUDENT</option>
+                <option value="admin">👨‍💼 ADMIN</option>
+              </select>
+              
+              <button type="submit" class="btn btn-login" aria-label="Continue to login">
+                <span>Continue to Login</span>
+                <i class="fas fa-arrow-right"></i>
+              </button>
+              
+              <div class="mt-3 text-center">
+                <small class="text-muted">
+                  <i class="fas fa-shield-alt me-1"></i>
+                  Secure login system
+                </small>
+              </div>
+            </form>
+          </div>
         </div>
-      <?php else: ?>
-        <?php foreach ($announcements as $announcement): ?>
-          <div class="announcement-item">
-            <div class="announcement-title">
-              <i class="fas fa-bullhorn me-2" style="color: #667eea;"></i>
-              <?php echo htmlspecialchars($announcement['title'] ?? 'No Title'); ?>
-            </div>
-            <div class="announcement-content">
-              <?php echo nl2br(htmlspecialchars($announcement['content'] ?? 'No content available.')); ?>
-            </div>
-            
-            <?php if (!empty($announcement['attachment'])): 
-              $file_path = 'uploads/announcements/' . $announcement['attachment'];
-              $file_extension = strtolower(pathinfo($announcement['attachment'], PATHINFO_EXTENSION));
-              $image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-              $video_extensions = ['mp4', 'avi', 'mov', 'wmv', 'webm'];
-            ?>
-              <div class="attachment-container">
-                <?php if (in_array($file_extension, $image_extensions)): ?>
-                  <!-- Display Image -->
-                  <div class="image-attachment">
-                    <img src="<?php echo $file_path; ?>" 
-                         alt="Announcement Image" 
-                         class="img-fluid"
-                         onclick="openModal('<?php echo $file_path; ?>', 'image')">
-                    <div class="attachment-indicator">
-                      <i class="fas fa-image"></i>
-                      <span>Image Attachment</span>
-                    </div>
-                  </div>
-                <?php elseif (in_array($file_extension, $video_extensions)): ?>
-                  <!-- Display Video -->
-                  <div class="video-attachment">
-                    <video controls class="w-100">
-                      <source src="<?php echo $file_path; ?>" type="video/<?php echo $file_extension; ?>">
-                      Your browser does not support the video tag.
-                    </video>
-                    <div class="attachment-indicator">
-                      <i class="fas fa-video"></i>
-                      <span>Video Attachment</span>
-                    </div>
-                  </div>
-                <?php else: ?>
-                  <!-- Display generic file attachment -->
-                  <div class="file-attachment">
-                    <div class="attachment-indicator" onclick="downloadFile('<?php echo $file_path; ?>', '<?php echo $announcement['attachment']; ?>')" style="cursor: pointer;">
-                      <i class="fas fa-paperclip"></i>
-                      <span>Download Attachment: <?php echo htmlspecialchars($announcement['attachment']); ?></span>
-                    </div>
+      </div>
+    </section>
+
+    <!-- ANNOUNCEMENTS SECTION -->
+    <section class="split-section announcements-section" aria-labelledby="announcements-title">
+      <div class="announcements-container">
+        <header class="announcements-header">
+          <h2 id="announcements-title">
+            <i class="fas fa-bullhorn me-2"></i>Latest Announcements
+          </h2>
+          <p>Stay updated with campus news and important updates</p>
+        </header>
+
+        <?php if (empty($announcements)): ?>
+          <div class="no-announcements" role="status" aria-live="polite">
+            <i class="fas fa-bullhorn" aria-hidden="true"></i>
+            <h4>No Announcements Available</h4>
+            <p>Check back later for updates from the school clinic.</p>
+          </div>
+        <?php else: ?>
+          <div class="announcements-list" role="list">
+            <?php foreach ($announcements as $index => $announcement): ?>
+              <article class="announcement-item" role="listitem">
+                <h3 class="announcement-title">
+                  <i class="fas fa-bullhorn" aria-hidden="true"></i>
+                  <?php echo htmlspecialchars($announcement['title'] ?? 'No Title'); ?>
+                </h3>
+                
+                <div class="announcement-content">
+                  <?php echo nl2br(htmlspecialchars($announcement['content'] ?? 'No content available.')); ?>
+                </div>
+                
+                <?php if (!empty($announcement['attachment'])): 
+                  $file_path = 'uploads/announcements/' . $announcement['attachment'];
+                  $file_extension = strtolower(pathinfo($announcement['attachment'], PATHINFO_EXTENSION));
+                  $image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                  $video_extensions = ['mp4', 'avi', 'mov', 'wmv', 'webm'];
+                ?>
+                  <div class="attachment-container">
+                    <?php if (in_array($file_extension, $image_extensions)): ?>
+                      <!-- Display Image -->
+                      <div class="image-attachment">
+                        <img src="<?php echo $file_path; ?>" 
+                             alt="Announcement attachment: <?php echo htmlspecialchars($announcement['title']); ?>"
+                             class="img-fluid"
+                             onclick="openModal('<?php echo $file_path; ?>', 'image')"
+                             tabindex="0"
+                             role="button"
+                             aria-label="View full size image">
+                        <div class="attachment-indicator" onclick="openModal('<?php echo $file_path; ?>', 'image')">
+                          <i class="fas fa-image" aria-hidden="true"></i>
+                          <span>View Image Attachment</span>
+                        </div>
+                      </div>
+                    <?php elseif (in_array($file_extension, $video_extensions)): ?>
+                      <!-- Display Video -->
+                      <div class="video-attachment">
+                        <video controls class="w-100" aria-label="Video attachment">
+                          <source src="<?php echo $file_path; ?>" type="video/<?php echo $file_extension; ?>">
+                          Your browser does not support the video tag.
+                        </video>
+                        <div class="attachment-indicator">
+                          <i class="fas fa-video" aria-hidden="true"></i>
+                          <span>Video Attachment</span>
+                        </div>
+                      </div>
+                    <?php else: ?>
+                      <!-- Display generic file attachment -->
+                      <div class="file-attachment">
+                        <div class="attachment-indicator" onclick="downloadFile('<?php echo $file_path; ?>', '<?php echo $announcement['attachment']; ?>')">
+                          <i class="fas fa-paperclip" aria-hidden="true"></i>
+                          <span>Download: <?php echo htmlspecialchars($announcement['attachment']); ?></span>
+                        </div>
+                      </div>
+                    <?php endif; ?>
                   </div>
                 <?php endif; ?>
-              </div>
-            <?php endif; ?>
-            
-            <div class="announcement-meta">
-              <span class="announcement-sender">
-                <i class="fas fa-user-circle"></i> 
-                <?php echo htmlspecialchars($announcement['sent_by'] ?? 'Administrator'); ?>
-              </span>
-              <span class="announcement-date">
-                <i class="fas fa-calendar-alt"></i> 
-                <?php 
-                  if (isset($announcement['created_at'])) {
-                    echo date('F j, Y \a\t g:i A', strtotime($announcement['created_at']));
-                  } else {
-                    echo 'Recently';
-                  }
-                ?>
-              </span>
-            </div>
+                
+                <footer class="announcement-meta">
+                  <span class="announcement-sender">
+                    <i class="fas fa-user-circle" aria-hidden="true"></i> 
+                    <?php echo htmlspecialchars($announcement['sent_by'] ?? 'Administrator'); ?>
+                  </span>
+                  <span class="announcement-date">
+                    <i class="fas fa-calendar-alt" aria-hidden="true"></i> 
+                    <?php 
+                      if (isset($announcement['created_at'])) {
+                        echo date('F j, Y \a\t g:i A', strtotime($announcement['created_at']));
+                      } else {
+                        echo 'Recently';
+                      }
+                    ?>
+                  </span>
+                </footer>
+              </article>
+            <?php endforeach; ?>
           </div>
-        <?php endforeach; ?>
-      <?php endif; ?>
-    </div>
+        <?php endif; ?>
+      </div>
+    </section>
   </div>
 
-  <!-- Image Modal -->
-  <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+  <!-- IMAGE MODAL -->
+  <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true" aria-labelledby="imageModalLabel">
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Announcement Attachment</h5>
+          <h3 class="modal-title" id="imageModalLabel">Announcement Attachment</h3>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body text-center">
-          <img id="modalImage" src="" alt="Full size image" class="img-fluid">
+          <img id="modalImage" src="" alt="" class="img-fluid rounded">
         </div>
       </div>
     </div>
@@ -620,53 +824,154 @@ try {
   <script src="assets/js/bootstrap.bundle.min.js"></script>
   
   <script>
-    // Add some interactive effects
+    // Enhanced JavaScript for better user experience
     document.addEventListener('DOMContentLoaded', function() {
-      // Add loading animation to announcement items
+      // Add staggered animation to announcement items
       const announcementItems = document.querySelectorAll('.announcement-item');
       announcementItems.forEach((item, index) => {
         item.style.animationDelay = `${index * 0.1}s`;
+        item.style.animation = 'fadeInUp 0.6s ease-out forwards';
       });
-      
-      // Smooth scroll for announcements container
+
+      // Smooth scrolling for announcements container with momentum
       const announcementsContainer = document.querySelector('.announcements-container');
       if (announcementsContainer) {
+        let isScrolling = false;
+        
         announcementsContainer.addEventListener('wheel', function(e) {
-          if (e.deltaY !== 0) {
-            e.preventDefault();
-            this.scrollTop += e.deltaY;
+          if (!isScrolling) {
+            isScrolling = true;
+            const delta = e.deltaY * 2; // Increase scroll speed
+            this.scrollBy({ top: delta, behavior: 'smooth' });
+            
+            setTimeout(() => {
+              isScrolling = false;
+            }, 100);
           }
+          e.preventDefault();
+        }, { passive: false });
+      }
+
+      // Enhanced focus management for accessibility
+      const focusableElements = document.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      focusableElements.forEach(element => {
+        element.addEventListener('focus', function() {
+          this.classList.add('focus-visible');
+        });
+        
+        element.addEventListener('blur', function() {
+          this.classList.remove('focus-visible');
+        });
+      });
+
+      // Form enhancement
+      const loginForm = document.querySelector('.login-card form');
+      if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+          const submitBtn = this.querySelector('button[type="submit"]');
+          const originalText = submitBtn.innerHTML;
+          
+          // Show loading state
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+          submitBtn.classList.add('loading');
+          
+          // Simulate processing time
+          setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.classList.remove('loading');
+          }, 1500);
         });
       }
+
+      // Keyboard navigation for announcements
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          const modal = bootstrap.Modal.getInstance(document.getElementById('imageModal'));
+          if (modal) {
+            modal.hide();
+          }
+        }
+      });
     });
 
-    // Function to open image in modal
+    // Enhanced modal function
     function openModal(filePath, type) {
       if (type === 'image') {
-        document.getElementById('modalImage').src = filePath;
-        var imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
-        imageModal.show();
+        const modalImage = document.getElementById('modalImage');
+        modalImage.src = filePath;
+        modalImage.alt = 'Full size announcement image';
+        
+        const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+        modal.show();
+        
+        // Focus management for accessibility
+        document.getElementById('imageModal').addEventListener('shown.bs.modal', function() {
+          this.querySelector('.btn-close').focus();
+        });
       }
     }
 
-    // Function to download files
+    // Enhanced download function
     function downloadFile(filePath, fileName) {
-      const link = document.createElement('a');
-      link.href = filePath;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      try {
+        const link = document.createElement('a');
+        link.href = filePath;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show download feedback
+        showToast('Download started: ' + fileName);
+      } catch (error) {
+        showToast('Download failed. Please try again.', 'error');
+        console.error('Download error:', error);
+      }
     }
 
-    // Auto-play videos when they come into view
+    // Toast notification function
+    function showToast(message, type = 'success') {
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.className = `alert alert-${type === 'error' ? 'danger' : 'success'} position-fixed`;
+      toast.style.cssText = `
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        animation: fadeInUp 0.3s ease-out;
+      `;
+      toast.innerHTML = `
+        <div class="d-flex align-items-center">
+          <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'} me-2"></i>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Remove toast after 3 seconds
+      setTimeout(() => {
+        toast.style.animation = 'fadeInUp 0.3s ease-out reverse';
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+          }
+        }, 300);
+      }, 3000);
+    }
+
+    // Auto-play videos when they come into view (with error handling)
     document.addEventListener('DOMContentLoaded', function() {
       const videos = document.querySelectorAll('video');
       
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            entry.target.play();
+            entry.target.play().catch(error => {
+              console.log('Auto-play prevented:', error);
+            });
           } else {
             entry.target.pause();
           }
@@ -674,9 +979,26 @@ try {
       }, { threshold: 0.5 });
 
       videos.forEach(video => {
+        // Add error handling for video elements
+        video.addEventListener('error', function() {
+          console.error('Video loading error:', this.src);
+        });
+        
         observer.observe(video);
       });
     });
+
+    // Touch device enhancements
+    if ('ontouchstart' in window) {
+      document.documentElement.classList.add('touch-device');
+      
+      // Increase tap targets for mobile
+      const tapTargets = document.querySelectorAll('.attachment-indicator, .btn-login');
+      tapTargets.forEach(target => {
+        target.style.minHeight = '44px';
+        target.style.minWidth = '44px';
+      });
+    }
   </script>
 </body>
 </html>
