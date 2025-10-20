@@ -2,25 +2,56 @@
 session_start();
 require_once '../includes/db_connect.php';
 
+// Include PHPMailer from your existing structure
+require_once '../phpmailer/src/PHPMailer.php';
+require_once '../phpmailer/src/SMTP.php';
+require_once '../phpmailer/src/Exception.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
+
 // Check if admin is logged in
 if (!isset($_SESSION['admin_logged_in'])) {
     header('Location: admin_login.php');
     exit;
 }
 
-// Fetch students for specific selection
+// Fetch students for specific selection - UPDATED FOR YOUR DATABASE
 $students = [];
 try {
     $stmt = $pdo->prepare("
-        SELECT id, student_id, first_name, last_name, email, course, year_level 
-        FROM students 
-        WHERE status = 'active' 
-        ORDER BY first_name, last_name
+        SELECT 
+            si.id,
+            si.student_number,
+            si.fullname,
+            si.course_year,
+            u.email,
+            CASE 
+                WHEN si.course_year LIKE '%1%' THEN '1'
+                WHEN si.course_year LIKE '%2%' THEN '2' 
+                WHEN si.course_year LIKE '%3%' THEN '3'
+                WHEN si.course_year LIKE '%4%' THEN '4'
+                ELSE '1'
+            END as year_level,
+            CASE 
+                WHEN si.course_year LIKE '%BSIT%' THEN 'BSIT'
+                WHEN si.course_year LIKE '%BSCS%' THEN 'BSCS'
+                WHEN si.course_year LIKE '%BSBA%' THEN 'BSBA'
+                WHEN si.course_year LIKE '%BSEd%' THEN 'BSEd'
+                WHEN si.course_year LIKE '%BSA%' THEN 'BSA'
+                ELSE si.course_year
+            END as course
+        FROM student_information si
+        LEFT JOIN users u ON si.student_number = u.student_number
+        ORDER BY si.fullname
     ");
     $stmt->execute();
     $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
 } catch (PDOException $e) {
     error_log("Error fetching students: " . $e->getMessage());
+    $students = [];
 }
 
 // Process form submission
@@ -28,14 +59,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = $_POST['subject'];
     $content = $_POST['content'];
     $sent_by = $_POST['sentBy'];
-    $recipient_type = $_POST['recipientType'];
     $send_email = isset($_POST['announcementType']) && in_array('email', $_POST['announcementType']) ? 1 : 0;
     $post_on_front = isset($_POST['announcementType']) && in_array('front', $_POST['announcementType']) ? 1 : 0;
     
-    // Handle specific students selection
+    // Handle email recipient type
+    $email_recipient_type = 'all'; // default
     $specific_students = [];
-    if ($recipient_type === 'specific' && isset($_POST['specificStudents'])) {
-        $specific_students = $_POST['specificStudents'];
+    
+    if ($send_email) {
+        $email_recipient_type = $_POST['emailRecipientType'] ?? 'all';
+        
+        // Handle specific students selection for email
+        if ($email_recipient_type === 'specific' && isset($_POST['emailSpecificStudents'])) {
+            $specific_students = $_POST['emailSpecificStudents'];
+        }
+    }
+    
+    // Handle expiry date with time
+    $expiry_date = null;
+    if (!empty($_POST['expiryDate']) && !empty($_POST['expiryTime'])) {
+        $expiry_date = $_POST['expiryDate'] . ' ' . $_POST['expiryTime'] . ':00';
+    } elseif (!empty($_POST['expiryDate'])) {
+        $expiry_date = $_POST['expiryDate'] . ' 23:59:59';
     }
     
     // Handle file upload
@@ -49,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // File validation
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'avi', 'mov', 'wmv', 'webm', 'pdf', 'doc', 'docx'];
-        $maxFileSize = 10 * 1024 * 1024; // 10MB
+        $maxFileSize = 10 * 1024 * 1024;
         
         $fileName = $_FILES['attachment']['name'];
         $fileSize = $_FILES['attachment']['size'];
@@ -80,19 +125,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Insert announcement
             $stmt = $pdo->prepare("
-                INSERT INTO announcements (title, content, sent_by, recipient_type, send_email, post_on_front, attachment)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO announcements (title, content, sent_by, send_email, post_on_front, attachment, expiry_date, is_active, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'active')
             ");
             
-            $stmt->execute([$title, $content, $sent_by, $recipient_type, $send_email, $post_on_front, $attachment]);
+            $stmt->execute([$title, $content, $sent_by, $send_email, $post_on_front, $attachment, $expiry_date]);
             $announcement_id = $pdo->lastInsertId();
             
-            // Insert specific students if selected
-            if ($recipient_type === 'specific' && !empty($specific_students)) {
+            // Insert specific students if selected for email
+            if ($send_email && $email_recipient_type === 'specific' && !empty($specific_students)) {
                 foreach ($specific_students as $student_id) {
                     $stmt = $pdo->prepare("
-                        INSERT INTO announcement_recipients (announcement_id, student_id)
-                        VALUES (?, ?)
+                        INSERT INTO announcement_recipients (announcement_id, student_id, recipient_type)
+                        VALUES (?, ?, 'email')
                     ");
                     $stmt->execute([$announcement_id, $student_id]);
                 }
@@ -101,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Send email if selected
             $email_result = ['success' => false, 'sent_count' => 0, 'message' => ''];
             if ($send_email) {
-                $email_result = sendAnnouncementEmail($title, $content, $sent_by, $attachment_path, $recipient_type, $specific_students, $announcement_id);
+                $email_result = sendAnnouncementEmail($title, $content, $sent_by, $attachment_path, $email_recipient_type, $specific_students, $announcement_id);
                 
                 // Update announcement with email results
                 $update_stmt = $pdo->prepare("
@@ -137,11 +182,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Function to send announcement emails
-function sendAnnouncementEmail($title, $content, $sent_by, $attachment_path = '', $recipient_type = 'all', $specific_students = [], $announcement_id = null) {
+// Function to send announcement emails with PHPMailer
+function sendAnnouncementEmail($title, $content, $sent_by, $attachment_path = '', $email_recipient_type = 'all', $specific_students = [], $announcement_id = null) {
+    global $pdo;
+    
     try {
-        // Get recipients based on recipient type
-        $recipients = getRecipients($recipient_type, $specific_students);
+        // Get recipients based on email recipient type
+        $recipients = getEmailRecipients($email_recipient_type, $specific_students);
         
         if (empty($recipients)) {
             return ['success' => false, 'sent_count' => 0, 'error_count' => 0, 'message' => 'No recipients found with valid email addresses'];
@@ -149,11 +196,19 @@ function sendAnnouncementEmail($title, $content, $sent_by, $attachment_path = ''
         
         $success_count = 0;
         $error_count = 0;
+        $error_messages = [];
         
         foreach ($recipients as $recipient) {
-            $email_sent = sendSingleEmail($recipient['email'], $recipient['name'], $title, $content, $sent_by);
+            $email_sent = sendSingleEmailWithPHPMailer(
+                $recipient['email'], 
+                $recipient['name'], 
+                $title, 
+                $content, 
+                $sent_by,
+                $attachment_path
+            );
             
-            if ($email_sent) {
+            if ($email_sent['success']) {
                 $success_count++;
                 
                 // Log successful email sending if announcement_id is provided
@@ -162,22 +217,25 @@ function sendAnnouncementEmail($title, $content, $sent_by, $attachment_path = ''
                 }
             } else {
                 $error_count++;
+                $error_messages[] = $recipient['email'] . ': ' . $email_sent['error'];
                 
                 // Log failed email sending
                 if ($announcement_id) {
-                    logEmailSent($announcement_id, $recipient['email'], $recipient['name'], 'failed', 'Email sending failed');
+                    logEmailSent($announcement_id, $recipient['email'], $recipient['name'], 'failed', $email_sent['error']);
                 }
             }
             
             // Small delay to avoid overwhelming the email server
-            usleep(100000); // 0.1 second
+            usleep(500000); // 0.5 second
         }
         
         return [
             'success' => $success_count > 0,
             'sent_count' => $success_count,
             'error_count' => $error_count,
-            'message' => $error_count > 0 ? 'Failed to send to ' . $error_count . ' recipients' : 'All emails sent successfully'
+            'message' => $error_count > 0 ? 
+                'Sent to ' . $success_count . ' recipients. Failed: ' . $error_count . '. First few errors: ' . implode('; ', array_slice($error_messages, 0, 3)) : 
+                'All emails sent successfully'
         ];
         
     } catch (Exception $e) {
@@ -186,39 +244,24 @@ function sendAnnouncementEmail($title, $content, $sent_by, $attachment_path = ''
     }
 }
 
-// Function to send single email using PHP mail()
-function sendSingleEmail($to_email, $to_name, $title, $content, $sent_by) {
-    $subject = "ASCOT Clinic Announcement: " . $title;
-    
-    $headers = "MIME-Version: 1.0" . "\r\n";
-    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-    $headers .= "From: ASCOT Online Clinic <noreply@ascot.edu.ph>" . "\r\n";
-    $headers .= "Reply-To: noreply@ascot.edu.ph" . "\r\n";
-    $headers .= "X-Mailer: PHP/" . phpversion();
-    
-    $email_content = createEmailTemplate($title, $content, $sent_by);
-    
-    return mail($to_email, $subject, $email_content, $headers);
-}
-
-// Function to get recipients based on type
-function getRecipients($recipient_type, $specific_students = []) {
+// Function to get email recipients based on type
+function getEmailRecipients($email_recipient_type, $specific_students = []) {
     global $pdo;
     
     $recipients = [];
     
     try {
-        switch ($recipient_type) {
+        switch ($email_recipient_type) {
             case 'all':
                 // Get all students with valid email addresses
                 $stmt = $pdo->prepare("
-                    SELECT email, CONCAT(first_name, ' ', last_name) as name 
-                    FROM students 
-                    WHERE email IS NOT NULL 
-                    AND email != '' 
-                    AND TRIM(email) != ''
-                    AND email LIKE '%@%'
-                    AND status = 'active'
+                    SELECT u.email, si.fullname as name 
+                    FROM student_information si
+                    LEFT JOIN users u ON si.student_number = u.student_number
+                    WHERE u.email IS NOT NULL 
+                    AND u.email != '' 
+                    AND TRIM(u.email) != ''
+                    AND u.email LIKE '%@%'
                 ");
                 $stmt->execute();
                 $recipients = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -233,33 +276,16 @@ function getRecipients($recipient_type, $specific_students = []) {
                 $placeholders = str_repeat('?,', count($specific_students) - 1) . '?';
                 
                 $stmt = $pdo->prepare("
-                    SELECT email, CONCAT(first_name, ' ', last_name) as name 
-                    FROM students 
-                    WHERE id IN ($placeholders)
-                    AND email IS NOT NULL 
-                    AND email != '' 
-                    AND TRIM(email) != ''
-                    AND email LIKE '%@%'
-                    AND status = 'active'
+                    SELECT u.email, si.fullname as name 
+                    FROM student_information si
+                    LEFT JOIN users u ON si.student_number = u.student_number
+                    WHERE si.id IN ($placeholders)
+                    AND u.email IS NOT NULL 
+                    AND u.email != '' 
+                    AND TRIM(u.email) != ''
+                    AND u.email LIKE '%@%'
                 ");
                 $stmt->execute($specific_students);
-                $recipients = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                break;
-                
-            case 'attendees':
-                // Get students who have appointments in the last 30 days
-                $stmt = $pdo->prepare("
-                    SELECT DISTINCT s.email, CONCAT(s.first_name, ' ', s.last_name) as name 
-                    FROM students s
-                    INNER JOIN appointments a ON s.id = a.student_id 
-                    WHERE s.email IS NOT NULL 
-                    AND s.email != '' 
-                    AND TRIM(s.email) != ''
-                    AND s.email LIKE '%@%'
-                    AND s.status = 'active'
-                    AND a.appointment_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-                ");
-                $stmt->execute();
                 $recipients = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 break;
         }
@@ -267,14 +293,54 @@ function getRecipients($recipient_type, $specific_students = []) {
         return $recipients;
         
     } catch (PDOException $e) {
-        error_log("Error getting recipients: " . $e->getMessage());
+        error_log("Error getting email recipients: " . $e->getMessage());
         return [];
+    }
+}
+
+// Function to send single email using PHPMailer
+function sendSingleEmailWithPHPMailer($to_email, $to_name, $title, $content, $sent_by, $attachment_path = '') {
+    try {
+        $mail = new PHPMailer(true);
+        
+        // Server settings
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com';
+        $mail->SMTPAuth = true;
+        $mail->Username = 'cachemeifucan05@gmail.com';
+        $mail->Password = 'zusittxqokhgzotm';
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = 587;
+        
+        // Recipients
+        $mail->setFrom('noreply@ascot.edu.ph', 'ASCOT Online Clinic');
+        $mail->addAddress($to_email, $to_name);
+        $mail->addReplyTo('noreply@ascot.edu.ph', 'ASCOT Clinic');
+        
+        // Attachments
+        if (!empty($attachment_path) && file_exists($attachment_path)) {
+            $mail->addAttachment($attachment_path);
+        }
+        
+        // Content
+        $mail->isHTML(true);
+        $mail->Subject = "ASCOT Clinic Announcement: " . $title;
+        $mail->Body = createEmailTemplate($title, $content, $sent_by);
+        $mail->AltBody = strip_tags($content);
+        
+        $mail->send();
+        return ['success' => true, 'error' => ''];
+        
+    } catch (Exception $e) {
+        error_log("PHPMailer Error for $to_email: " . $mail->ErrorInfo);
+        return ['success' => false, 'error' => $mail->ErrorInfo];
     }
 }
 
 // Function to create email template
 function createEmailTemplate($title, $content, $sent_by) {
     $current_date = date('F j, Y \a\t g:i A');
+    $current_year = date('Y');
     
     return '
     <!DOCTYPE html>
@@ -284,7 +350,7 @@ function createEmailTemplate($title, $content, $sent_by) {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
             body { 
-                font-family: \"Segoe UI\", Tahoma, Geneva, Verdana, sans-serif; 
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; 
                 line-height: 1.6; 
                 color: #333; 
                 margin: 0; 
@@ -349,26 +415,6 @@ function createEmailTemplate($title, $content, $sent_by) {
                 background: #f8f9fa;
                 border-top: 1px solid #e9ecef;
             }
-            .logo { 
-                text-align: center; 
-                margin-bottom: 20px; 
-            }
-            .logo img { 
-                max-width: 80px; 
-                height: auto; 
-            }
-            @media only screen and (max-width: 600px) {
-                .container {
-                    margin: 10px;
-                    border-radius: 0;
-                }
-                .content {
-                    padding: 20px;
-                }
-                .announcement-title {
-                    font-size: 20px;
-                }
-            }
         </style>
     </head>
     <body>
@@ -388,7 +434,7 @@ function createEmailTemplate($title, $content, $sent_by) {
             <div class="footer">
                 <p>This is an automated message from ASCOT Online Clinic System.</p>
                 <p>Please do not reply to this email. For inquiries, please contact the clinic directly.</p>
-                <p>&copy; ' . date('Y') . ' Aurora State College of Technology. All rights reserved.</p>
+                <p>&copy; ' . $current_year . ' Aurora State College of Technology. All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -420,7 +466,6 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* [EXACTLY THE SAME CSS AS YOUR ORIGINAL CODE] */
         * {
             margin: 0;
             padding: 0;
@@ -983,7 +1028,7 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
             font-size: 0.9rem;
         }
 
-        /* NEW STYLES FOR STUDENT SELECTION */
+        /* Student Selection Styles */
         .student-selection {
             display: none;
             margin-top: 15px;
@@ -1064,6 +1109,82 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
         .student-details {
             font-size: 0.85rem;
             color: #6c757d;
+        }
+
+        /* Time Picker Styles */
+        .expiry-time-container {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .expiry-date-group, .expiry-time-group {
+            flex: 1;
+        }
+
+        .time-presets {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .time-preset-btn {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .time-preset-btn:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        .expiry-preview {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 4px solid #667eea;
+            font-size: 0.9rem;
+        }
+
+        .expiry-preview .label {
+            font-weight: 600;
+            color: #1a3a5f;
+        }
+
+        .expiry-preview .value {
+            color: #495057;
+        }
+
+        .expiry-preview .time-remaining {
+            color: #e67e22;
+            font-weight: 500;
+            margin-top: 5px;
+        }
+
+        /* Student Search */
+        .student-search {
+            margin-bottom: 15px;
+        }
+
+        /* Email Recipient Selection */
+        .email-recipient-selection {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+        .email-recipient-selection.active {
+            display: block;
         }
 
         /* Responsive Design */
@@ -1151,6 +1272,15 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
             .student-list {
                 max-height: 200px;
             }
+
+            .expiry-time-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .expiry-date-group, .expiry-time-group {
+                width: 100%;
+            }
         }
 
         @media (max-width: 480px) {
@@ -1182,7 +1312,7 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
-                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img">
+                <img src="../assets/img/logo.png" alt="ASCOT Logo" class="logo-img">
                 <div class="school-info">
                     <div class="republic">Republic of the Philippines</div>
                     <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
@@ -1212,7 +1342,7 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
                             <i class="fas fa-id-card"></i>
                             Students Profile
                         </a>
-                        <a href="#" class="submenu-item">
+                        <a href="search_students.php" class="submenu-item">
                             <i class="fas fa-search"></i>
                             Search Students
                         </a>
@@ -1226,7 +1356,7 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="consultationMenu">
-                        <a href="#" class="submenu-item">
+                        <a href="view_records.php" class="submenu-item">
                             <i class="fas fa-folder-open"></i>
                             View Records
                         </a>
@@ -1372,62 +1502,6 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
                         </div>
                     </div>
 
-                    <!-- Recipient Type Section -->
-                    <div class="form-section">
-                        <h3 class="form-section-title">
-                            <i class="fas fa-users"></i>
-                            Recipient Type
-                        </h3>
-                        <div class="radio-group">
-                            <div class="radio-option">
-                                <input type="radio" id="allStudents" name="recipientType" value="all" checked>
-                                <label for="allStudents">All Students</label>
-                            </div>
-                            <div class="radio-option">
-                                <input type="radio" id="specificStudents" name="recipientType" value="specific">
-                                <label for="specificStudents">Specific Students</label>
-                            </div>
-                            <div class="radio-option">
-                                <input type="radio" id="attendees" name="recipientType" value="attendees">
-                                <label for="attendees">Recent Clinic Visitors (Last 30 days)</label>
-                            </div>
-                        </div>
-                        
-                        <!-- Specific Students Selection -->
-                        <div class="student-selection" id="specificStudentsSelection">
-                            <div class="select-all">
-                                <input type="checkbox" id="selectAllStudents">
-                                <label for="selectAllStudents">Select All Students</label>
-                                <span class="selected-count" id="selectedCount">0 selected</span>
-                            </div>
-                            <div class="student-list">
-                                <?php if (!empty($students)): ?>
-                                    <?php foreach ($students as $student): ?>
-                                        <div class="student-checkbox">
-                                            <input type="checkbox" name="specificStudents[]" value="<?php echo $student['id']; ?>" 
-                                                   id="student_<?php echo $student['id']; ?>" class="student-checkbox-input">
-                                            <label for="student_<?php echo $student['id']; ?>">
-                                                <div class="student-info">
-                                                    <span class="student-name"><?php echo htmlspecialchars($student['first_name'] . ' ' . $student['last_name']); ?></span>
-                                                    <span class="student-details">
-                                                        <?php echo htmlspecialchars($student['student_id']); ?> - 
-                                                        <?php echo htmlspecialchars($student['course'] . ' ' . $student['year_level']); ?>
-                                                    </span>
-                                                </div>
-                                            </label>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <p class="text-muted">No students found in the database.</p>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        
-                        <div class="recipient-count" id="recipientCount">
-                            <i class="fas fa-users me-2"></i>Estimated recipients: Loading...
-                        </div>
-                    </div>
-
                     <!-- Type of Announcement Section -->
                     <div class="form-section">
                         <h3 class="form-section-title">
@@ -1444,7 +1518,73 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
                                 <label for="postFront">Post on Front Page</label>
                             </div>
                         </div>
-                        <div class="email-warning" id="emailWarning" style="display: none;">
+                        
+                        <!-- Email Recipient Selection (Only shows when Send Email is checked) -->
+                        <div class="email-recipient-selection" id="emailRecipientSelection">
+                            <h4 style="color: #1a3a5f; margin-bottom: 15px; font-size: 1rem;">
+                                <i class="fas fa-users me-2"></i>Email Recipients
+                            </h4>
+                            
+                            <div class="radio-group">
+                                <div class="radio-option">
+                                    <input type="radio" id="emailAllStudents" name="emailRecipientType" value="all" checked>
+                                    <label for="emailAllStudents">All Students</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="emailSpecificStudents" name="emailRecipientType" value="specific">
+                                    <label for="emailSpecificStudents">Specific Students</label>
+                                </div>
+                            </div>
+                            
+                            <!-- Specific Students Selection for Email -->
+                            <div class="student-selection" id="emailSpecificStudentsSelection">
+                                <div class="student-search">
+                                    <input type="text" class="form-control" id="emailStudentSearch" placeholder="Search students by name, ID, or course...">
+                                </div>
+                                
+                                <div class="select-all">
+                                    <input type="checkbox" id="selectEmailAllStudents">
+                                    <label for="selectEmailAllStudents">Select All Students</label>
+                                    <span class="selected-count" id="emailSelectedCount">0 selected</span>
+                                </div>
+                                
+                                <div class="student-list">
+                                    <?php if (!empty($students)): ?>
+                                        <?php foreach ($students as $student): ?>
+                                            <div class="student-checkbox">
+                                                <input type="checkbox" name="emailSpecificStudents[]" value="<?php echo $student['id']; ?>" 
+                                                       id="email_student_<?php echo $student['id']; ?>" class="email-student-checkbox-input">
+                                                <label for="email_student_<?php echo $student['id']; ?>">
+                                                    <div class="student-info">
+                                                        <span class="student-name"><?php echo htmlspecialchars($student['fullname']); ?></span>
+                                                        <span class="student-details">
+                                                            <?php echo htmlspecialchars($student['student_number']); ?> - 
+                                                            <?php echo htmlspecialchars($student['course_year']); ?>
+                                                            <?php if (!empty($student['email'])): ?>
+                                                                <br><small class="text-success">✓ Has email: <?php echo htmlspecialchars($student['email']); ?></small>
+                                                            <?php else: ?>
+                                                                <br><small class="text-danger">✗ No email address</small>
+                                                            <?php endif; ?>
+                                                        </span>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle"></i> 
+                                            No students found in the database. 
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            
+                            <div class="recipient-count" id="emailRecipientCount" style="margin-top: 15px;">
+                                <i class="fas fa-users me-2"></i>Email recipients: 0 students
+                            </div>
+                        </div>
+                        
+                        <div class="email-warning" id="emailWarning" style="display: none; margin-top: 15px;">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             <strong>Note:</strong> Sending emails may take several minutes depending on the number of recipients.
                         </div>
@@ -1472,6 +1612,48 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
                         </div>
                     </div>
 
+                    <!-- Expiry Date & Time Section -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-clock"></i>
+                            Expiry Settings
+                        </h3>
+                        <div class="form-group">
+                            <label class="form-label">Announcement Expiry Date & Time (Optional)</label>
+                            
+                            <div class="expiry-time-container">
+                                <div class="expiry-date-group">
+                                    <label class="form-label small">Date</label>
+                                    <input type="date" class="form-control" id="expiryDate" name="expiryDate" min="<?php echo date('Y-m-d'); ?>">
+                                </div>
+                                
+                                <div class="expiry-time-group">
+                                    <label class="form-label small">Time</label>
+                                    <input type="time" class="form-control" id="expiryTime" name="expiryTime" value="23:59">
+                                    
+                                    <div class="time-presets">
+                                        <button type="button" class="time-preset-btn" data-time="08:00">8:00 AM</button>
+                                        <button type="button" class="time-preset-btn" data-time="12:00">12:00 PM</button>
+                                        <button type="button" class="time-preset-btn" data-time="17:00">5:00 PM</button>
+                                        <button type="button" class="time-preset-btn" data-time="23:59">End of Day</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="expiry-preview" id="expiryPreview" style="display: none;">
+                                <div>
+                                    <span class="label">Expires on:</span>
+                                    <span class="value" id="expiryPreviewText"></span>
+                                </div>
+                                <div class="time-remaining" id="timeRemaining"></div>
+                            </div>
+                            
+                            <small class="form-text text-muted">
+                                Leave empty if announcement should not expire. Minimum date is today.
+                            </small>
+                        </div>
+                    </div>
+
                     <!-- File Upload Section -->
                     <div class="form-section">
                         <h3 class="form-section-title">
@@ -1481,7 +1663,7 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
                         <div class="form-group">
                             <input type="file" class="file-upload-input" id="attachment" name="attachment" 
                                    accept="image/*,video/*,.pdf,.doc,.docx">
-                            <small class="form-text text-muted">Accepted formats: Images (JPG, PNG, GIF), Videos (MP4, AVI, MOV), Documents (PDF, DOC, DOCX). Max size: 10MB</small>
+                            <small class="form-text text-muted">Accepted formats: Images (JPG, PNG, GIF, WEBP), Videos (MP4, AVI, MOV, WMV, WEBM), Documents (PDF, DOC, DOCX). Max size: 10MB</small>
                         </div>
                     </div>
 
@@ -1516,8 +1698,8 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
         </main>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script>
-        // [KEEP ALL YOUR ORIGINAL JAVASCRIPT FUNCTIONS]
         // Dropdown functionality
         document.querySelectorAll('.dropdown-btn').forEach(button => {
             button.addEventListener('click', function() {
@@ -1585,57 +1767,47 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
             }
         });
 
-        // Email functionality
-        const sendEmailCheckbox = document.getElementById('sendEmail');
-        const recipientTypeRadios = document.querySelectorAll('input[name="recipientType"]');
-        const recipientCount = document.getElementById('recipientCount');
-        const previewEmailBtn = document.getElementById('previewEmailBtn');
-        const emailPreview = document.getElementById('emailPreview');
-        const subjectInput = document.getElementById('subject');
-        const contentInput = document.getElementById('content');
-        const sentBySelect = document.getElementById('sentBy');
-        const emailWarning = document.getElementById('emailWarning');
-
-        // NEW FUNCTIONS FOR STUDENT SELECTION
-        // Toggle student selection based on recipient type
-        function toggleStudentSelection() {
-            const recipientType = document.querySelector('input[name="recipientType"]:checked').value;
-            const studentSelection = document.getElementById('specificStudentsSelection');
+        // NEW FUNCTIONS FOR EMAIL RECIPIENT SELECTION
+        // Toggle email recipient selection based on send email checkbox
+        function toggleEmailRecipientSelection() {
+            const sendEmailCheckbox = document.getElementById('sendEmail');
+            const emailRecipientSelection = document.getElementById('emailRecipientSelection');
+            const emailWarning = document.getElementById('emailWarning');
             
-            if (recipientType === 'specific') {
-                studentSelection.classList.add('active');
-                updateSelectedCount();
-                updateRecipientCount();
+            if (sendEmailCheckbox.checked) {
+                emailRecipientSelection.classList.add('active');
+                emailWarning.style.display = 'block';
+                updateEmailRecipientCount();
+                toggleEmailSpecificStudentSelection();
             } else {
-                studentSelection.classList.remove('active');
-                updateRecipientCount();
+                emailRecipientSelection.classList.remove('active');
+                emailWarning.style.display = 'none';
             }
         }
 
-        // Select all students
-        function setupSelectAll() {
-            const selectAll = document.getElementById('selectAllStudents');
-            const studentCheckboxes = document.querySelectorAll('.student-checkbox-input');
+        // Toggle specific student selection for email
+        function toggleEmailSpecificStudentSelection() {
+            const emailRecipientType = document.querySelector('input[name="emailRecipientType"]:checked').value;
+            const emailSpecificSelection = document.getElementById('emailSpecificStudentsSelection');
             
-            selectAll.addEventListener('change', function() {
-                studentCheckboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
-                });
-                updateSelectedCount();
-                if (document.querySelector('input[name="recipientType"]:checked').value === 'specific') {
-                    updateRecipientCount();
-                }
-            });
+            if (emailRecipientType === 'specific') {
+                emailSpecificSelection.classList.add('active');
+                updateEmailSelectedCount();
+                updateEmailRecipientCount();
+            } else {
+                emailSpecificSelection.classList.remove('active');
+                updateEmailRecipientCount();
+            }
         }
 
-        // Update selected count
-        function updateSelectedCount() {
-            const selectedCount = document.querySelectorAll('.student-checkbox-input:checked').length;
-            document.getElementById('selectedCount').textContent = selectedCount + ' selected';
+        // Update email selected count
+        function updateEmailSelectedCount() {
+            const selectedCount = document.querySelectorAll('.email-student-checkbox-input:checked').length;
+            document.getElementById('emailSelectedCount').textContent = selectedCount + ' selected';
             
-            // Update select all checkbox state
-            const totalStudents = document.querySelectorAll('.student-checkbox-input').length;
-            const selectAll = document.getElementById('selectAllStudents');
+            const totalStudents = document.querySelectorAll('.email-student-checkbox-input').length;
+            const selectAll = document.getElementById('selectEmailAllStudents');
+            
             if (selectedCount === 0) {
                 selectAll.checked = false;
                 selectAll.indeterminate = false;
@@ -1648,47 +1820,106 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
             }
         }
 
-        // Update recipient count
-        function updateRecipientCount() {
-            const recipientType = document.querySelector('input[name="recipientType"]:checked').value;
+        // Setup select all for email students
+        function setupEmailSelectAll() {
+            const selectAll = document.getElementById('selectEmailAllStudents');
+            const studentCheckboxes = document.querySelectorAll('.email-student-checkbox-input');
             
-            if (recipientType === 'specific') {
-                const selectedCount = document.querySelectorAll('.student-checkbox-input:checked').length;
-                document.getElementById('recipientCount').innerHTML = 
-                    `<i class="fas fa-users me-2"></i>Selected recipients: ${selectedCount} students`;
+            selectAll.addEventListener('change', function() {
+                studentCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateEmailSelectedCount();
+                if (document.querySelector('input[name="emailRecipientType"]:checked').value === 'specific') {
+                    updateEmailRecipientCount();
+                }
+            });
+        }
+
+        // Update email recipient count
+        function updateEmailRecipientCount() {
+            const sendEmailChecked = document.getElementById('sendEmail').checked;
+            
+            if (!sendEmailChecked) {
+                document.getElementById('emailRecipientCount').innerHTML = 
+                    `<i class="fas fa-users me-2"></i>Email recipients: 0 students (email not selected)`;
+                return;
+            }
+            
+            const emailRecipientType = document.querySelector('input[name="emailRecipientType"]:checked').value;
+            
+            if (emailRecipientType === 'specific') {
+                const selectedStudents = Array.from(document.querySelectorAll('.email-student-checkbox-input:checked'))
+                    .map(checkbox => checkbox.value);
+                const selectedCount = selectedStudents.length;
+                
+                if (selectedCount > 0) {
+                    document.getElementById('emailRecipientCount').innerHTML = 
+                        `<i class="fas fa-users me-2"></i>Email recipients: ${selectedCount} students`;
+                    
+                    // Fetch actual count with valid emails
+                    fetch(`get_recipient_count.php?type=specific&specific_students=${selectedStudents.join(',')}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                document.getElementById('emailRecipientCount').innerHTML = 
+                                    `<i class="fas fa-users me-2"></i>Email recipients: ${data.count} students (with valid email)`;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching recipient count:', error);
+                        });
+                } else {
+                    document.getElementById('emailRecipientCount').innerHTML = 
+                        `<i class="fas fa-users me-2"></i>Email recipients: 0 students`;
+                }
             } else {
-                fetch('get_recipient_count.php?type=' + recipientType)
+                document.getElementById('emailRecipientCount').innerHTML = 
+                    `<i class="fas fa-spinner fa-spin me-2"></i>Loading email recipient count...`;
+                
+                fetch(`get_recipient_count.php?type=${emailRecipientType}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            document.getElementById('recipientCount').innerHTML = 
-                                `<i class="fas fa-users me-2"></i>Estimated recipients: ${data.count} students`;
+                            document.getElementById('emailRecipientCount').innerHTML = 
+                                `<i class="fas fa-users me-2"></i>Email recipients: ${data.count} students`;
                         } else {
-                            document.getElementById('recipientCount').innerHTML = 
-                                `<i class="fas fa-users me-2"></i>Estimated recipients: Unable to load count`;
+                            document.getElementById('emailRecipientCount').innerHTML = 
+                                `<i class="fas fa-users me-2"></i>Email recipients: Unable to load count`;
                         }
                     })
                     .catch(error => {
-                        document.getElementById('recipientCount').innerHTML = 
-                            `<i class="fas fa-users me-2"></i>Estimated recipients: Error loading count`;
+                        console.error('Error fetching recipient count:', error);
+                        document.getElementById('emailRecipientCount').innerHTML = 
+                            `<i class="fas fa-users me-2"></i>Email recipients: Error loading count`;
                     });
             }
         }
 
-        // Show/hide email warning
-        function toggleEmailWarning() {
-            if (sendEmailCheckbox.checked) {
-                emailWarning.style.display = 'block';
-            } else {
-                emailWarning.style.display = 'none';
-            }
+        // Email student search functionality
+        function initEmailStudentSearch() {
+            const searchInput = document.getElementById('emailStudentSearch');
+            if (!searchInput) return;
+
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const studentCheckboxes = document.querySelectorAll('.student-checkbox');
+                
+                studentCheckboxes.forEach(checkbox => {
+                    const studentName = checkbox.querySelector('.student-name').textContent.toLowerCase();
+                    const studentDetails = checkbox.querySelector('.student-details').textContent.toLowerCase();
+                    const isVisible = studentName.includes(searchTerm) || studentDetails.includes(searchTerm);
+                    
+                    checkbox.style.display = isVisible ? 'block' : 'none';
+                });
+            });
         }
 
         // Update email preview
         function updateEmailPreview() {
-            const subject = subjectInput.value || 'Announcement Subject';
-            const content = contentInput.value || 'Announcement content will appear here...';
-            const sentBy = sentBySelect.value || 'Administrator';
+            const subject = document.getElementById('subject').value || 'Announcement Subject';
+            const content = document.getElementById('content').value || 'Announcement content will appear here...';
+            const sentBy = document.getElementById('sentBy').value || 'Administrator';
             
             const previewHTML = `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 100%;">
@@ -1716,26 +1947,112 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
             document.getElementById('previewContent').innerHTML = previewHTML;
         }
 
-        // Event listeners for student selection
-        document.querySelectorAll('.student-checkbox-input').forEach(checkbox => {
+        // NEW FUNCTIONS FOR EXPIRY TIME
+        function updateExpiryPreview() {
+            const dateInput = document.getElementById('expiryDate');
+            const timeInput = document.getElementById('expiryTime');
+            const preview = document.getElementById('expiryPreview');
+            const previewText = document.getElementById('expiryPreviewText');
+            const timeRemaining = document.getElementById('timeRemaining');
+
+            if (dateInput.value && timeInput.value) {
+                const expiryDateTime = new Date(dateInput.value + 'T' + timeInput.value);
+                const now = new Date();
+                
+                // Format the date for display
+                const formattedDate = expiryDateTime.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                previewText.textContent = formattedDate;
+                
+                // Calculate time remaining
+                const timeDiff = expiryDateTime - now;
+                if (timeDiff > 0) {
+                    const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    
+                    let remainingText = '';
+                    if (days > 0) {
+                        remainingText = `${days} day${days > 1 ? 's' : ''} and ${hours} hour${hours > 1 ? 's' : ''} from now`;
+                    } else if (hours > 0) {
+                        remainingText = `${hours} hour${hours > 1 ? 's' : ''} from now`;
+                    } else {
+                        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                        remainingText = `${minutes} minute${minutes > 1 ? 's' : ''} from now`;
+                    }
+                    
+                    timeRemaining.textContent = `⏰ ${remainingText}`;
+                    timeRemaining.style.color = '#e67e22';
+                } else {
+                    timeRemaining.textContent = '⚠️ This time has already passed';
+                    timeRemaining.style.color = '#e74c3c';
+                }
+                
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        function setupTimePresets() {
+            const presetButtons = document.querySelectorAll('.time-preset-btn');
+            const timeInput = document.getElementById('expiryTime');
+            
+            presetButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    timeInput.value = this.getAttribute('data-time');
+                    updateExpiryPreview();
+                });
+            });
+        }
+
+        function setMinimumDate() {
+            const dateInput = document.getElementById('expiryDate');
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.min = today;
+            
+            // Set default date to tomorrow if empty
+            if (!dateInput.value) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                dateInput.value = tomorrow.toISOString().split('T')[0];
+            }
+        }
+
+        // Event listeners for email functionality
+        const sendEmailCheckbox = document.getElementById('sendEmail');
+        sendEmailCheckbox.addEventListener('change', toggleEmailRecipientSelection);
+
+        // Email recipient type change
+        document.querySelectorAll('input[name="emailRecipientType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                toggleEmailSpecificStudentSelection();
+                updateEmailRecipientCount();
+            });
+        });
+
+        // Email student checkbox changes
+        document.querySelectorAll('.email-student-checkbox-input').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
-                updateSelectedCount();
-                if (document.querySelector('input[name="recipientType"]:checked').value === 'specific') {
-                    updateRecipientCount();
+                updateEmailSelectedCount();
+                if (document.querySelector('input[name="emailRecipientType"]:checked').value === 'specific') {
+                    updateEmailRecipientCount();
                 }
             });
         });
 
-        // Update event listeners for recipient type
-        document.querySelectorAll('input[name="recipientType"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                toggleStudentSelection();
-                updateRecipientCount();
-            });
-        });
-
-        // Original event listeners
-        sendEmailCheckbox.addEventListener('change', toggleEmailWarning);
+        // Email functionality
+        const previewEmailBtn = document.getElementById('previewEmailBtn');
+        const emailPreview = document.getElementById('emailPreview');
+        const subjectInput = document.getElementById('subject');
+        const contentInput = document.getElementById('content');
+        const sentBySelect = document.getElementById('sentBy');
 
         subjectInput.addEventListener('input', updateEmailPreview);
         contentInput.addEventListener('input', updateEmailPreview);
@@ -1761,7 +2078,14 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
             const subject = document.getElementById('subject').value;
             const content = document.getElementById('content').value;
             const sendEmail = document.getElementById('sendEmail').checked;
-            const recipientType = document.querySelector('input[name="recipientType"]:checked').value;
+            const postFront = document.getElementById('postFront').checked;
+            
+            // Check if at least one announcement type is selected
+            if (!sendEmail && !postFront) {
+                e.preventDefault();
+                alert('Please select at least one announcement type (Send Email or Post on Front Page)');
+                return;
+            }
             
             if (!sentBy) {
                 e.preventDefault();
@@ -1781,21 +2105,37 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
                 return;
             }
             
-            // Validate specific students selection
-            if (recipientType === 'specific') {
-                const selectedStudents = document.querySelectorAll('.student-checkbox-input:checked').length;
-                if (selectedStudents === 0) {
+            // Validate specific email students selection
+            if (sendEmail) {
+                const emailRecipientType = document.querySelector('input[name="emailRecipientType"]:checked').value;
+                
+                if (emailRecipientType === 'specific') {
+                    const selectedStudents = document.querySelectorAll('.email-student-checkbox-input:checked').length;
+                    if (selectedStudents === 0) {
+                        e.preventDefault();
+                        alert('Please select at least one student for email announcement');
+                        return;
+                    }
+                }
+                
+                const emailRecipientCountText = document.querySelector('#emailRecipientCount').textContent;
+                
+                if (!confirm(`This will send emails to all selected recipients.\n${emailRecipientCountText}\n\nThis may take several minutes. Do you want to continue?`)) {
                     e.preventDefault();
-                    alert('Please select at least one student for specific announcement');
                     return;
                 }
             }
             
-            if (sendEmail) {
-                const recipientCountText = document.querySelector('#recipientCount').textContent;
+            // Validate expiry date if provided
+            const expiryDate = document.getElementById('expiryDate').value;
+            const expiryTime = document.getElementById('expiryTime').value;
+            if (expiryDate) {
+                const expiryDateTime = new Date(expiryDate + 'T' + (expiryTime || '23:59'));
+                const now = new Date();
                 
-                if (!confirm(`This will send emails to all selected recipients (${recipientType}).\n${recipientCountText}\n\nThis may take several minutes. Do you want to continue?`)) {
+                if (expiryDateTime <= now) {
                     e.preventDefault();
+                    alert('Please select a future date and time for expiry');
                     return;
                 }
             }
@@ -1848,14 +2188,28 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
         });
 
         // Initialize
-        toggleStudentSelection();
-        setupSelectAll();
-        updateSelectedCount();
-        updateRecipientCount();
-        toggleEmailWarning();
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize email functionality
+            toggleEmailRecipientSelection();
+            toggleEmailSpecificStudentSelection();
+            setupEmailSelectAll();
+            initEmailStudentSearch();
+            updateEmailSelectedCount();
+            updateEmailRecipientCount();
+            
+            // Initialize expiry time functionality
+            setMinimumDate();
+            setupTimePresets();
+            
+            const dateInput = document.getElementById('expiryDate');
+            const timeInput = document.getElementById('expiryTime');
+            
+            dateInput.addEventListener('change', updateExpiryPreview);
+            timeInput.addEventListener('change', updateExpiryPreview);
+            
+            // Initial preview update
+            updateExpiryPreview();
+        });
     </script>
-
-    <!-- Bootstrap JS for alert dismissal -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

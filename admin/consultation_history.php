@@ -413,6 +413,13 @@ try {
             background: #f8f9fa;
         }
 
+        /* Action Buttons Styles */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
         .view-btn {
             background: #007bff;
             color: white;
@@ -424,10 +431,30 @@ try {
             display: flex;
             align-items: center;
             gap: 5px;
+            font-size: 0.85rem;
         }
 
         .view-btn:hover {
             background: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .archive-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+        }
+
+        .archive-btn:hover {
+            background: #545b62;
             transform: scale(1.05);
         }
 
@@ -578,6 +605,19 @@ try {
 
             .detail-row label {
                 min-width: auto;
+            }
+
+            /* Responsive adjustments for action buttons */
+            .action-buttons {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .view-btn, .archive-btn {
+                width: 100%;
+                justify-content: center;
+                font-size: 0.8rem;
+                padding: 6px 12px;
             }
         }
 
@@ -764,8 +804,6 @@ try {
                         </div>
                         <div class="col-md-4 text-end">
                             <div class="contact-info">
-                                <p><strong>Contact:</strong> <?php echo htmlspecialchars($student['cellphone_number']); ?></p>
-                                <p><strong>Age/Sex:</strong> <?php echo htmlspecialchars($student['age']); ?> / <?php echo htmlspecialchars($student['sex']); ?></p>
                             </div>
                         </div>
                     </div>
@@ -789,8 +827,8 @@ try {
                             <thead>
                                 <tr>
                                     <th width="25%">Date</th>
-                                    <th width="55%">Diagnose</th>
-                                    <th width="20%">View</th>
+                                    <th width="50%">Diagnose</th>
+                                    <th width="25%">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -807,18 +845,24 @@ try {
                                             <td><?php echo date('F j, Y', strtotime($consultation['consultation_date'])); ?></td>
                                             <td><?php echo htmlspecialchars($consultation['diagnosis'] ?? 'No diagnosis'); ?></td>
                                             <td>
-                                                <button class="view-btn" data-bs-toggle="modal" data-bs-target="#consultationModal"
-                                                        data-date="<?php echo date('F j, Y', strtotime($consultation['consultation_date'])); ?>"
-                                                        data-diagnosis="<?php echo htmlspecialchars($consultation['diagnosis'] ?? ''); ?>"
-                                                        data-symptoms="<?php echo htmlspecialchars($consultation['symptoms'] ?? ''); ?>"
-                                                        data-temperature="<?php echo htmlspecialchars($consultation['temperature'] ?? ''); ?>"
-                                                        data-blood-pressure="<?php echo htmlspecialchars($consultation['blood_pressure'] ?? ''); ?>"
-                                                        data-treatment="<?php echo htmlspecialchars($consultation['treatment'] ?? ''); ?>"
-                                                        data-heart-rate="<?php echo htmlspecialchars($consultation['heart_rate'] ?? ''); ?>"
-                                                        data-staff="<?php echo htmlspecialchars($consultation['attending_staff'] ?? ''); ?>"
-                                                        data-notes="<?php echo htmlspecialchars($consultation['physician_notes'] ?? ''); ?>">
-                                                    <i class="fas fa-eye"></i> View
-                                                </button>
+                                                <div class="action-buttons">
+                                                    <button class="view-btn" data-bs-toggle="modal" data-bs-target="#consultationModal"
+                                                            data-date="<?php echo date('F j, Y', strtotime($consultation['consultation_date'])); ?>"
+                                                            data-diagnosis="<?php echo htmlspecialchars($consultation['diagnosis'] ?? ''); ?>"
+                                                            data-symptoms="<?php echo htmlspecialchars($consultation['symptoms'] ?? ''); ?>"
+                                                            data-temperature="<?php echo htmlspecialchars($consultation['temperature'] ?? ''); ?>"
+                                                            data-blood-pressure="<?php echo htmlspecialchars($consultation['blood_pressure'] ?? ''); ?>"
+                                                            data-treatment="<?php echo htmlspecialchars($consultation['treatment'] ?? ''); ?>"
+                                                            data-heart-rate="<?php echo htmlspecialchars($consultation['heart_rate'] ?? ''); ?>"
+                                                            data-staff="<?php echo htmlspecialchars($consultation['attending_staff'] ?? ''); ?>"
+                                                            data-notes="<?php echo htmlspecialchars($consultation['physician_notes'] ?? ''); ?>">
+                                                        <i class="fas fa-eye"></i> View
+                                                    </button>
+                                                    <button class="archive-btn" 
+                                                            onclick="archiveConsultation(<?php echo $consultation['id']; ?>)">
+                                                        <i class="fas fa-archive"></i> Archive
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -967,6 +1011,36 @@ try {
                 document.getElementById('modalStaff').textContent = button.getAttribute('data-staff') || 'Not specified';
                 document.getElementById('modalNotes').textContent = button.getAttribute('data-notes') || 'No notes provided';
             });
+        }
+
+        // Archive Consultation Function
+        function archiveConsultation(consultationId) {
+            if (confirm('Are you sure you want to archive this consultation record?')) {
+                // You can implement the archive functionality here
+                // This could be an AJAX call to update the record status
+                fetch(`archive_consultation.php?id=${consultationId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Consultation record archived successfully!');
+                        location.reload(); // Reload the page to reflect changes
+                    } else {
+                        alert('Error archiving consultation record: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error archiving consultation record.');
+                });
+                
+                // For now, just show a confirmation message
+                // alert('Archive functionality would be implemented here for consultation ID: ' + consultationId);
+            }
         }
     </script>
 </body>

@@ -50,23 +50,36 @@ if (isset($_GET['activate_id'])) {
     }
 }
 
-// Fetch all announcements from database
+// FIXED: Fetch announcements with safe column checking
 $announcements = [];
 try {
-    $stmt = $pdo->prepare("
-        SELECT id, title, content, sent_by, recipient_type, send_email, post_on_front, 
-               attachment, is_active, created_at 
-        FROM announcements 
-        ORDER BY created_at DESC
-    ");
+    // First, let's check what columns actually exist
+    $check_stmt = $pdo->query("SHOW COLUMNS FROM announcements");
+    $existing_columns = $check_stmt->fetchAll(PDO::FETCH_COLUMN);
+    
+    // Build query with only existing columns
+    $select_columns = ["id", "title", "content", "sent_by", "created_at"];
+    
+    $optional_columns = ['send_email', 'post_on_front', 'recipient_type', 'attachment', 'is_active'];
+    foreach ($optional_columns as $column) {
+        if (in_array($column, $existing_columns)) {
+            $select_columns[] = $column;
+        }
+    }
+    
+    $query = "SELECT " . implode(', ', $select_columns) . " FROM announcements ORDER BY created_at DESC";
+    $stmt = $pdo->prepare($query);
     $stmt->execute();
     $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
 } catch (PDOException $e) {
     $error_message = "Error fetching announcements: " . $e->getMessage();
 }
 
-// Function to determine status
-function getAnnouncementStatus($created_at, $is_active) {
+// Safe functions with null coalescing
+function getAnnouncementStatus($created_at, $is_active = null) {
+    $is_active = $is_active ?? 1;
+    
     if (!$is_active) {
         return 'Expired';
     }
@@ -82,8 +95,10 @@ function getAnnouncementStatus($created_at, $is_active) {
     return 'Active';
 }
 
-// Function to get announcement type
-function getAnnouncementType($send_email, $post_on_front) {
+function getAnnouncementType($send_email = null, $post_on_front = null) {
+    $send_email = $send_email ?? 0;
+    $post_on_front = $post_on_front ?? 0;
+    
     $types = [];
     if ($send_email) {
         $types[] = 'Email';
@@ -94,8 +109,11 @@ function getAnnouncementType($send_email, $post_on_front) {
     return implode(' & ', $types) ?: 'None';
 }
 
-// Function to get recipient display name
-function getRecipientDisplay($recipient_type) {
+function getRecipientDisplay($recipient_type = null) {
+    if (empty($recipient_type) || $recipient_type === null) {
+        return 'All Students';
+    }
+    
     switch ($recipient_type) {
         case 'all':
             return 'All Students';
@@ -835,12 +853,12 @@ function getRecipientDisplay($recipient_type) {
                                     <tr>
                                         <td><?php echo htmlspecialchars($announcement['id']); ?></td>
                                         <td><?php echo htmlspecialchars($announcement['title']); ?></td>
-                                        <td><?php echo getRecipientDisplay($announcement['recipient_type']); ?></td>
-                                        <td><?php echo getAnnouncementType($announcement['send_email'], $announcement['post_on_front']); ?></td>
+                                        <td><?php echo getRecipientDisplay($announcement['recipient_type'] ?? 'all'); ?></td>
+                                        <td><?php echo getAnnouncementType($announcement['send_email'] ?? 0, $announcement['post_on_front'] ?? 0); ?></td>
                                         <td><?php echo date('m-d-Y', strtotime($announcement['created_at'])); ?></td>
                                         <td>
                                             <?php 
-                                            $status = getAnnouncementStatus($announcement['created_at'], $announcement['is_active']);
+                                            $status = getAnnouncementStatus($announcement['created_at'], $announcement['is_active'] ?? 1);
                                             $status_class = 'status-' . strtolower($status);
                                             ?>
                                             <span class="<?php echo $status_class; ?>">
@@ -861,7 +879,7 @@ function getRecipientDisplay($recipient_type) {
                                                 </button>
                                                 
                                                 <!-- EXPIRED/ACTIVATE BUTTON -->
-                                                <?php if ($announcement['is_active']): ?>
+                                                <?php if (($announcement['is_active'] ?? 1)): ?>
                                                     <button class="btn-action btn-expire" 
                                                             title="Mark as Expired"
                                                             onclick="expireAnnouncement(<?php echo $announcement['id']; ?>, '<?php echo htmlspecialchars($announcement['title']); ?>')">

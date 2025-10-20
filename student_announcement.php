@@ -8,34 +8,169 @@ session_start();
 //     exit();
 // }
 
-require_once 'includes/db_connect.php'; // Adjust path as needed
+require_once 'includes/db_connect.php';
 
 $student_number = $_SESSION['student_number'] ?? '2021-12345';
+$student_id = $_SESSION['student_id'] ?? 1;
 
-// ✅ REAL DATABASE QUERY
+// DEBUG: Check what's in the database - COMMENTED OUT FOR NORMAL VIEW
+/*
+echo "<div style='background: #f8d7da; padding: 15px; margin: 10px; border-radius: 5px;'>";
+echo "<h3>🔍 DEBUG INFORMATION - STUDENT ANNOUNCEMENTS</h3>";
+
 try {
-    // Get announcements that are posted on front page
+    // Check total announcements in database
+    $total_stmt = $pdo->query("SELECT COUNT(*) as total FROM announcements");
+    $total_count = $total_stmt->fetch(PDO::FETCH_ASSOC);
+    echo "<p><strong>Total announcements in database:</strong> " . $total_count['total'] . "</p>";
+    
+    // Check active announcements with post_on_front = 1
+    $active_stmt = $pdo->query("SELECT COUNT(*) as active FROM announcements WHERE post_on_front = 1 AND is_active = 1");
+    $active_count = $active_stmt->fetch(PDO::FETCH_ASSOC);
+    echo "<p><strong>Active announcements (post_on_front=1, is_active=1):</strong> " . $active_count['active'] . "</p>";
+    
+    // Check inactive announcements
+    $inactive_stmt = $pdo->query("SELECT COUNT(*) as inactive FROM announcements WHERE is_active = 0");
+    $inactive_count = $inactive_stmt->fetch(PDO::FETCH_ASSOC);
+    echo "<p><strong>Inactive announcements (is_active=0):</strong> " . $inactive_count['inactive'] . "</p>";
+    
+    // Show ALL announcements data - FIXED: removed recipient_type
+    $all_stmt = $pdo->query("SELECT id, title, post_on_front, is_active, created_at FROM announcements ORDER BY created_at DESC");
+    $all_data = $all_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    echo "<p><strong>ALL ANNOUNCEMENTS IN DATABASE:</strong></p>";
+    echo "<table border='1' style='width:100%; border-collapse: collapse;'>";
+    echo "<tr style='background: #e9ecef;'><th>ID</th><th>Title</th><th>Post Front</th><th>Active</th><th>Created</th></tr>";
+    foreach ($all_data as $row) {
+        echo "<tr>";
+        echo "<td>" . $row['id'] . "</td>";
+        echo "<td>" . htmlspecialchars($row['title']) . "</td>";
+        echo "<td>" . $row['post_on_front'] . "</td>";
+        echo "<td>" . $row['is_active'] . "</td>";
+        echo "<td>" . $row['created_at'] . "</td>";
+        echo "</tr>";
+    }
+    echo "</table>";
+    
+} catch (PDOException $e) {
+    echo "<p style='color: red;'><strong>Database Error:</strong> " . $e->getMessage() . "</p>";
+}
+echo "</div>";
+*/
+
+// Function to get announcement badge - FIXED: added default value
+function getAnnouncementBadge($recipient_type = 'all') {
+    switch ($recipient_type) {
+        case 'specific':
+            return '<span class="badge bg-warning ms-2"><i class="fas fa-user-friends"></i> Specific</span>';
+        case 'attendees':
+            return '<span class="badge bg-info ms-2"><i class="fas fa-calendar-check"></i> Recent Visitors</span>';
+        case 'all':
+        default:
+            return '<span class="badge bg-success ms-2"><i class="fas fa-users"></i> All Students</span>';
+    }
+}
+
+// Function to get announcement card class - FIXED: added default value
+function getAnnouncementCardClass($recipient_type = 'all', $is_expiring_soon = false) {
+    $classes = [];
+    
+    if ($is_expiring_soon) {
+        $classes[] = 'expiring';
+    }
+    
+    switch ($recipient_type) {
+        case 'specific':
+            $classes[] = 'specific';
+            break;
+        case 'attendees':
+            $classes[] = 'attendees';
+            break;
+    }
+    
+    return implode(' ', $classes);
+}
+
+// ✅ SIMPLIFIED DATABASE QUERY - FIXED: removed recipient_type references
+try {
+    // Get ALL active announcements that should be shown to students
     $stmt = $pdo->prepare("
-        SELECT * FROM announcements 
-        WHERE post_on_front = 1 
-        ORDER BY created_at DESC
-        LIMIT 10
+        SELECT a.* 
+        FROM announcements a
+        WHERE a.post_on_front = 1 
+        AND a.is_active = 1
+        ORDER BY a.created_at DESC
+        LIMIT 20
     ");
     $stmt->execute();
     $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
+    // COMMENTED OUT DEBUG INFORMATION
+    /*
+    echo "<div style='background: #d1ecf1; padding: 15px; margin: 10px; border-radius: 5px;'>";
+    echo "<p><strong>ACTIVE ANNOUNCEMENTS FOUND FOR STUDENT VIEW:</strong> " . count($announcements) . "</p>";
+    if (!empty($announcements)) {
+        echo "<table border='1' style='width:100%; border-collapse: collapse;'>";
+        echo "<tr style='background: #e9ecef;'><th>ID</th><th>Title</th><th>Post Front</th><th>Active</th><th>Created</th></tr>";
+        foreach ($announcements as $ann) {
+            echo "<tr>";
+            echo "<td>" . $ann['id'] . "</td>";
+            echo "<td>" . htmlspecialchars($ann['title']) . "</td>";
+            echo "<td>" . $ann['post_on_front'] . "</td>";
+            echo "<td>" . $ann['is_active'] . "</td>";
+            echo "<td>" . $ann['created_at'] . "</td>";
+            echo "</tr>";
+        }
+        echo "</table>";
+    } else {
+        echo "<p style='color: red;'>No announcements found with post_on_front = 1 AND is_active = 1</p>";
+    }
+    echo "</div>";
+    */
+    
+    // Get inactive announcements
+    $archive_stmt = $pdo->prepare("
+        SELECT a.* 
+        FROM announcements a
+        WHERE a.is_active = 0
+        ORDER BY a.created_at DESC
+        LIMIT 20
+    ");
+    $archive_stmt->execute();
+    $archived_announcements = $archive_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
 } catch (PDOException $e) {
     error_log("Error fetching announcements: " . $e->getMessage());
-    // Fallback to sample data if database error
-    $announcements = [
-        [
-            'id' => 1,
-            'title' => 'Database Connection Issue',
-            'content' => 'There was an issue loading announcements. Please try again later.',
-            'sent_by' => 'Clinic Administrator',
-            'created_at' => date('Y-m-d H:i:s')
-        ]
+    $announcements = [];
+    $archived_announcements = [];
+    // COMMENTED OUT ERROR DISPLAY
+    /*
+    echo "<div style='background: #f8d7da; padding: 15px; margin: 10px; border-radius: 5px;'>";
+    echo "<p style='color: red;'><strong>QUERY ERROR:</strong> " . $e->getMessage() . "</p>";
+    echo "</div>";
+    */
+}
+
+// Add this function to check file paths
+function checkMediaFile($filename) {
+    if (empty($filename)) return ['exists' => false, 'path' => ''];
+    
+    $possible_paths = [
+        '../uploads/announcements/' . $filename,
+        'uploads/announcements/' . $filename,
+        '../admin/uploads/announcements/' . $filename,
+        'admin/uploads/announcements/' . $filename,
+        'uploads/' . $filename,
+        '../uploads/' . $filename
     ];
+    
+    foreach ($possible_paths as $path) {
+        if (file_exists($path)) {
+            return ['exists' => true, 'path' => $path];
+        }
+    }
+    
+    return ['exists' => false, 'path' => '../uploads/announcements/' . $filename];
 }
 ?>
 <!DOCTYPE html>
@@ -47,7 +182,6 @@ try {
     <link href="assets/css/bootstrap.min.css" rel="stylesheet">
     <link href="assets/webfonts/all.min.css" rel="stylesheet">
     <link href="assets/css/student_dashboard.css" rel="stylesheet">
-    <link href="assets/css/student_announcement.css" rel="stylesheet">
     
     <style>
         :root {
@@ -99,9 +233,9 @@ try {
         }
 
         .header .logo-img {
-             height: 80px;
-             width: 80px;
-             margin-top: -15px;
+            height: 80px;
+            width: 80px;
+            margin-top: -15px;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
             transition: transform 0.3s ease;
         }
@@ -259,7 +393,7 @@ try {
             margin-top: var(--header-height);
         }
 
-        /* ========== ORIGINAL ANNOUNCEMENT STYLES (PRESERVED) ========== */
+        /* ========== ANNOUNCEMENT STYLES ========== */
         .page-header {
             background: #ffda6a;
             padding: 20px;
@@ -296,6 +430,28 @@ try {
             margin-bottom: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             border-left: 4px solid #3498db;
+            transition: all 0.3s ease;
+        }
+
+        .announcement-card.archived {
+            border-left: 4px solid #6c757d;
+            background: #f8f9fa;
+            opacity: 0.8;
+        }
+
+        .announcement-card.expiring {
+            border-left: 4px solid #f39c12;
+            background: linear-gradient(135deg, #fff 0%, #fff9e6 100%);
+        }
+
+        .announcement-card.specific {
+            border-left: 4px solid #ffc107;
+            background: linear-gradient(135deg, #fff 0%, #fffbf0 100%);
+        }
+
+        .announcement-card.attendees {
+            border-left: 4px solid #17a2b8;
+            background: linear-gradient(135deg, #fff 0%, #f0fdff 100%);
         }
 
         .announcement-header {
@@ -317,6 +473,22 @@ try {
             font-size: 1.2rem;
         }
 
+        .announcement-icon.archived {
+            background: #6c757d;
+        }
+
+        .announcement-icon.expiring {
+            background: #f39c12;
+        }
+
+        .announcement-icon.specific {
+            background: #ffc107;
+        }
+
+        .announcement-icon.attendees {
+            background: #17a2b8;
+        }
+
         .announcement-meta {
             flex: 1;
         }
@@ -325,6 +497,10 @@ try {
             color: #333;
             margin-bottom: 5px;
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .announcement-date {
@@ -345,6 +521,24 @@ try {
             font-weight: bold;
         }
 
+        .badge-expired {
+            background: #6c757d;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .badge-expiring {
+            background: #f39c12;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
         .announcement-body {
             margin-bottom: 15px;
         }
@@ -358,6 +552,9 @@ try {
         .announcement-footer {
             border-top: 1px solid #eee;
             padding-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .announcement-category {
@@ -370,6 +567,12 @@ try {
 
         .announcement-category i {
             margin-right: 5px;
+        }
+
+        .archive-status {
+            font-size: 0.8rem;
+            color: #e74c3c;
+            font-weight: 500;
         }
 
         .no-announcements {
@@ -387,6 +590,188 @@ try {
         .no-announcements h4 {
             color: #666;
             margin-bottom: 10px;
+        }
+
+        /* ========== TAB STYLES ========== */
+        .announcement-tabs {
+            background: white;
+            border-radius: 10px;
+            padding: 0;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-tabs {
+            border-bottom: 1px solid #dee2e6;
+            padding: 0 20px;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #666;
+            font-weight: 500;
+            padding: 15px 25px;
+            margin-bottom: -1px;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #3498db;
+            background: transparent;
+            border-bottom: 3px solid #3498db;
+        }
+
+        .nav-tabs .nav-link:hover {
+            border: none;
+            color: #3498db;
+        }
+
+        .tab-content {
+            padding: 20px;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* ========== ENHANCED MEDIA STYLES ========== */
+        .announcement-media {
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .announcement-image {
+            width: 100%;
+            height: auto;
+            max-height: 500px;
+            object-fit: contain;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .announcement-image:hover {
+            transform: scale(1.01);
+        }
+
+        .announcement-video {
+            width: 100%;
+            height: auto;
+            max-height: 500px;
+            background: #000;
+            border-radius: 8px;
+        }
+
+        .announcement-pdf-preview {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .announcement-pdf-preview:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .announcement-pdf-preview i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .announcement-pdf-preview h5 {
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .announcement-pdf-preview p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        /* Modal enhancements */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom: none;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .modal-header .btn-close {
+            filter: invert(1);
+            opacity: 0.8;
+        }
+
+        .modal-header .btn-close:hover {
+            opacity: 1;
+        }
+
+        /* Auto-play video styling */
+        .video-autoplay {
+            width: 100%;
+            height: auto;
+            max-height: 500px;
+            background: #000;
+            border-radius: 10px;
+        }
+
+        /* Responsive media */
+        @media (max-width: 768px) {
+            .announcement-image,
+            .announcement-video,
+            .video-autoplay {
+                max-height: 300px !important;
+            }
+            
+            .announcement-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .announcement-icon {
+                align-self: flex-start;
+            }
+            
+            .announcement-footer {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+
+            .announcement-meta h4 {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .announcement-image,
+            .announcement-video,
+            .video-autoplay {
+                max-height: 250px !important;
+            }
+            
+            .nav-tabs .nav-link {
+                padding: 12px 15px;
+                font-size: 0.9rem;
+            }
         }
 
         /* ========== RESPONSIVE BREAKPOINTS ========== */
@@ -433,15 +818,6 @@ try {
                 margin-top: 70px;
             }
 
-            .announcement-header {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .announcement-card {
-                padding: 20px;
-            }
-
             .mobile-menu-btn {
                 top: 15px;
                 left: 15px;
@@ -478,6 +854,21 @@ try {
     
     <!-- SIDEBAR OVERLAY -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Image Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Image Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImage" src="" alt="Preview" class="img-fluid rounded">
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ENHANCED HEADER -->
     <div class="header">
@@ -517,77 +908,215 @@ try {
                 </div>
             </div>
 
-            <!-- MAIN CONTENT AREA (ORIGINAL DESIGN PRESERVED) -->
+            <!-- MAIN CONTENT AREA -->
             <div class="col-md-9 col-lg-10 main-content">
                 <div class="page-header">
-                    <h2><i class="fas fa-bullhorn"></i>  Announcements</h2>
-                    <p class="text-muted"> Stay updated with the latest clinic announcements and notices</p>
+                    <h2><i class="fas fa-bullhorn"></i> Announcements</h2>
+                    <p class="text-muted">Stay updated with the latest clinic announcements and notices</p>
                 </div>
 
-                <!-- DEMO MODE BANNER -->
-                <div class="alert alert-info mb-3" role="alert">
-                    <i class="fas fa-info-circle"></i> 
-                    <strong>Live Data:</strong> Showing real announcements from the clinic.
-                </div>
+                <!-- REMOVED DEBUG MODE BANNER -->
 
-                <!-- ANNOUNCEMENTS LIST -->
-                <div class="announcements-container">
-                    <?php if (empty($announcements)): ?>
-                        <div class="no-announcements">
-                            <i class="fas fa-inbox"></i>
-                            <h4>No Announcements Yet</h4>
-                            <p>Check back later for updates from the clinic</p>
-                        </div>
-                    <?php else: ?>
-                        <?php foreach ($announcements as $announcement): ?>
-                            <div class="announcement-card">
-                                <div class="announcement-header">
-                                    <div class="announcement-icon">
-                                        <i class="fas fa-bullhorn"></i>
+                <!-- ANNOUNCEMENT TABS -->
+                <div class="announcement-tabs">
+                    <ul class="nav nav-tabs" id="announcementTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab">
+                                <i class="fas fa-bell"></i> Active Announcements
+                                <span class="badge bg-primary ms-1"><?php echo count($announcements); ?></span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="archive-tab" data-bs-toggle="tab" data-bs-target="#archive" type="button" role="tab">
+                                <i class="fas fa-archive"></i> Archive
+                                <span class="badge bg-secondary ms-1"><?php echo count($archived_announcements); ?></span>
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="announcementTabsContent">
+                        <!-- ACTIVE ANNOUNCEMENTS TAB -->
+                        <div class="tab-pane fade show active" id="active" role="tabpanel">
+                            <div class="announcements-container">
+                                <?php if (empty($announcements)): ?>
+                                    <div class="no-announcements">
+                                        <i class="fas fa-inbox"></i>
+                                        <h4>No Active Announcements</h4>
+                                        <p>Check back later for updates from the clinic</p>
                                     </div>
-                                    <div class="announcement-meta">
-                                        <h4><?php echo htmlspecialchars($announcement['title']); ?></h4>
-                                        <span class="announcement-date">
-                                            <i class="fas fa-calendar-alt"></i>
-                                            <?php echo date('F j, Y g:i A', strtotime($announcement['created_at'])); ?>
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="announcement-body">
-                                    <p><?php echo nl2br(htmlspecialchars($announcement['content'])); ?></p>
-                                    
-                                    <!-- Show attachment if exists -->
-                                    <?php if (!empty($announcement['attachment'])): ?>
-                                        <div class="mt-3">
-                                            <i class="fas fa-paperclip"></i>
-                                            <strong>Attachment:</strong> 
-                                            <?php
-                                            $fileExtension = strtolower(pathinfo($announcement['attachment'], PATHINFO_EXTENSION));
-                                            if (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])): ?>
-                                                <a href="../uploads/announcements/<?php echo $announcement['attachment']; ?>" target="_blank">
-                                                    View Image
-                                                </a>
-                                            <?php elseif (in_array($fileExtension, ['pdf'])): ?>
-                                                <a href="../uploads/announcements/<?php echo $announcement['attachment']; ?>" target="_blank">
-                                                    View PDF
-                                                </a>
-                                            <?php else: ?>
-                                                <a href="../uploads/announcements/<?php echo $announcement['attachment']; ?>" download>
-                                                    Download File
-                                                </a>
-                                            <?php endif; ?>
+                                <?php else: ?>
+                                    <?php foreach ($announcements as $announcement): ?>
+                                        <div class="announcement-card <?php echo getAnnouncementCardClass($announcement['recipient_type'] ?? 'all'); ?>">
+                                            <div class="announcement-header">
+                                                <div class="announcement-icon <?php echo ($announcement['recipient_type'] ?? 'all') === 'specific' ? 'specific' : (($announcement['recipient_type'] ?? 'all') === 'attendees' ? 'attendees' : ''); ?>">
+                                                    <i class="fas fa-bullhorn"></i>
+                                                </div>
+                                                <div class="announcement-meta">
+                                                    <h4>
+                                                        <?php echo htmlspecialchars($announcement['title']); ?>
+                                                        <?php echo getAnnouncementBadge($announcement['recipient_type'] ?? 'all'); ?>
+                                                    </h4>
+                                                    <span class="announcement-date">
+                                                        <i class="fas fa-calendar-alt"></i>
+                                                        <?php echo date('F j, Y g:i A', strtotime($announcement['created_at'])); ?>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="announcement-body">
+                                                <p><?php echo nl2br(htmlspecialchars($announcement['content'])); ?></p>
+                                                
+                                                <!-- MEDIA DISPLAY -->
+                                                <?php if (!empty($announcement['attachment'])): 
+                                                    $fileCheck = checkMediaFile($announcement['attachment']);
+                                                    $actualPath = $fileCheck['path'];
+                                                    $fileExtension = strtolower(pathinfo($announcement['attachment'], PATHINFO_EXTENSION));
+                                                    $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                                                    $videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'webm'];
+                                                    $pdfExtensions = ['pdf'];
+                                                ?>
+
+                                                    <?php if (in_array($fileExtension, $imageExtensions)): ?>
+                                                        <div class="announcement-media">
+                                                            <img src="<?php echo $actualPath; ?>" 
+                                                                 alt="Announcement Image" 
+                                                                 class="announcement-image"
+                                                                 onclick="openImageModal('<?php echo $actualPath; ?>')">
+                                                        </div>
+                                                        
+                                                    <?php elseif (in_array($fileExtension, $videoExtensions)): ?>
+                                                        <div class="announcement-media">
+                                                            <video class="announcement-video" controls>
+                                                                <source src="<?php echo $actualPath; ?>" type="video/<?php echo $fileExtension; ?>">
+                                                                Your browser does not support the video tag.
+                                                            </video>
+                                                        </div>
+                                                        
+                                                    <?php elseif (in_array($fileExtension, $pdfExtensions)): ?>
+                                                        <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')">
+                                                            <i class="fas fa-file-pdf"></i>
+                                                            <h5>PDF Document</h5>
+                                                            <p>Click to view the document</p>
+                                                        </div>
+                                                        
+                                                    <?php else: ?>
+                                                        <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, #27ae60, #219a52);">
+                                                            <i class="fas fa-file"></i>
+                                                            <h5>Document File</h5>
+                                                            <p>Click to view the file</p>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                    
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="announcement-footer">
+                                                <span class="announcement-category">
+                                                    <i class="fas fa-user"></i>
+                                                    Sent by: <?php echo htmlspecialchars($announcement['sent_by'] ?? 'Admin'); ?>
+                                                </span>
+                                                <span class="text-success">
+                                                    <i class="fas fa-circle"></i> Active
+                                                </span>
+                                            </div>
                                         </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="announcement-footer">
-                                    <span class="announcement-category">
-                                        <i class="fas fa-user"></i>
-                                        Sent by: <?php echo htmlspecialchars($announcement['sent_by']); ?>
-                                    </span>
-                                </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                        </div>
+                        
+                        <!-- ARCHIVE TAB -->
+                        <div class="tab-pane fade" id="archive" role="tabpanel">
+                            <div class="announcements-container">
+                                <?php if (empty($archived_announcements)): ?>
+                                    <div class="no-announcements">
+                                        <i class="fas fa-archive"></i>
+                                        <h4>Archive is Empty</h4>
+                                        <p>No expired or archived announcements found</p>
+                                    </div>
+                                <?php else: ?>
+                                    <?php foreach ($archived_announcements as $announcement): ?>
+                                        <div class="announcement-card archived">
+                                            <div class="announcement-header">
+                                                <div class="announcement-icon archived">
+                                                    <i class="fas fa-archive"></i>
+                                                </div>
+                                                <div class="announcement-meta">
+                                                    <h4>
+                                                        <?php echo htmlspecialchars($announcement['title']); ?>
+                                                        <?php echo getAnnouncementBadge($announcement['recipient_type'] ?? 'all'); ?>
+                                                    </h4>
+                                                    <span class="announcement-date">
+                                                        <i class="fas fa-calendar-alt"></i>
+                                                        Posted: <?php echo date('F j, Y g:i A', strtotime($announcement['created_at'])); ?>
+                                                    </span>
+                                                </div>
+                                                
+                                                <span class="badge-expired">
+                                                    <i class="fas fa-ban"></i>
+                                                    Inactive
+                                                </span>
+                                            </div>
+                                            <div class="announcement-body">
+                                                <p><?php echo nl2br(htmlspecialchars($announcement['content'])); ?></p>
+                                                
+                                                <!-- MEDIA DISPLAY FOR ARCHIVED -->
+                                                <?php if (!empty($announcement['attachment'])): 
+                                                    $fileCheck = checkMediaFile($announcement['attachment']);
+                                                    $actualPath = $fileCheck['path'];
+                                                    $fileExtension = strtolower(pathinfo($announcement['attachment'], PATHINFO_EXTENSION));
+                                                    $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                                                    $videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'webm'];
+                                                    $pdfExtensions = ['pdf'];
+                                                ?>
+
+                                                    <?php if (in_array($fileExtension, $imageExtensions)): ?>
+                                                        <div class="announcement-media">
+                                                            <img src="<?php echo $actualPath; ?>" 
+                                                                 alt="Archived Announcement Image" 
+                                                                 class="announcement-image"
+                                                                 onclick="openImageModal('<?php echo $actualPath; ?>')"
+                                                                 style="opacity: 0.7;">
+                                                        </div>
+                                                        
+                                                    <?php elseif (in_array($fileExtension, $videoExtensions)): ?>
+                                                        <div class="announcement-media">
+                                                            <video class="announcement-video" controls style="opacity: 0.7;">
+                                                                <source src="<?php echo $actualPath; ?>" type="video/<?php echo $fileExtension; ?>">
+                                                                Your browser does not support the video tag.
+                                                            </video>
+                                                        </div>
+                                                        
+                                                    <?php elseif (in_array($fileExtension, $pdfExtensions)): ?>
+                                                        <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, #6c757d, #5a6268); opacity: 0.8;">
+                                                            <i class="fas fa-file-pdf"></i>
+                                                            <h5>PDF Document</h5>
+                                                            <p>Click to view the document</p>
+                                                        </div>
+                                                        
+                                                    <?php else: ?>
+                                                        <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, #6c757d, #5a6268); opacity: 0.8;">
+                                                            <i class="fas fa-file"></i>
+                                                            <h5>Document File</h5>
+                                                            <p>Click to view the file</p>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                    
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="announcement-footer">
+                                                <span class="announcement-category">
+                                                    <i class="fas fa-user"></i>
+                                                    Sent by: <?php echo htmlspecialchars($announcement['sent_by'] ?? 'Admin'); ?>
+                                                </span>
+                                                <span class="archive-status">
+                                                    <i class="fas fa-archive"></i> Inactive
+                                                </span>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -649,6 +1178,55 @@ try {
                     closeSidebar();
                 }
             });
+
+            // Image Modal Functionality
+            window.openImageModal = function(filePath) {
+                const modalImage = document.getElementById('modalImage');
+                modalImage.src = filePath;
+                
+                const imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+                imageModal.show();
+            }
+
+            // Auto-refresh announcements every 5 minutes
+            function autoRefreshAnnouncements() {
+                setTimeout(() => {
+                    location.reload();
+                }, 300000); // 5 minutes
+            }
+
+            // Initialize auto-refresh
+            autoRefreshAnnouncements();
+
+            // Tab persistence
+            const announcementTabs = document.getElementById('announcementTabs');
+            if (announcementTabs) {
+                announcementTabs.addEventListener('click', function(e) {
+                    if (e.target.tagName === 'BUTTON') {
+                        const tabId = e.target.getAttribute('data-bs-target').replace('#', '');
+                        localStorage.setItem('activeAnnouncementTab', tabId);
+                    }
+                });
+
+                // Restore active tab
+                const activeTab = localStorage.getItem('activeAnnouncementTab') || 'active';
+                const tabButton = document.querySelector(`[data-bs-target="#${activeTab}"]`);
+                if (tabButton) {
+                    const tab = new bootstrap.Tab(tabButton);
+                    tab.show();
+                }
+            }
+        });
+
+        // Keyboard navigation for modal
+        document.addEventListener('keydown', function(e) {
+            const imageModal = document.getElementById('imageModal');
+            if (imageModal.classList.contains('show') && e.key === 'Escape') {
+                const modal = bootstrap.Modal.getInstance(imageModal);
+                if (modal) {
+                    modal.hide();
+                }
+            }
         });
     </script>
 </body>

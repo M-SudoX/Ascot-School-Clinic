@@ -52,7 +52,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
-            padding-top: 100px; /* Added for fixed header */
+            padding-top: 100px;
         }
 
         /* Header Styles - FIXED */
@@ -61,12 +61,12 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: fixed; /* Added */
-            top: 0; /* Added */
-            left: 0; /* Added */
-            right: 0; /* Added */
-            z-index: 1000; /* Added */
-            height: 100px; /* Added */
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 100px;
         }
 
         .header-content {
@@ -105,7 +105,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 100px; /* Adjusted for fixed header */
+            top: 100px;
             left: 20px;
             z-index: 1001;
             background: #667eea;
@@ -116,12 +116,6 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-radius: 50%;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .mobile-menu-toggle:hover {
-            transform: scale(1.1);
-            background: #764ba2;
         }
 
         /* Dashboard Container - FIXED */
@@ -137,18 +131,18 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             padding: 2rem 0;
             transition: transform 0.3s ease;
-            position: fixed; /* Added */
-            top: 100px; /* Added */
-            left: 0; /* Added */
-            bottom: 0; /* Added */
-            overflow-y: auto; /* Added */
-            z-index: 999; /* Added */
+            position: fixed;
+            top: 100px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 999;
         }
 
         .sidebar-nav {
             display: flex;
             flex-direction: column;
-            height: 100%; /* Added */
+            height: 100%;
         }
 
         .nav-item {
@@ -157,17 +151,11 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 1rem 1.5rem;
             color: #444;
             text-decoration: none;
-            transition: all 0.3s ease;
             border: none;
             background: none;
             width: 100%;
             text-align: left;
             cursor: pointer;
-        }
-
-        .nav-item:hover {
-            background: #f8f9fa;
-            color: #667eea;
         }
 
         .nav-item.active {
@@ -211,13 +199,12 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 0.75rem 1.5rem 0.75rem 3.5rem;
             color: #666;
             text-decoration: none;
-            transition: all 0.3s ease;
             font-size: 0.9rem;
         }
 
-        .submenu-item:hover {
-            background: #e9ecef;
+        .submenu-item.active {
             color: #667eea;
+            font-weight: 500;
         }
 
         .submenu-item i {
@@ -230,10 +217,6 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin-top: auto;
         }
 
-        .nav-item.logout:hover {
-            background: rgba(220, 53, 69, 0.1);
-        }
-
         /* Main Content - FIXED */
         .main-content {
             flex: 1;
@@ -241,15 +224,15 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             overflow-x: hidden;
             background: linear-gradient(135deg, #ffda6a 0%, #764ba2 100%);
             min-height: calc(100vh - 100px);
-            margin-left: 280px; /* Added for sidebar space */
-            margin-top: 0; /* Added */
+            margin-left: 280px;
+            margin-top: 0;
         }
 
         /* Sidebar Overlay for Mobile - FIXED */
         .sidebar-overlay {
             display: none;
             position: fixed;
-            top: 100px; /* Adjusted for fixed header */
+            top: 100px;
             left: 0;
             right: 0;
             bottom: 0;
@@ -261,396 +244,307 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             display: block;
         }
 
-        /* Calendar Container - Glass Effect */
+        /* SIMPLIFIED CALENDAR CONTAINER */
         .calendar-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 25px;
-            padding: 40px;
-            box-shadow: 
-                0 25px 50px rgba(0, 0, 0, 0.25),
-                0 0 0 1px rgba(255, 255, 255, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            max-width: 1400px;
+            width: 95%;
         }
         
-        /* Calendar Header - Gradient Design */
+        /* SIMPLIFIED CALENDAR HEADER */
         .calendar-header {
-            background: linear-gradient(135deg, #ffda6a 0%, #fff7da 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-radius: 15px;
-            padding: 30px 40px;
-            margin-bottom: 35px;
+            padding: 20px 30px;
+            margin-bottom: 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 
-                0 15px 35px rgba(102, 126, 234, 0.4),
-                0 5px 15px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
-            color: #333;
-        }
-        
-        .calendar-header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: rotate 20s linear infinite;
-        }
-        
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
         }
         
         .calendar-header h3 {
             margin: 0;
-            font-weight: 800;
-            font-size: 2rem;
+            font-weight: 600;
+            font-size: 1.6rem;
             display: flex;
             align-items: center;
-            gap: 15px;
-            position: relative;
-            z-index: 1;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            gap: 10px;
         }
         
         .calendar-header h3 i {
-            font-size: 2.2rem;
-            animation: float 3s ease-in-out infinite;
+            font-size: 1.7rem;
         }
         
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-        
-        /* Month Navigation */
+        /* SIMPLIFIED CALENDAR CONTROLS */
         .calendar-controls {
             display: flex;
             align-items: center;
-            gap: 20px;
-            position: relative;
-            z-index: 1;
+            gap: 15px;
         }
         
         .calendar-controls button {
-            background: rgba(255, 255, 255, 0.25);
-            border: 2px solid rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             color: white;
-            width: 45px;
-            height: 45px;
-            border-radius: 14px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 1.1rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        
-        .calendar-controls button:hover {
-            background: rgba(255, 255, 255, 0.4);
-            transform: scale(1.15) translateY(-2px);
-            border-color: white;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-        }
-        
-        .calendar-controls button:active {
-            transform: scale(1.05);
+            font-size: 1rem;
         }
         
         #monthDisplay {
-            font-size: 1.5rem;
-            font-weight: 700;
-            min-width: 220px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            min-width: 180px;
             text-align: center;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-            color: #333;
+            color: white;
         }
 
-        /* Calendar Grid */
+        /* SIMPLIFIED CALENDAR GRID */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 15px;
-            margin-top: 25px;
+            gap: 10px;
+            margin-top: 15px;
         }
         
-        /* Day Headers - Modern Style */
+        /* SIMPLIFIED DAY HEADERS */
         .calendar-day-header {
             text-align: center;
-            font-weight: 800;
+            font-weight: 600;
             color: #667eea;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
-            letter-spacing: 0.15em;
-            padding: 18px 0;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 14px;
-            margin-bottom: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            border: 2px solid rgba(102, 126, 234, 0.1);
+            padding: 15px 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 5px;
+            border: 1px solid #e9ecef;
         }
 
-        /* Day Cells - Premium Design */
+        /* SIMPLIFIED DAY CELLS - NO HOVER */
         .calendar-day {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border: 2px solid #e9ecef;
-            border-radius: 18px;
-            min-height: 130px;
-            padding: 18px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            min-height: 100px;
+            padding: 12px;
             position: relative;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
         
-        .calendar-day::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            transform: scaleX(0);
-            transition: transform 0.4s ease;
-        }
-        
-        .calendar-day:hover::before {
-            transform: scaleX(1);
-        }
-        
-        .calendar-day:hover {
-            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-            transform: translateY(-8px) scale(1.03);
-            box-shadow: 
-                0 20px 40px rgba(102, 126, 234, 0.25),
-                0 0 0 3px rgba(102, 126, 234, 0.1);
-            border-color: #667eea;
-        }
-        
-        /* Today Indicator - Stunning Effect */
+        /* TODAY INDICATOR - SIMPLE */
         .calendar-day.today {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-color: #764ba2;
-            box-shadow: 
-                0 15px 40px rgba(102, 126, 234, 0.6),
-                0 0 0 4px rgba(255, 255, 255, 0.5),
-                0 0 30px rgba(102, 126, 234, 0.4) inset;
-            transform: scale(1.08);
-            animation: todayPulse 3s ease-in-out infinite;
         }
         
-        @keyframes todayPulse {
-            0%, 100% {
-                box-shadow: 
-                    0 15px 40px rgba(102, 126, 234, 0.6),
-                    0 0 0 4px rgba(255, 255, 255, 0.5),
-                    0 0 30px rgba(102, 126, 234, 0.4) inset;
-            }
-            50% {
-                box-shadow: 
-                    0 20px 50px rgba(102, 126, 234, 0.8),
-                    0 0 0 6px rgba(255, 255, 255, 0.7),
-                    0 0 40px rgba(102, 126, 234, 0.6) inset;
-            }
-        }
-        
-        .calendar-day.today:hover {
-            transform: translateY(-8px) scale(1.1);
-            box-shadow: 
-                0 25px 60px rgba(102, 126, 234, 0.8),
-                0 0 0 5px rgba(255, 255, 255, 0.6);
-        }
-        
-        .calendar-day.today::before {
-            display: none;
-        }
-        
-        /* Empty Days */
+        /* EMPTY DAYS */
         .calendar-day.text-muted {
-            opacity: 0.25;
+            opacity: 0.3;
             cursor: default;
             pointer-events: none;
             background: #f8f9fa;
         }
         
-        /* Day Number */
+        /* DAY NUMBER */
         .calendar-day > div:first-child {
-            font-size: 1.6rem;
-            font-weight: 800;
-            margin-bottom: 8px;
-            position: relative;
-            z-index: 1;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: inherit;
         }
 
-        /* Appointment Badge - Eye-Catching */
+        /* SIMPLIFIED APPOINTMENT BADGE */
         .appointment-count {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            top: 10px;
+            right: 10px;
+            background: #dc3545;
             color: white;
             border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            font-size: 0.9rem;
-            font-weight: 800;
+            width: 28px;
+            height: 28px;
+            font-size: 0.8rem;
+            font-weight: 600;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 
-                0 6px 16px rgba(239, 68, 68, 0.5),
-                0 0 0 3px rgba(255, 255, 255, 0.5);
-            animation: bounce 2s infinite;
             z-index: 2;
         }
-        
-        @keyframes bounce {
-            0%, 100% {
-                transform: scale(1) translateY(0);
-            }
-            50% {
-                transform: scale(1.15) translateY(-4px);
-            }
-        }
 
-        /* Modal - Premium Design */
+        /* Modal Styles */
         .modal-content {
-            border-radius: 24px;
+            border-radius: 15px;
             border: none;
-            overflow: hidden;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
         }
         
         .modal-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 30px 35px;
+            padding: 20px 25px;
             border: none;
+            border-radius: 15px 15px 0 0;
         }
         
         .modal-header .modal-title {
-            font-size: 1.7rem;
-            font-weight: 800;
+            font-size: 1.4rem;
+            font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 15px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            gap: 10px;
         }
         
         .modal-body {
-            padding: 35px;
-            background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+            padding: 25px;
         }
         
         .modal-body h5 {
-            font-weight: 800;
-            margin-bottom: 30px;
-            padding-bottom: 18px;
-            border-bottom: 4px solid;
-            border-image: linear-gradient(90deg, #667eea, #764ba2) 1;
-            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            font-size: 1.2rem;
         }
 
-        /* Appointment Items - Elegant Cards */
-        .appointment-item {
-            background: white;
-            border-left: 6px solid #667eea;
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 18px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+        /* Table Styles */
+        .appointments-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
         }
-        
-        .appointment-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 6px;
-            background: linear-gradient(180deg, #667eea, #764ba2);
-            transition: width 0.4s ease;
+
+        .appointments-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
-        
-        .appointment-item:hover::before {
-            width: 12px;
+
+        .appointments-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
         }
-        
-        .appointment-item:hover {
-            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-            transform: translateX(12px) scale(1.02);
-            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.25);
-        }
-        
-        .appointment-item strong {
-            color: #667eea;
-            font-size: 1.25rem;
-            display: block;
-            margin-bottom: 15px;
-            font-weight: 800;
-        }
-        
-        .appointment-item i {
-            color: #764ba2;
-            margin-right: 10px;
-            width: 22px;
-            font-size: 1rem;
-        }
-        
-        .appointment-item > *:not(:last-child) {
-            margin-bottom: 10px;
-        }
-        
-        .appointment-item div {
-            font-size: 1rem;
+
+        .appointments-table td {
+            padding: 12px 15px;
+            font-size: 0.9rem;
             color: #4b5563;
-            line-height: 1.6;
+            border-bottom: 1px solid #e9ecef;
         }
-        
+
+        .appointments-table .time-cell {
+            font-weight: 600;
+            color: #764ba2;
+        }
+
+        .appointments-table .purpose-cell {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         /* No Appointments Message */
         .no-appointments {
             text-align: center;
-            color: #9ca3af;
-            padding: 60px 30px;
-            font-size: 1.2rem;
+            color: #6c757d;
+            padding: 40px 20px;
+            font-size: 1.1rem;
         }
         
         .no-appointments i {
-            font-size: 5rem;
-            color: #d1d5db;
-            margin-bottom: 25px;
+            font-size: 3rem;
+            color: #dee2e6;
+            margin-bottom: 15px;
             display: block;
-            opacity: 0.5;
         }
-        
-        /* Responsive Design - FIXED */
-        @media (max-width: 1024px) {
+
+        /* RESPONSIVE DESIGN */
+        @media (max-width: 1200px) {
             .calendar-container {
-                padding: 30px;
+                padding: 25px;
+            }
+            
+            .calendar-header {
+                padding: 18px 25px;
+            }
+            
+            .calendar-header h3 {
+                font-size: 1.4rem;
+            }
+            
+            #monthDisplay {
+                font-size: 1.2rem;
             }
             
             .calendar-grid {
-                gap: 10px;
+                gap: 8px;
             }
             
             .calendar-day {
-                min-height: 100px;
-                padding: 12px;
+                min-height: 90px;
+                padding: 10px;
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .calendar-container {
+                padding: 20px;
+                width: 98%;
+            }
+            
+            .calendar-header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .calendar-header h3 {
+                font-size: 1.3rem;
+            }
+            
+            .calendar-controls {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            #monthDisplay {
+                font-size: 1.1rem;
+                min-width: 150px;
+            }
+            
+            .calendar-grid {
+                gap: 6px;
+            }
+            
+            .calendar-day {
+                min-height: 80px;
+                padding: 8px;
+            }
+            
+            .calendar-day > div:first-child {
+                font-size: 1.1rem;
+            }
+            
+            .appointment-count {
+                width: 24px;
+                height: 24px;
+                font-size: 0.75rem;
             }
         }
         
@@ -662,12 +556,12 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 100px; /* Adjusted for fixed header */
-                height: calc(100vh - 100px); /* Adjusted for fixed header */
+                top: 100px;
+                height: calc(100vh - 100px);
                 z-index: 1000;
                 transform: translateX(-100%);
                 overflow-y: auto;
-                width: 280px; /* Added */
+                width: 280px;
             }
 
             .sidebar.active {
@@ -681,7 +575,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             .main-content {
                 padding: 1rem;
                 width: 100%;
-                margin-left: 0; /* Reset margin for mobile */
+                margin-left: 0;
             }
 
             .header-content {
@@ -697,49 +591,149 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
 
             .calendar-container {
-                padding: 20px;
-                border-radius: 20px;
+                padding: 15px;
+                border-radius: 15px;
             }
             
             .calendar-header {
-                flex-direction: column;
-                gap: 20px;
-                text-align: center;
-                padding: 25px;
+                padding: 12px 15px;
+                margin-bottom: 20px;
             }
             
             .calendar-header h3 {
-                font-size: 1.5rem;
-            }
-            
-            .calendar-day {
-                min-height: 80px;
-                padding: 10px;
-            }
-            
-            .calendar-day > div:first-child {
-                font-size: 1.2rem;
-            }
-            
-            .appointment-count {
-                width: 28px;
-                height: 28px;
-                font-size: 0.8rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .calendar-grid {
+                font-size: 1.1rem;
                 gap: 8px;
             }
             
+            .calendar-header h3 i {
+                font-size: 1.2rem;
+            }
+            
+            .calendar-controls button {
+                width: 35px;
+                height: 35px;
+            }
+            
+            #monthDisplay {
+                font-size: 1rem;
+                min-width: 130px;
+            }
+            
+            .calendar-day-header {
+                font-size: 0.75rem;
+                padding: 12px 0;
+            }
+            
+            .calendar-grid {
+                gap: 4px;
+            }
+            
             .calendar-day {
-                min-height: 60px;
-                padding: 8px;
+                min-height: 70px;
+                padding: 6px;
             }
             
             .calendar-day > div:first-child {
                 font-size: 1rem;
+            }
+            
+            .appointment-count {
+                width: 22px;
+                height: 22px;
+                font-size: 0.7rem;
+                top: 6px;
+                right: 6px;
+            }
+
+            /* Responsive table for mobile */
+            .appointments-table-container {
+                overflow-x: auto;
+            }
+
+            .appointments-table {
+                min-width: 600px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .calendar-container {
+                padding: 12px;
+            }
+            
+            .calendar-header {
+                padding: 10px 12px;
+                border-radius: 12px;
+            }
+            
+            .calendar-header h3 {
+                font-size: 1rem;
+            }
+            
+            .calendar-controls {
+                gap: 10px;
+            }
+            
+            .calendar-controls button {
+                width: 32px;
+                height: 32px;
+                font-size: 0.9rem;
+            }
+            
+            #monthDisplay {
+                font-size: 0.9rem;
+                min-width: 110px;
+            }
+            
+            .calendar-day-header {
+                font-size: 0.7rem;
+                padding: 10px 0;
+            }
+            
+            .calendar-grid {
+                gap: 3px;
+            }
+            
+            .calendar-day {
+                min-height: 60px;
+                padding: 5px;
+                border-radius: 8px;
+            }
+            
+            .calendar-day > div:first-child {
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .calendar-container {
+                padding: 10px;
+            }
+            
+            .calendar-header {
+                padding: 8px 10px;
+            }
+            
+            .calendar-header h3 {
+                font-size: 0.9rem;
+            }
+            
+            .calendar-controls button {
+                width: 30px;
+                height: 30px;
+            }
+            
+            #monthDisplay {
+                font-size: 0.85rem;
+                min-width: 100px;
+            }
+            
+            .calendar-day {
+                min-height: 55px;
+                padding: 4px;
+            }
+            
+            .calendar-day > div:first-child {
+                font-size: 0.85rem;
             }
         }
     </style>
@@ -893,7 +887,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <!-- MODAL -->
     <div class="modal fade" id="appointmentModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title"><i class="fas fa-calendar-check"></i> Appointments</h5>
@@ -1007,21 +1001,46 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         function showAppointments(dayApps, day, month, year) {
             const modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
             const list = document.getElementById('appointmentsList');
-            list.innerHTML = `<h5>${monthNames[month]} ${day}, ${year}</h5>`;
-            if (dayApps.length === 0) {
-                list.innerHTML += `<div class="no-appointments"><i class="fas fa-calendar-times"></i><br>No appointments scheduled for this day</div>`;
-            } else {
-                dayApps.forEach(a => {
-                    list.innerHTML += `
-                        <div class="appointment-item">
-                            <strong><i class="fas fa-user"></i> ${a.student}</strong>
-                            <div><i class="fas fa-id-card"></i> ${a.studentId}</div>
-                            <div><i class="fas fa-clock"></i> ${a.time}</div>
-                            <div><i class="fas fa-stethoscope"></i> ${a.purpose}</div>
-                            <div><i class="fas fa-envelope"></i> ${a.contact}</div>
-                        </div>`;
-                });
-            }
+            
+            list.innerHTML = `
+                <h5>${monthNames[month]} ${day}, ${year}</h5>
+                <div class="appointments-table-container">
+                    ${dayApps.length === 0 ? 
+                        `<div class="no-appointments">
+                            <i class="fas fa-calendar-times"></i><br>
+                            No appointments scheduled for this day
+                        </div>` : 
+                        `<table class="appointments-table">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Student ID</th>
+                                    <th>Time</th>
+                                    <th>Purpose</th>
+                                    <th>Contact</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${dayApps.map(app => `
+                                    <tr>
+                                        <td>${app.student}</td>
+                                        <td>${app.studentId}</td>
+                                        <td class="time-cell">${app.time}</td>
+                                        <td class="purpose-cell">${app.purpose}</td>
+                                        <td>${app.contact}</td>
+                                        <td>
+                                            <span class="badge ${app.status === 'Approved' ? 'bg-success' : 'bg-warning'}">
+                                                ${app.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>`
+                    }
+                </div>
+            `;
             modal.show();
         }
 

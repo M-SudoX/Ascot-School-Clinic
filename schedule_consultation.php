@@ -21,6 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $time = $_POST['time'] ?? '';
     $concern = $_POST['concern'] ?? '';
     $notes = $_POST['notes'] ?? '';
+    
+    // Handle "Other" concern
+    if ($concern === 'Other' && !empty($_POST['other_concern'])) {
+        $concern = $_POST['other_concern'];
+    }
 
     try {
         $stmt = $pdo->prepare("INSERT INTO consultation_requests (student_id, date, time, requested, notes, status) VALUES (?, ?, ?, ?, ?, 'Pending')");
@@ -82,29 +87,6 @@ if (isset($_GET['cancel'])) {
         if ($consultation) {
             logActivity($pdo, $student_id, "Cancelled consultation: " . $consultation['requested']);
         }
-        
-        $_SESSION['success_message'] = 'Consultation cancelled and deleted successfully!';
-    } catch (PDOException $e) {
-        $_SESSION['error_message'] = 'Error deleting consultation: ' . $e->getMessage();
-    }
-
-    header("Location: schedule_consultation.php");
-    exit();
-}
-
-// ... (REST OF YOUR EXISTING SCHEDULE_CONSULTATION CODE) ...
-
-/* ===============================
-   ✅ CANCEL CONSULTATION (DELETE RECORD)
-================================= */
-if (isset($_GET['cancel'])) {
-    $id = $_GET['cancel'];
-    try {
-        $stmt = $pdo->prepare("DELETE FROM consultation_requests WHERE id = ? AND status = 'Pending'");
-        $stmt->execute([$id]);
-        
-        // ✅ I-LOG ANG PAG-CANCEL NG CONSULTATION
-        logActivity($pdo, $student_id, "Cancelled consultation request");
         
         $_SESSION['success_message'] = 'Consultation cancelled and deleted successfully!';
     } catch (PDOException $e) {
@@ -874,7 +856,7 @@ function formatDate($date) {
                 <!-- Consultation Form -->
                 <div class="consultation-form-container fade-in">
                     <h4 class="mb-4"><i class="fas fa-calendar-plus me-2"></i>New Consultation Request</h4>
-                    <form method="POST" action="">
+                    <form method="POST" action="" id="consultationForm">
                         <input type="hidden" name="action" value="create">
                         
                         <div class="row mb-4">
@@ -913,7 +895,7 @@ function formatDate($date) {
                         
                         <div class="form-group mb-4">
                             <label class="form-label"><strong>Reason/Concern:</strong></label>
-                            <select name="concern" class="form-control" required>
+                            <select name="concern" class="form-control" id="concernSelect" required>
                                 <option value="">Select Concern</option>
                                 <option value="Medicine">Medicine</option>
                                 <option value="Medical Clearance">Medical Clearance</option>
@@ -927,6 +909,14 @@ function formatDate($date) {
                                 <option value="Other">Other</option>
                             </select>
                             <small class="form-text text-muted">What is the reason for your consultation?</small>
+                            
+                            <!-- Other Concern Textbox (Hidden by default) -->
+                            <div id="otherConcernContainer" class="mt-3" style="display: none;">
+                                <label class="form-label"><strong>Please specify your concern:</strong></label>
+                                <input type="text" name="other_concern" id="otherConcern" class="form-control" 
+                                       placeholder="Please describe your specific concern...">
+                                <small class="form-text text-muted">Type your specific reason for consultation</small>
+                            </div>
                         </div>
                         
                         <div class="form-group mb-4">
@@ -1073,44 +1063,35 @@ function formatDate($date) {
         const viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
         const editModal = new bootstrap.Modal(document.getElementById('editModal'));
 
-        function viewConsultation(c) {
-            const body = document.getElementById('viewBody');
-            body.innerHTML = `
-                <div class="consultation-details">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Date:</strong><br>${c.date}</p>
-                            <p><strong>Time:</strong><br>${c.time}</p>
-                            <p><strong>Status:</strong><br><span class="status-${c.status.toLowerCase()}">${c.status}</span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Concern:</strong><br>${c.requested}</p>
-                            <p><strong>Created:</strong><br>${c.created_at}</p>
-                        </div>
-                    </div>
-                    ${c.notes ? `
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <p><strong>Additional Notes:</strong></p>
-                            <div class="alert alert-info">${c.notes}</div>
-                        </div>
-                    </div>` : ''}
-                </div>
-            `;
-            viewModal.show();
-        }
-
-        function openEditModal(c) {
-            document.getElementById('edit_consultation_id').value = c.id;
-            document.getElementById('edit_date').value = c.date;
-            document.getElementById('edit_time').value = c.time;
-            document.getElementById('edit_concern').value = c.requested;
-            document.getElementById('edit_notes').value = c.notes || '';
-            editModal.show();
-        }
-
-        // MOBILE SIDEBAR FUNCTIONALITY
+        // Function to handle concern selection
         document.addEventListener('DOMContentLoaded', function() {
+            const concernSelect = document.getElementById('concernSelect');
+            const otherConcernContainer = document.getElementById('otherConcernContainer');
+            const otherConcernInput = document.getElementById('otherConcern');
+            const consultationForm = document.getElementById('consultationForm');
+
+            concernSelect.addEventListener('change', function() {
+                if (this.value === 'Other') {
+                    otherConcernContainer.style.display = 'block';
+                    otherConcernInput.required = true;
+                } else {
+                    otherConcernContainer.style.display = 'none';
+                    otherConcernInput.required = false;
+                    otherConcernInput.value = ''; // Clear the input when not needed
+                }
+            });
+
+            // Form submission handling
+            consultationForm.addEventListener('submit', function(e) {
+                if (concernSelect.value === 'Other' && otherConcernInput.value.trim() === '') {
+                    e.preventDefault();
+                    alert('Please specify your concern in the "Other" field.');
+                    otherConcernInput.focus();
+                    return;
+                }
+            });
+
+            // MOBILE SIDEBAR FUNCTIONALITY
             const mobileMenuBtn = document.getElementById('mobileMenuBtn');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -1181,6 +1162,42 @@ function formatDate($date) {
                 element.style.animationDelay = `${index * 0.1}s`;
             });
         });
+
+        function viewConsultation(c) {
+            const body = document.getElementById('viewBody');
+            body.innerHTML = `
+                <div class="consultation-details">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Date:</strong><br>${c.date}</p>
+                            <p><strong>Time:</strong><br>${c.time}</p>
+                            <p><strong>Status:</strong><br><span class="status-${c.status.toLowerCase()}">${c.status}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Concern:</strong><br>${c.requested}</p>
+                            <p><strong>Created:</strong><br>${c.created_at}</p>
+                        </div>
+                    </div>
+                    ${c.notes ? `
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <p><strong>Additional Notes:</strong></p>
+                            <div class="alert alert-info">${c.notes}</div>
+                        </div>
+                    </div>` : ''}
+                </div>
+            `;
+            viewModal.show();
+        }
+
+        function openEditModal(c) {
+            document.getElementById('edit_consultation_id').value = c.id;
+            document.getElementById('edit_date').value = c.date;
+            document.getElementById('edit_time').value = c.time;
+            document.getElementById('edit_concern').value = c.requested;
+            document.getElementById('edit_notes').value = c.notes || '';
+            editModal.show();
+        }
     </script>
 </body>
 </html>

@@ -9,7 +9,7 @@ if (!isset($_SESSION['admin_id'])) {
 }
 
 // ===============================
-// ✅ HANDLE APPROVE / REJECT / RESCHEDULE
+// ✅ HANDLE APPROVE / REJECT / RESCHEDULE / DELETE
 // ===============================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -32,6 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $pdo->prepare("UPDATE consultation_requests SET date = ?, time = ?, status = 'Rescheduled' WHERE id = ?");
                     $stmt->execute([$newDate, $newTime, $id]);
                 }
+            } elseif ($action === 'delete') {
+                $stmt = $pdo->prepare("DELETE FROM consultation_requests WHERE id = ?");
+                $stmt->execute([$id]);
             }
             $_SESSION['success_message'] = "Consultation updated successfully.";
         } catch (PDOException $e) {
@@ -356,7 +359,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             gap: 8px;
         }
 
-        .btn-approve, .btn-decline, .btn-reschedule {
+        .btn-approve, .btn-decline, .btn-reschedule, .btn-delete {
             border: none;
             border-radius: 8px;
             width: 40px;
@@ -396,6 +399,16 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
 
         .btn-reschedule:hover {
             background: #bee5eb;
+            transform: scale(1.1);
+        }
+
+        .btn-delete {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn-delete:hover {
+            background: #f1b0b7;
             transform: scale(1.1);
         }
 
@@ -514,7 +527,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 gap: 5px;
             }
 
-            .btn-approve, .btn-decline, .btn-reschedule {
+            .btn-approve, .btn-decline, .btn-reschedule, .btn-delete {
                 width: 35px;
                 height: 35px;
                 font-size: 0.9rem;
@@ -743,6 +756,15 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                                                 data-name="<?= htmlspecialchars($c['fullname']); ?>">
                                                 <i class="fas fa-calendar-alt"></i>
                                             </button>
+
+                                            <!-- DELETE BUTTON ADDED HERE -->
+                                            <form method="POST" class="d-inline" onsubmit="return confirmDelete()">
+                                                <input type="hidden" name="consultation_id" value="<?= $c['id']; ?>">
+                                                <input type="hidden" name="action" value="delete">
+                                                <button type="submit" class="btn-delete" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -847,6 +869,11 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             const id = button.getAttribute('data-id');
             document.getElementById('reschedule_id').value = id;
         });
+
+        // Delete confirmation function
+        function confirmDelete() {
+            return confirm('Are you sure you want to delete this consultation request? This action cannot be undone.');
+        }
     </script>
 </body>
 </html>

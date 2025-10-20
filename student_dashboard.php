@@ -87,22 +87,6 @@ try {
     $recent_activities = [];
 }
 
-// ✅ FETCH MONTHLY STATS
-try {
-    $stats_stmt = $pdo->prepare("
-        SELECT 
-            COUNT(*) as total_consultations,
-            SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed_consultations,
-            SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending_consultations
-        FROM consultation_requests 
-        WHERE student_id = ? AND MONTH(created_at) = MONTH(CURDATE())
-    ");
-    $stats_stmt->execute([$student_id]);
-    $monthly_stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    $monthly_stats = ['total_consultations' => 0, 'completed_consultations' => 0, 'pending_consultations' => 0];
-}
-
 // Use PDO - Secure database access
 // PDO was used to PROTECT the student information
 
@@ -397,45 +381,6 @@ try {
             font-size: 1.2rem;
             font-weight: 600;
             margin-bottom: 0;
-        }
-
-        .welcome-stats {
-            display: flex;
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255,255,255,0.7);
-            padding: 10px 15px;
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
-        }
-
-        .stat-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .stat-info h4 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #2c3e50;
-        }
-
-        .stat-info span {
-            font-size: 0.9rem;
-            color: #7f8c8d;
-            font-weight: 600;
         }
 
         /* ========== DASHBOARD CARDS ========== */
@@ -938,11 +883,6 @@ try {
                 padding: 20px;
             }
 
-            .welcome-stats {
-                flex-direction: column;
-                gap: 10px;
-            }
-
             .header .student-welcome {
                 display: none;
             }
@@ -1204,38 +1144,8 @@ try {
                 <!-- WELCOME SECTION -->
                 <div class="welcome-section fade-in">
                     <div class="welcome-content">
-                        <h1>Welcome back, <?php echo htmlspecialchars(explode(' ', $student_info['fullname'])[0]); ?>! 👋</h1>
+                        <h1>Welcome back Long Time No See Ayaw Kol Bata Pako , <?php echo htmlspecialchars(explode(' ', $student_info['fullname'])[0]); ?>! 👋</h1>
                         <p>Here's what's happening with your health consultations today</p>
-                        
-                        <div class="welcome-stats">
-                            <div class="stat-item">
-                                <div class="stat-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
-                                    <i class="fas fa-calendar-check"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h4><?php echo $monthly_stats['total_consultations']; ?></h4>
-                                    <span>Total Consultations</span>
-                                </div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-icon" style="background: linear-gradient(135deg, #27ae60, #219a52);">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h4><?php echo $monthly_stats['completed_consultations']; ?></h4>
-                                    <span>Completed</span>
-                                </div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-icon" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
-                                    <i class="fas fa-clock"></i>
-                                </div>
-                                <div class="stat-info">
-                                    <h4><?php echo $monthly_stats['pending_consultations']; ?></h4>
-                                    <span>Pending</span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 

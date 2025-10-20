@@ -644,7 +644,7 @@
                             <i class="fas fa-calendar-alt"></i>
                             Calendar View
                         </a>
-                        <a href="#" class="submenu-item">
+                        <a href="approvals.php" class="submenu-item">
                             <i class="fas fa-check-circle"></i>
                             Approvals
                         </a>

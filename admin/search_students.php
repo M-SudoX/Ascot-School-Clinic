@@ -571,7 +571,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="fas fa-search"></i> Search Students</h2>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-outline-secondary">
+                    
                     </button>
                 </div>
             </div>
