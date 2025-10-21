@@ -656,13 +656,30 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="adminMenu">
-                        <a href="user_management.php" class="submenu-item">
+                        <a href="users_logs.php" class="submenu-item">
                             <i class="fas fa-users-cog"></i>
-                            User Management
+                            Users Logs
                         </a>
-                        <a href="access_logs.php" class="submenu-item">
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-clipboard-list"></i>
-                            Access Logs
+                            Back up & Restore
+                        </a>
+                    </div>
+                </div>
+                <div class="nav-group">
+                    <button class="nav-item dropdown-btn" data-target="announcementMenu">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Announcement</span>
+                        <i class="fas fa-chevron-down arrow"></i>
+                    </button>
+                    <div class="submenu" id="announcementMenu">
+                        <a href="new_announcement.php" class="submenu-item">
+                            <i class="fas fa-plus-circle"></i>
+                            New Announcement
+                        </a>
+                        <a href="announcement_history.php" class="submenu-item">
+                            <i class="fas fa-history"></i>
+                            History
                         </a>
                     </div>
                 </div>

@@ -132,7 +132,7 @@ try {
 
         /* ========== ENHANCED HEADER DESIGN ========== */
         .header {
-            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%);
+            background: linear-gradient(135deg, #ffda6a 0%, #fff7de 100%);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255,255,255,0.2);
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
@@ -1144,7 +1144,7 @@ try {
                 <!-- WELCOME SECTION -->
                 <div class="welcome-section fade-in">
                     <div class="welcome-content">
-                        <h1>Welcome back Long Time No See Ayaw Kol Bata Pako , <?php echo htmlspecialchars(explode(' ', $student_info['fullname'])[0]); ?>! 👋</h1>
+                        <h1>Welcome, <?php echo htmlspecialchars(explode(' ', $student_info['fullname'])[0]); ?>! 👋</h1>
                         <p>Here's what's happening with your health consultations today</p>
                     </div>
                 </div>

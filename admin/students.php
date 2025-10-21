@@ -656,13 +656,14 @@ function getProfileStatus($student) {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="adminMenu">
-                        <a href="user_management.php" class="submenu-item">
+                         <a href="users_logs.php" class="submenu-item">
                             <i class="fas fa-users-cog"></i>
-                            User Management
+                            Users Logs
                         </a>
-                        <a href="access_logs.php" class="submenu-item">
+                        </a>
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-clipboard-list"></i>
-                            Access Logs
+                            Backup & Restore
                         </a>
                     </div>
                 </div>

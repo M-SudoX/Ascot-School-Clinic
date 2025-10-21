@@ -528,17 +528,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="adminMenu">
-                        <a href="user_management.php" class="submenu-item">
+                         <a href="users_logs.php" class="submenu-item">
                             <i class="fas fa-users-cog"></i>
-                            User Management
+                            Users Logs
                         </a>
-                        <a href="access_logs.php" class="submenu-item">
+                        </a>
+                        <a href="#" class="submenu-item">
                             <i class="fas fa-clipboard-list"></i>
-                            Access Logs
+                            Backup & Restore
                         </a>
                     </div>
                 </div>
-
                 <!-- ANNOUNCEMENT SECTION -->
                 <div class="nav-group">
                     <button class="nav-item dropdown-btn" data-target="announcementMenu">

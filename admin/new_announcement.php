@@ -1,462 +1,3 @@
-<?php
-session_start();
-require_once '../includes/db_connect.php';
-
-// Include PHPMailer from your existing structure
-require_once '../phpmailer/src/PHPMailer.php';
-require_once '../phpmailer/src/SMTP.php';
-require_once '../phpmailer/src/Exception.php';
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
-use PHPMailer\PHPMailer\Exception;
-
-// Check if admin is logged in
-if (!isset($_SESSION['admin_logged_in'])) {
-    header('Location: admin_login.php');
-    exit;
-}
-
-// Fetch students for specific selection - UPDATED FOR YOUR DATABASE
-$students = [];
-try {
-    $stmt = $pdo->prepare("
-        SELECT 
-            si.id,
-            si.student_number,
-            si.fullname,
-            si.course_year,
-            u.email,
-            CASE 
-                WHEN si.course_year LIKE '%1%' THEN '1'
-                WHEN si.course_year LIKE '%2%' THEN '2' 
-                WHEN si.course_year LIKE '%3%' THEN '3'
-                WHEN si.course_year LIKE '%4%' THEN '4'
-                ELSE '1'
-            END as year_level,
-            CASE 
-                WHEN si.course_year LIKE '%BSIT%' THEN 'BSIT'
-                WHEN si.course_year LIKE '%BSCS%' THEN 'BSCS'
-                WHEN si.course_year LIKE '%BSBA%' THEN 'BSBA'
-                WHEN si.course_year LIKE '%BSEd%' THEN 'BSEd'
-                WHEN si.course_year LIKE '%BSA%' THEN 'BSA'
-                ELSE si.course_year
-            END as course
-        FROM student_information si
-        LEFT JOIN users u ON si.student_number = u.student_number
-        ORDER BY si.fullname
-    ");
-    $stmt->execute();
-    $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-} catch (PDOException $e) {
-    error_log("Error fetching students: " . $e->getMessage());
-    $students = [];
-}
-
-// Process form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title = $_POST['subject'];
-    $content = $_POST['content'];
-    $sent_by = $_POST['sentBy'];
-    $send_email = isset($_POST['announcementType']) && in_array('email', $_POST['announcementType']) ? 1 : 0;
-    $post_on_front = isset($_POST['announcementType']) && in_array('front', $_POST['announcementType']) ? 1 : 0;
-    
-    // Handle email recipient type
-    $email_recipient_type = 'all'; // default
-    $specific_students = [];
-    
-    if ($send_email) {
-        $email_recipient_type = $_POST['emailRecipientType'] ?? 'all';
-        
-        // Handle specific students selection for email
-        if ($email_recipient_type === 'specific' && isset($_POST['emailSpecificStudents'])) {
-            $specific_students = $_POST['emailSpecificStudents'];
-        }
-    }
-    
-    // Handle expiry date with time
-    $expiry_date = null;
-    if (!empty($_POST['expiryDate']) && !empty($_POST['expiryTime'])) {
-        $expiry_date = $_POST['expiryDate'] . ' ' . $_POST['expiryTime'] . ':00';
-    } elseif (!empty($_POST['expiryDate'])) {
-        $expiry_date = $_POST['expiryDate'] . ' 23:59:59';
-    }
-    
-    // Handle file upload
-    $attachment = '';
-    $attachment_path = '';
-    if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === 0) {
-        $uploadDir = '../uploads/announcements/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-        
-        // File validation
-        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'avi', 'mov', 'wmv', 'webm', 'pdf', 'doc', 'docx'];
-        $maxFileSize = 10 * 1024 * 1024;
-        
-        $fileName = $_FILES['attachment']['name'];
-        $fileSize = $_FILES['attachment']['size'];
-        $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-        
-        if (!in_array($fileExtension, $allowedExtensions)) {
-            $error_message = "Error: Only image, video, PDF, and document files are allowed.";
-        } elseif ($fileSize > $maxFileSize) {
-            $error_message = "Error: File size must be less than 10MB.";
-        } else {
-            $newFileName = time() . '_' . uniqid() . '.' . $fileExtension;
-            $targetPath = $uploadDir . $newFileName;
-            
-            if (move_uploaded_file($_FILES['attachment']['tmp_name'], $targetPath)) {
-                $attachment = $newFileName;
-                $attachment_path = $targetPath;
-            } else {
-                $error_message = "Error uploading file. Please try again.";
-            }
-        }
-    }
-    
-    // Only proceed with database insertion if no file upload errors
-    if (!isset($error_message)) {
-        try {
-            // Start transaction
-            $pdo->beginTransaction();
-            
-            // Insert announcement
-            $stmt = $pdo->prepare("
-                INSERT INTO announcements (title, content, sent_by, send_email, post_on_front, attachment, expiry_date, is_active, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'active')
-            ");
-            
-            $stmt->execute([$title, $content, $sent_by, $send_email, $post_on_front, $attachment, $expiry_date]);
-            $announcement_id = $pdo->lastInsertId();
-            
-            // Insert specific students if selected for email
-            if ($send_email && $email_recipient_type === 'specific' && !empty($specific_students)) {
-                foreach ($specific_students as $student_id) {
-                    $stmt = $pdo->prepare("
-                        INSERT INTO announcement_recipients (announcement_id, student_id, recipient_type)
-                        VALUES (?, ?, 'email')
-                    ");
-                    $stmt->execute([$announcement_id, $student_id]);
-                }
-            }
-            
-            // Send email if selected
-            $email_result = ['success' => false, 'sent_count' => 0, 'message' => ''];
-            if ($send_email) {
-                $email_result = sendAnnouncementEmail($title, $content, $sent_by, $attachment_path, $email_recipient_type, $specific_students, $announcement_id);
-                
-                // Update announcement with email results
-                $update_stmt = $pdo->prepare("
-                    UPDATE announcements 
-                    SET email_sent_count = ?, email_failed_count = ? 
-                    WHERE id = ?
-                ");
-                $update_stmt->execute([$email_result['sent_count'], $email_result['error_count'], $announcement_id]);
-            }
-            
-            // Commit transaction
-            $pdo->commit();
-            
-            // Set success message
-            if ($send_email) {
-                if ($email_result['success']) {
-                    $_SESSION['success_message'] = 'Announcement created successfully! Emails sent to ' . $email_result['sent_count'] . ' recipients.' . 
-                                                  ($email_result['error_count'] > 0 ? ' Failed: ' . $email_result['error_count'] : '');
-                } else {
-                    $_SESSION['success_message'] = 'Announcement created successfully but there was an issue sending emails: ' . $email_result['message'];
-                }
-            } else {
-                $_SESSION['success_message'] = 'Announcement created successfully!';
-            }
-            
-            header('Location: new_announcement.php');
-            exit;
-            
-        } catch (PDOException $e) {
-            $pdo->rollBack();
-            $error_message = "Error creating announcement: " . $e->getMessage();
-        }
-    }
-}
-
-// Function to send announcement emails with PHPMailer
-function sendAnnouncementEmail($title, $content, $sent_by, $attachment_path = '', $email_recipient_type = 'all', $specific_students = [], $announcement_id = null) {
-    global $pdo;
-    
-    try {
-        // Get recipients based on email recipient type
-        $recipients = getEmailRecipients($email_recipient_type, $specific_students);
-        
-        if (empty($recipients)) {
-            return ['success' => false, 'sent_count' => 0, 'error_count' => 0, 'message' => 'No recipients found with valid email addresses'];
-        }
-        
-        $success_count = 0;
-        $error_count = 0;
-        $error_messages = [];
-        
-        foreach ($recipients as $recipient) {
-            $email_sent = sendSingleEmailWithPHPMailer(
-                $recipient['email'], 
-                $recipient['name'], 
-                $title, 
-                $content, 
-                $sent_by,
-                $attachment_path
-            );
-            
-            if ($email_sent['success']) {
-                $success_count++;
-                
-                // Log successful email sending if announcement_id is provided
-                if ($announcement_id) {
-                    logEmailSent($announcement_id, $recipient['email'], $recipient['name'], 'sent', '');
-                }
-            } else {
-                $error_count++;
-                $error_messages[] = $recipient['email'] . ': ' . $email_sent['error'];
-                
-                // Log failed email sending
-                if ($announcement_id) {
-                    logEmailSent($announcement_id, $recipient['email'], $recipient['name'], 'failed', $email_sent['error']);
-                }
-            }
-            
-            // Small delay to avoid overwhelming the email server
-            usleep(500000); // 0.5 second
-        }
-        
-        return [
-            'success' => $success_count > 0,
-            'sent_count' => $success_count,
-            'error_count' => $error_count,
-            'message' => $error_count > 0 ? 
-                'Sent to ' . $success_count . ' recipients. Failed: ' . $error_count . '. First few errors: ' . implode('; ', array_slice($error_messages, 0, 3)) : 
-                'All emails sent successfully'
-        ];
-        
-    } catch (Exception $e) {
-        error_log("Email sending error: " . $e->getMessage());
-        return ['success' => false, 'sent_count' => 0, 'error_count' => 0, 'message' => $e->getMessage()];
-    }
-}
-
-// Function to get email recipients based on type
-function getEmailRecipients($email_recipient_type, $specific_students = []) {
-    global $pdo;
-    
-    $recipients = [];
-    
-    try {
-        switch ($email_recipient_type) {
-            case 'all':
-                // Get all students with valid email addresses
-                $stmt = $pdo->prepare("
-                    SELECT u.email, si.fullname as name 
-                    FROM student_information si
-                    LEFT JOIN users u ON si.student_number = u.student_number
-                    WHERE u.email IS NOT NULL 
-                    AND u.email != '' 
-                    AND TRIM(u.email) != ''
-                    AND u.email LIKE '%@%'
-                ");
-                $stmt->execute();
-                $recipients = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                break;
-                
-            case 'specific':
-                if (empty($specific_students)) {
-                    return [];
-                }
-                
-                // Convert student IDs to comma-separated string for IN clause
-                $placeholders = str_repeat('?,', count($specific_students) - 1) . '?';
-                
-                $stmt = $pdo->prepare("
-                    SELECT u.email, si.fullname as name 
-                    FROM student_information si
-                    LEFT JOIN users u ON si.student_number = u.student_number
-                    WHERE si.id IN ($placeholders)
-                    AND u.email IS NOT NULL 
-                    AND u.email != '' 
-                    AND TRIM(u.email) != ''
-                    AND u.email LIKE '%@%'
-                ");
-                $stmt->execute($specific_students);
-                $recipients = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                break;
-        }
-        
-        return $recipients;
-        
-    } catch (PDOException $e) {
-        error_log("Error getting email recipients: " . $e->getMessage());
-        return [];
-    }
-}
-
-// Function to send single email using PHPMailer
-function sendSingleEmailWithPHPMailer($to_email, $to_name, $title, $content, $sent_by, $attachment_path = '') {
-    try {
-        $mail = new PHPMailer(true);
-        
-        // Server settings
-        $mail->isSMTP();
-        $mail->Host = 'smtp.gmail.com';
-        $mail->SMTPAuth = true;
-        $mail->Username = 'cachemeifucan05@gmail.com';
-        $mail->Password = 'zusittxqokhgzotm';
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = 587;
-        
-        // Recipients
-        $mail->setFrom('noreply@ascot.edu.ph', 'ASCOT Online Clinic');
-        $mail->addAddress($to_email, $to_name);
-        $mail->addReplyTo('noreply@ascot.edu.ph', 'ASCOT Clinic');
-        
-        // Attachments
-        if (!empty($attachment_path) && file_exists($attachment_path)) {
-            $mail->addAttachment($attachment_path);
-        }
-        
-        // Content
-        $mail->isHTML(true);
-        $mail->Subject = "ASCOT Clinic Announcement: " . $title;
-        $mail->Body = createEmailTemplate($title, $content, $sent_by);
-        $mail->AltBody = strip_tags($content);
-        
-        $mail->send();
-        return ['success' => true, 'error' => ''];
-        
-    } catch (Exception $e) {
-        error_log("PHPMailer Error for $to_email: " . $mail->ErrorInfo);
-        return ['success' => false, 'error' => $mail->ErrorInfo];
-    }
-}
-
-// Function to create email template
-function createEmailTemplate($title, $content, $sent_by) {
-    $current_date = date('F j, Y \a\t g:i A');
-    $current_year = date('Y');
-    
-    return '
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-            body { 
-                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; 
-                line-height: 1.6; 
-                color: #333; 
-                margin: 0; 
-                padding: 0; 
-                background-color: #f4f4f4;
-            }
-            .container { 
-                max-width: 600px; 
-                margin: 0 auto; 
-                background: white;
-                border-radius: 10px;
-                overflow: hidden;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            }
-            .header { 
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                color: white; 
-                padding: 30px 20px; 
-                text-align: center; 
-            }
-            .header h1 { 
-                margin: 0; 
-                font-size: 24px; 
-                font-weight: 600;
-            }
-            .header p { 
-                margin: 5px 0 0 0; 
-                opacity: 0.9; 
-                font-size: 14px;
-            }
-            .content { 
-                padding: 30px; 
-            }
-            .announcement-title { 
-                color: #1a3a5f; 
-                font-size: 22px; 
-                margin-bottom: 20px; 
-                font-weight: 600;
-                border-bottom: 2px solid #f0f0f0;
-                padding-bottom: 10px;
-            }
-            .announcement-content { 
-                background: #f8f9fa; 
-                padding: 20px; 
-                border-radius: 8px; 
-                border-left: 4px solid #667eea; 
-                margin-bottom: 20px;
-                line-height: 1.8;
-            }
-            .sender-info { 
-                background: #e9ecef; 
-                padding: 15px; 
-                border-radius: 8px; 
-                margin-top: 20px; 
-                font-size: 14px;
-            }
-            .footer { 
-                text-align: center; 
-                padding: 20px; 
-                color: #666; 
-                font-size: 12px; 
-                background: #f8f9fa;
-                border-top: 1px solid #e9ecef;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>AURORA STATE COLLEGE OF TECHNOLOGY</h1>
-                <p>Online School Clinic</p>
-            </div>
-            <div class="content">
-                <div class="announcement-title">' . htmlspecialchars($title) . '</div>
-                <div class="announcement-content">' . nl2br(htmlspecialchars($content)) . '</div>
-                <div class="sender-info">
-                    <p><strong>Sent by:</strong> ' . htmlspecialchars($sent_by) . '</p>
-                    <p><strong>Date:</strong> ' . $current_date . '</p>
-                </div>
-            </div>
-            <div class="footer">
-                <p>This is an automated message from ASCOT Online Clinic System.</p>
-                <p>Please do not reply to this email. For inquiries, please contact the clinic directly.</p>
-                <p>&copy; ' . $current_year . ' Aurora State College of Technology. All rights reserved.</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    ';
-}
-
-// Function to log email sending
-function logEmailSent($announcement_id, $email, $name, $status, $error_message = '') {
-    global $pdo;
-    
-    try {
-        $stmt = $pdo->prepare("
-            INSERT INTO announcement_emails (announcement_id, recipient_email, recipient_name, status, error_message, sent_at)
-            VALUES (?, ?, ?, ?, ?, NOW())
-        ");
-        $stmt->execute([$announcement_id, $email, $name, $status, $error_message]);
-    } catch (PDOException $e) {
-        error_log("Error logging email: " . $e->getMessage());
-    }
-}
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -475,14 +16,20 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
+            padding-top: 100px; /* Added for fixed header */
         }
 
-        /* Header Styles */
+        /* Fixed Header Styles */
         .top-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: fixed; /* Made fixed */
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1002; /* Higher z-index */
         }
 
         .header-content {
@@ -521,7 +68,7 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
         .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 100px;
+            top: 110px; /* Adjusted for fixed header */
             left: 20px;
             z-index: 1001;
             background: #667eea;
@@ -546,18 +93,25 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
             min-height: calc(100vh - 100px);
         }
 
-        /* Sidebar Styles */
+        /* Fixed Sidebar Styles */
         .sidebar {
             width: 280px;
             background: white;
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             padding: 2rem 0;
             transition: transform 0.3s ease;
+            position: fixed; /* Made fixed */
+            top: 100px; /* Below the fixed header */
+            left: 0;
+            height: calc(100vh - 100px); /* Full height minus header */
+            overflow-y: auto; /* Scrollable if content is long */
+            z-index: 1000;
         }
 
         .sidebar-nav {
             display: flex;
             flex-direction: column;
+            height: 100%;
         }
 
         .nav-item {
@@ -648,11 +202,13 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
             background: rgba(220, 53, 69, 0.1);
         }
 
-        /* Main Content */
+        /* Main Content - Adjusted for fixed sidebar */
         .main-content {
             flex: 1;
             padding: 2rem;
             overflow-x: hidden;
+            margin-left: 280px; /* Space for fixed sidebar */
+            width: calc(100% - 280px); /* Adjusted width */
         }
 
         /* Notification Styles */
@@ -1200,18 +756,28 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
         }
 
         @media (max-width: 768px) {
+            body {
+                padding-top: 80px; /* Adjusted for smaller header on mobile */
+            }
+
+            .top-header {
+                padding: 0.5rem 0; /* Reduced padding on mobile */
+            }
+
             .mobile-menu-toggle {
                 display: block;
+                top: 85px; /* Adjusted for smaller header */
             }
 
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 0;
-                height: 100vh;
+                top: 80px; /* Adjusted for smaller header */
+                height: calc(100vh - 80px); /* Adjusted height */
                 z-index: 1000;
                 transform: translateX(-100%);
                 overflow-y: auto;
+                width: 280px; /* Fixed width */
             }
 
             .sidebar.active {
@@ -1221,7 +787,7 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
             .sidebar-overlay {
                 display: none;
                 position: fixed;
-                top: 0;
+                top: 80px; /* Start below header */
                 left: 0;
                 right: 0;
                 bottom: 0;
@@ -1236,6 +802,7 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
             .main-content {
                 padding: 1rem;
                 width: 100%;
+                margin-left: 0; /* Remove sidebar margin on mobile */
             }
 
             .notification-menu {
@@ -1308,11 +875,11 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
     <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header -->
+    <!-- Fixed Header -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
-                <img src="../assets/img/logo.png" alt="ASCOT Logo" class="logo-img">
+                 <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img">
                 <div class="school-info">
                     <div class="republic">Republic of the Philippines</div>
                     <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
@@ -1323,7 +890,7 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar -->
+        <!-- Fixed Sidebar -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">
@@ -1370,7 +937,7 @@ function logEmailSent($announcement_id, $email, $name, $status, $error_message =
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="appointmentsMenu">
-                        <a href="#" class="submenu-item">
+                        <a href="calendar_view.php" class="submenu-item">
                             <i class="fas fa-calendar-alt"></i>
                             Calendar View
                         </a>

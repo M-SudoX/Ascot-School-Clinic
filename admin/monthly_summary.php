@@ -2,15 +2,277 @@
 session_start();
 include 'admin_logger.php';
 
-// Log admin access (but this won't show in logs because of the filter)
-logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
+// Check if admin is logged in
+if (!isset($_SESSION['admin_logged_in'])) {
+    header('Location: admin_login.php');
+    exit;
+}
+
+// Log admin access
+logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Accessed Monthly Summary Report');
+
+// Get selected month and year from GET parameters, default to current month
+$selected_month = isset($_GET['month']) ? intval($_GET['month']) : date('n');
+$selected_year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
+
+// Validate month range
+if ($selected_month < 1 || $selected_month > 12) {
+    $selected_month = date('n');
+}
+
+// Sample data - in a real application, this would come from your database
+// Based on the selected month and year
+$month_names = [
+    1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April', 
+    5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+    9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+];
+
+$month = $month_names[$selected_month] . ' ' . $selected_year;
+
+// Sample data that would typically come from database queries
+$monthly_data = [
+    // January 2025
+    '1_2025' => [
+        'total_consultations' => 28,
+        'departments' => [
+            "Information Technology" => 8,
+            "Forestry" => 20
+        ],
+        'diagnostics' => [
+            "Flu" => 12,
+            "Allergies" => 9,
+            "Migraine" => 7
+        ],
+        'year_levels' => [
+            "1st Year" => 25,
+            "2nd Year" => 3
+        ]
+    ],
+    // February 2025
+    '2_2025' => [
+        'total_consultations' => 32,
+        'departments' => [
+            "Information Technology" => 10,
+            "Forestry" => 22
+        ],
+        'diagnostics' => [
+            "Flu" => 14,
+            "Allergies" => 11,
+            "Migraine" => 7
+        ],
+        'year_levels' => [
+            "1st Year" => 28,
+            "2nd Year" => 4
+        ]
+    ],
+    // March 2025
+    '3_2025' => [
+        'total_consultations' => 30,
+        'departments' => [
+            "Information Technology" => 9,
+            "Forestry" => 21
+        ],
+        'diagnostics' => [
+            "Flu" => 13,
+            "Allergies" => 10,
+            "Migraine" => 7
+        ],
+        'year_levels' => [
+            "1st Year" => 26,
+            "2nd Year" => 4
+        ]
+    ],
+    // April 2025
+    '4_2025' => [
+        'total_consultations' => 35,
+        'departments' => [
+            "Information Technology" => 12,
+            "Forestry" => 23
+        ],
+        'diagnostics' => [
+            "Flu" => 16,
+            "Allergies" => 12,
+            "Migraine" => 7
+        ],
+        'year_levels' => [
+            "1st Year" => 30,
+            "2nd Year" => 5
+        ]
+    ],
+    // May 2025
+    '5_2025' => [
+        'total_consultations' => 34,
+        'departments' => [
+            "Information Technology" => 11,
+            "Forestry" => 23
+        ],
+        'diagnostics' => [
+            "Flu" => 15,
+            "Allergies" => 10,
+            "Migraine" => 9
+        ],
+        'year_levels' => [
+            "1st Year" => 31,
+            "2nd Year" => 3
+        ]
+    ],
+    // June 2025
+    '6_2025' => [
+        'total_consultations' => 29,
+        'departments' => [
+            "Information Technology" => 10,
+            "Forestry" => 19
+        ],
+        'diagnostics' => [
+            "Flu" => 11,
+            "Allergies" => 10,
+            "Migraine" => 8
+        ],
+        'year_levels' => [
+            "1st Year" => 24,
+            "2nd Year" => 5
+        ]
+    ],
+    // July 2025
+    '7_2025' => [
+        'total_consultations' => 38,
+        'departments' => [
+            "Information Technology" => 14,
+            "Forestry" => 24
+        ],
+        'diagnostics' => [
+            "Flu" => 17,
+            "Allergies" => 13,
+            "Migraine" => 8
+        ],
+        'year_levels' => [
+            "1st Year" => 33,
+            "2nd Year" => 5
+        ]
+    ],
+    // August 2025
+    '8_2025' => [
+        'total_consultations' => 36,
+        'departments' => [
+            "Information Technology" => 13,
+            "Forestry" => 23
+        ],
+        'diagnostics' => [
+            "Flu" => 16,
+            "Allergies" => 12,
+            "Migraine" => 8
+        ],
+        'year_levels' => [
+            "1st Year" => 32,
+            "2nd Year" => 4
+        ]
+    ],
+    // September 2025
+    '9_2025' => [
+        'total_consultations' => 31,
+        'departments' => [
+            "Information Technology" => 10,
+            "Forestry" => 21
+        ],
+        'diagnostics' => [
+            "Flu" => 13,
+            "Allergies" => 11,
+            "Migraine" => 7
+        ],
+        'year_levels' => [
+            "1st Year" => 27,
+            "2nd Year" => 4
+        ]
+    ],
+    // October 2025
+    '10_2025' => [
+        'total_consultations' => 33,
+        'departments' => [
+            "Information Technology" => 11,
+            "Forestry" => 22
+        ],
+        'diagnostics' => [
+            "Flu" => 14,
+            "Allergies" => 12,
+            "Migraine" => 7
+        ],
+        'year_levels' => [
+            "1st Year" => 29,
+            "2nd Year" => 4
+        ]
+    ],
+    // November 2025
+    '11_2025' => [
+        'total_consultations' => 37,
+        'departments' => [
+            "Information Technology" => 13,
+            "Forestry" => 24
+        ],
+        'diagnostics' => [
+            "Flu" => 16,
+            "Allergies" => 13,
+            "Migraine" => 8
+        ],
+        'year_levels' => [
+            "1st Year" => 32,
+            "2nd Year" => 5
+        ]
+    ],
+    // December 2025
+    '12_2025' => [
+        'total_consultations' => 27,
+        'departments' => [
+            "Information Technology" => 9,
+            "Forestry" => 18
+        ],
+        'diagnostics' => [
+            "Flu" => 10,
+            "Allergies" => 9,
+            "Migraine" => 8
+        ],
+        'year_levels' => [
+            "1st Year" => 23,
+            "2nd Year" => 4
+        ]
+    ]
+];
+
+// Get data for selected month or use default if not available
+$data_key = $selected_month . '_' . $selected_year;
+if (isset($monthly_data[$data_key])) {
+    $data = $monthly_data[$data_key];
+} else {
+    // Default data if month not in sample data
+    $data = [
+        'total_consultations' => 30,
+        'departments' => [
+            "Information Technology" => 10,
+            "Forestry" => 20
+        ],
+        'diagnostics' => [
+            "Flu" => 12,
+            "Allergies" => 10,
+            "Migraine" => 8
+        ],
+        'year_levels' => [
+            "1st Year" => 25,
+            "2nd Year" => 5
+        ]
+    ];
+}
+
+$total_consultations = $data['total_consultations'];
+$departments = $data['departments'];
+$diagnostics = $data['diagnostics'];
+$year_levels = $data['year_levels'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - ASCOT Clinic</title>
+    <title>Monthly Summary - ASCOT Clinic</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -23,7 +285,7 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
-            padding-top: 100px; /* Added for fixed header */
+            padding-top: 100px;
         }
 
         /* Header Styles */
@@ -32,12 +294,12 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: fixed; /* Added */
-            top: 0; /* Added */
-            left: 0; /* Added */
-            right: 0; /* Added */
-            z-index: 1000; /* Added */
-            height: 100px; /* Added */
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 100px;
         }
 
         .header-content {
@@ -108,18 +370,18 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             padding: 2rem 0;
             transition: transform 0.3s ease;
-            position: fixed; /* Added */
-            top: 100px; /* Added */
-            left: 0; /* Added */
-            bottom: 0; /* Added */
-            overflow-y: auto; /* Added */
-            z-index: 999; /* Added */
+            position: fixed;
+            top: 100px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 999;
         }
 
         .sidebar-nav {
             display: flex;
             flex-direction: column;
-            height: 100%; /* Added */
+            height: 100%;
         }
 
         .nav-item {
@@ -159,7 +421,6 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
         .nav-item .arrow {
             margin-left: auto;
             transition: transform 0.3s ease;
-    
         }
 
         .submenu {
@@ -188,6 +449,11 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
             color: #667eea;
         }
 
+        .submenu-item.active {
+            color: #667eea;
+            font-weight: 600;
+        }
+
         .submenu-item i {
             width: 20px;
             margin-right: 0.75rem;
@@ -207,8 +473,8 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
             flex: 1;
             padding: 2rem;
             overflow-x: hidden;
-            margin-left: 280px; /* Added for sidebar space */
-            margin-top: 0; /* Added */
+            margin-left: 280px;
+            margin-top: 0;
         }
 
         /* Notification Styles */
@@ -319,76 +585,98 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
             background: #f8f9fa;
         }
 
-        /* Quick Actions */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .action-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem 1.5rem;
-            background: white;
-            border-radius: 10px;
-            text-decoration: none;
-            color: #444;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(102,126,234,0.3);
-            color: #667eea;
-        }
-
-        .action-btn i {
-            font-size: 1.5rem;
-            color: #667eea;
-        }
-
-        /* Dashboard Card */
-        .dashboard-card {
+        /* Content Section */
+        .content {
             background: white;
             border-radius: 15px;
             padding: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            margin-top: 1rem;
         }
 
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .content-header h2 {
+            color: #1a3a5f;
+            font-size: 24px;
+        }
+
+        /* Monthly Summary Styles */
+        .monthly-summary {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .month-selector {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .month-btn {
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .month-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .month-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .year-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
             margin-bottom: 2rem;
         }
 
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
+        .year-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #667eea;
+            transition: all 0.3s ease;
         }
 
-        .stat-item i {
-            font-size: 2rem;
-            opacity: 0.9;
+        .year-btn:hover {
+            transform: scale(1.2);
         }
 
-        .stat-label {
-            font-size: 0.85rem;
-            opacity: 0.9;
+        .current-year {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1a3a5f;
+            min-width: 80px;
+            text-align: center;
         }
 
-        .stat-value {
+        .summary-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #1a3a5f;
             font-size: 1.5rem;
-            font-weight: bold;
+            font-weight: 600;
         }
 
         .divider {
@@ -397,71 +685,39 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
             margin: 2rem 0;
         }
 
-        .section-title {
-            font-size: 1.2rem;
-            color: #444;
-            margin-bottom: 1rem;
+        .report-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-report {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-        }
-
-        .section-title i {
-            color: #667eea;
-        }
-
-        .activity-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 3px solid #667eea;
-        }
-
-        .activity-item i {
-            color: #667eea;
-            font-size: 1.2rem;
-        }
-
-        .quick-links {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-
-        .link-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            text-decoration: none;
-            color: #444;
-            transition: all 0.3s ease;
-        }
-
-        .link-btn:hover {
+            padding: 0.75rem 1.5rem;
             background: #667eea;
             color: white;
-            transform: translateX(5px);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
         }
 
-        .link-btn i {
-            color: #667eea;
-            transition: color 0.3s ease;
+        .btn-report:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
         }
 
-        .link-btn:hover i {
-            color: white;
+        .btn-report.secondary {
+            background: #6c757d;
+        }
+
+        .btn-report.secondary:hover {
+            background: #5a6268;
         }
 
         /* Responsive Design */
@@ -474,14 +730,6 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
                 width: 50px;
                 height: 50px;
             }
-
-            .quick-actions {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .stats-row {
-                grid-template-columns: 1fr;
-            }
         }
 
         @media (max-width: 768px) {
@@ -492,12 +740,12 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 100px; /* Adjusted for fixed header */
-                height: calc(100vh - 100px); /* Adjusted for fixed header */
+                top: 100px;
+                height: calc(100vh - 100px);
                 z-index: 1000;
                 transform: translateX(-100%);
                 overflow-y: auto;
-                width: 280px; /* Added */
+                width: 280px;
             }
 
             .sidebar.active {
@@ -507,7 +755,7 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
             .sidebar-overlay {
                 display: none;
                 position: fixed;
-                top: 100px; /* Adjusted for fixed header */
+                top: 100px;
                 left: 0;
                 right: 0;
                 bottom: 0;
@@ -522,11 +770,7 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
             .main-content {
                 padding: 1rem;
                 width: 100%;
-                margin-left: 0; /* Reset margin for mobile */
-            }
-
-            .quick-actions {
-                grid-template-columns: 1fr;
+                margin-left: 0;
             }
 
             .notification-menu {
@@ -545,24 +789,31 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
             .republic, .clinic-title {
                 font-size: 0.65rem;
             }
+
+            .report-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn-report {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+
+            .month-selector {
+                gap: 0.25rem;
+            }
+
+            .month-btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.85rem;
+            }
         }
 
         @media (max-width: 480px) {
-            .action-btn {
-                padding: 0.75rem 1rem;
-                font-size: 0.9rem;
-            }
-
-            .dashboard-card {
+            .content {
                 padding: 1rem;
-            }
-
-            .stat-item {
-                padding: 1rem;
-            }
-
-            .stat-value {
-                font-size: 1.2rem;
             }
 
             .notification-menu {
@@ -570,8 +821,17 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
                 right: -20px;
             }
 
-            .quick-links {
-                grid-template-columns: 1fr;
+            .summary-title {
+                font-size: 1.25rem;
+            }
+
+            .month-selector {
+                gap: 0.2rem;
+            }
+
+            .month-btn {
+                padding: 0.35rem 0.7rem;
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -589,7 +849,7 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
-                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img"> <!-- SCHOOL LOGO -->
+                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img">
                 <div class="school-info">
                     <div class="republic">Republic of the Philippines</div>
                     <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
@@ -603,7 +863,7 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
-                <a href="admin_dashboard.php" class="nav-item active">
+                <a href="admin_dashboard.php" class="nav-item">
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
@@ -614,7 +874,7 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
                         <span>Student Management</span>
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
-                    <div class="submenu show" id="studentMenu">
+                    <div class="submenu" id="studentMenu">
                         <a href="students.php" class="submenu-item">
                             <i class="fas fa-id-card"></i>
                             Students Profile
@@ -664,8 +924,8 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
                         <span>Reports</span>
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
-                    <div class="submenu" id="reportsMenu">
-                        <a href="monthly_summary.php" class="submenu-item">
+                    <div class="submenu show" id="reportsMenu">
+                        <a href="#" class="submenu-item active">
                             <i class="fas fa-file-invoice"></i>
                             Monthly Summary
                         </a>
@@ -735,85 +995,107 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
                 </div>
             </div>
 
-            <div class="quick-actions">
-                <a href="#" class="action-btn">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>New Consultation</span>
-                </a>
-                <a href="#" class="action-btn">
-                    <i class="fas fa-search"></i>
-                    <span>Search Students</span>
-                </a>
-                <a href="#" class="action-btn">
-                    <i class="fas fa-file-alt"></i>
-                    <span>Generate Reports</span>
-                </a>
-                <a href="#" class="action-btn">
-                    <i class="fas fa-bullhorn"></i>
-                    <span>New Announcement</span>
-                </a>
-            </div>
-
-            <div class="dashboard-card">
-                <div class="stats-row">
-                    <div class="stat-item">
-                        <i class="fas fa-calendar-day"></i>
-                        <div>
-                            <div class="stat-label">Today:</div>
-                            <div class="stat-value">5 Consults</div>
-                        </div>
-                    </div>
-                    <div class="stat-item">
-                        <i class="fas fa-bullhorn"></i>
-                        <div>
-                            <div class="stat-label">Active:</div>
-                            <div class="stat-value">3 Announcements</div>
-                        </div>
-                    </div>
+            <div class="content">
+                <div class="content-header">
+                    <h2><i class="fas fa-file-invoice me-2"></i>Monthly Summary Report</h2>
                 </div>
 
-                <div class="divider"></div>
+                <div class="monthly-summary">
+                    <!-- Year Selector -->
+                    <div class="year-selector">
+                        <button class
+                        ="year-btn" onclick="changeYear(<?php echo $selected_year - 1; ?>)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <div class="current-year"><?php echo $selected_year; ?></div>
+                        <button class="year-btn" onclick="changeYear(<?php echo $selected_year + 1; ?>)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
 
-                <div class="activity-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-history"></i>
-                        Recent Activity
-                    </h3>
-                    <div class="activity-list">
-                        <div class="activity-item">
-                            <i class="fas fa-user-md"></i>
-                            <span>Dr. James added consult (3:00 pm)</span>
-                        </div>
-                        <div class="activity-item">
-                            <i class="fas fa-clipboard-check"></i>
-                            <span>New appointment request received (2:30 pm)</span>
-                        </div>
-                        <div class="activity-item">
-                            <i class="fas fa-user-check"></i>
-                            <span>Student profile updated (1:15 pm)</span>
-                        </div>
-                        <div class="activity-item">
-                            <i class="fas fa-bullhorn"></i>
-                            <span>New announcement posted (12:45 pm)</span>
+                    <!-- Month Selector -->
+                    <div class="month-selector">
+                        <?php 
+                        $month_abbr = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                        for ($i = 1; $i <= 12; $i++): 
+                            $is_active = ($i == $selected_month) ? 'active' : '';
+                        ?>
+                            <button class="month-btn <?php echo $is_active; ?>" 
+                                    onclick="selectMonth(<?php echo $i; ?>, <?php echo $selected_year; ?>)">
+                                <?php echo $month_abbr[$i-1]; ?>
+                            </button>
+                        <?php endfor; ?>
+                    </div>
+
+                    <!-- Bar Chart - ALL 12 MONTHS -->
+                    <div style="background: white; padding: 2rem; border-radius: 10px; margin-bottom: 2rem;">
+                        <div style="display: flex; align-items: flex-end; justify-content: center; gap: 1rem; height: 200px; margin-bottom: 1rem; overflow-x: auto; padding: 0 1rem;">
+                            <?php 
+                            // Get all 12 months data for the selected year
+                            $all_months_data = [];
+                            for ($m = 1; $m <= 12; $m++) {
+                                $key = $m . '_' . $selected_year;
+                                if (isset($monthly_data[$key])) {
+                                    $all_months_data[$m] = $monthly_data[$key]['total_consultations'];
+                                } else {
+                                    $all_months_data[$m] = 30; // default value
+                                }
+                            }
+                            
+                            $max = max($all_months_data);
+                            
+                            // Display ALL 12 months
+                            for ($m = 1; $m <= 12; $m++): 
+                                $height = ($all_months_data[$m] / $max) * 150;
+                                $is_selected = ($m == $selected_month) ? 'box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);' : '';
+                            ?>
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; min-width: 50px;">
+                                <div style="width: 50px; height: <?php echo $height; ?>px; background: #f4d35e; border-radius: 4px 4px 0 0; <?php echo $is_selected; ?>"></div>
+                                <span style="font-size: 0.7rem; font-weight: 600; color: <?php echo ($m == $selected_month) ? '#667eea' : '#333'; ?>;"><?php echo strtoupper(substr($month_names[$m], 0, 3)); ?></span>
+                            </div>
+                            <?php endfor; ?>
                         </div>
                     </div>
-                </div>
 
-                <div class="divider"></div>
+                    <h2 class="summary-title">MONTHLY SUMMARY (<?php echo strtoupper($month); ?>)</h2>
 
-                <div class="quick-links">
-                    <a href="#" class="link-btn">
-                        <i class="fas fa-users"></i>
-                        View All Students
-                    </a>
-                    <a href="#" class="link-btn">
-                        <i class="fas fa-archive"></i>
-                        Reports Archive
-                    </a>
-                    <a href="#" class="link-btn">
-                        <i class="fas fa-bullhorn"></i>
-                        Announcement History
-                    </a>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: #f8f9fa; padding: 2rem; border-radius: 10px;">
+                        <div>
+                            <p style="margin-bottom: 0.5rem;"><strong>Total Consultation:</strong> <?php echo $total_consultations; ?></p>
+                            <p style="margin-bottom: 0.5rem;"><strong>Top Diagnoses:</strong></p>
+                            <?php foreach($diagnostics as $diagnostic => $count): ?>
+                            <p style="margin-left: 1rem; margin-bottom: 0.25rem;"><?php echo $diagnostic; ?></p>
+                            <?php endforeach; ?>
+                        </div>
+                        <div>
+                            <p style="margin-bottom: 0.5rem;"><strong>BY DEPARTMENT</strong></p>
+                            <?php foreach($departments as $dept => $count): ?>
+                            <p style="margin-left: 1rem; margin-bottom: 0.25rem;"><?php echo $dept; ?>: <?php echo $count; ?></p>
+                            <?php endforeach; ?>
+                            
+                            <p style="margin-bottom: 0.5rem; margin-top: 1rem;"><strong>BY YEAR LEVEL</strong></p>
+                            <?php foreach($year_levels as $level => $count): ?>
+                            <p style="margin-left: 1rem; margin-bottom: 0.25rem;"><?php echo $level; ?>: <?php echo $count; ?></p>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="report-actions">
+                        <button class="btn-report" onclick="printReport()">
+                            <i class="fas fa-print"></i>
+                            Print Report
+                        </button>
+                        <button class="btn-report secondary" onclick="exportToPDF()">
+                            <i class="fas fa-file-pdf"></i>
+                            Export to PDF
+                        </button>
+                        <button class="btn-report secondary" onclick="goBack()">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Dashboard
+                        </button>
+                    </div>
                 </div>
             </div>
         </main>
@@ -886,6 +1168,30 @@ logAdminAction($_SESSION['admin_name'] ?? 'Admin User', 'Logged into system');
                 notifMenu.classList.remove('show');
             }
         });
+
+        // Month and Year selection functions
+        function selectMonth(month, year) {
+            window.location.href = `?month=${month}&year=${year}`;
+        }
+
+        function changeYear(year) {
+            window.location.href = `?month=<?php echo $selected_month; ?>&year=${year}`;
+        }
+
+        // Report functions
+        function printReport() {
+            window.print();
+        }
+
+        function exportToPDF() {
+            alert('PDF export functionality would be implemented here.');
+            // In a real application, you would use a library like jsPDF
+            // or make an API call to generate a PDF
+        }
+
+        function goBack() {
+            window.location.href = 'admin_dashboard.php';
+        }
     </script>
 </body>
 </html>
