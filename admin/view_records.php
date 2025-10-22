@@ -13,11 +13,34 @@ $records = [];
 $search = $_GET['search'] ?? '';
 
 try {
-    // Build query with search
+    // Build query with search - FIXED TO PREVENT DUPLICATES
     $query = "
-        SELECT c.*, si.fullname as student_name, si.student_number
+        SELECT DISTINCT
+            c.id,
+            c.consultation_date,
+            c.diagnosis,
+            c.symptoms,
+            c.temperature,
+            c.blood_pressure,
+            c.heart_rate,
+            c.treatment,
+            c.attending_staff,
+            c.physician_notes,
+            c.created_at,
+            si.fullname as student_name,
+            si.student_number,
+            si.address
         FROM consultations c 
-        JOIN student_information si ON c.student_number = si.student_number 
+        JOIN (
+            -- Get only the LATEST student_information record for each student
+            SELECT s1.*
+            FROM student_information s1
+            INNER JOIN (
+                SELECT student_number, MAX(created_at) as max_created
+                FROM student_information 
+                GROUP BY student_number
+            ) s2 ON s1.student_number = s2.student_number AND s1.created_at = s2.max_created
+        ) si ON c.student_number = si.student_number 
     ";
     
     $params = [];
@@ -368,7 +391,7 @@ try {
             gap: 8px;
         }
 
-        .view-btn, .edit-btn {
+        .view-btn, .edit-btn, .certificate-btn {
             padding: 6px 12px;
             border: none;
             border-radius: 5px;
@@ -376,6 +399,9 @@ try {
             font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .view-btn {
@@ -394,6 +420,15 @@ try {
 
         .edit-btn:hover {
             background: #e0a800;
+        }
+
+        .certificate-btn {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .certificate-btn:hover {
+            background: #138496;
         }
 
         /* Modal Styles */
@@ -471,6 +506,98 @@ try {
         .no-notes {
             color: #6c757d;
             font-style: italic;
+        }
+
+        /* Certificate Modal Styles */
+        .certificate-form .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .certificate-form label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .certificate-form .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .certificate-form .form-control:focus {
+            border-color: #667eea;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .certificate-form .form-control[readonly] {
+            background-color: #f8f9fa;
+            opacity: 1;
+        }
+
+        .certificate-form .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            background-color: #fff;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .certificate-form .form-select:focus {
+            border-color: #667eea;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .certificate-form textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .certificate-form .btn {
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border-radius: 0.375rem;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .certificate-form .btn-primary {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+
+        .certificate-form .btn-primary:hover {
+            background-color: #5a6fd8;
+            border-color: #5a6fd8;
+        }
+
+        .certificate-form .btn-outline-secondary {
+            color: #6c757d;
+            border-color: #6c757d;
+        }
+
+        .certificate-form .btn-outline-secondary:hover {
+            color: #fff;
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+
+        /* Laboratory Fields Styles */
+        .lab-checkboxes {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-check {
+            margin-bottom: 5px;
         }
 
         /* Responsive Design - FIXED */
@@ -812,6 +939,16 @@ try {
                                         <a href="edit_consultation.php?id=<?php echo $record['id']; ?>" class="edit-btn">
                                             <i class="fas fa-edit"></i> Edit
                                         </a>
+                                        <button class="certificate-btn" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#certificateModal"
+                                                data-id="<?php echo $record['id']; ?>"
+                                                data-student="<?php echo htmlspecialchars($record['student_name']); ?>"
+                                                data-address="<?php echo htmlspecialchars($record['address'] ?? 'Not specified'); ?>"
+                                                data-diagnosis="<?php echo htmlspecialchars($record['diagnosis']); ?>"
+                                                data-recommendation="<?php echo htmlspecialchars($record['physician_notes']); ?>">
+                                            <i class="fas fa-certificate"></i> Issue Certificate
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -958,6 +1095,135 @@ try {
         </div>
     </div>
 
+    <!-- Certificate Modal -->
+    <div class="modal fade" id="certificateModal" tabindex="-1" aria-labelledby="certificateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="certificateModalLabel">
+                        <i class="fas fa-certificate me-2"></i>Issue New Certificate
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form class="certificate-form" action="process_certificate.php" method="POST" target="_blank">
+                    <div class="modal-body">
+                        <div class="detail-section">
+                            <h6 class="section-title">Student Information</h6>
+                            <div class="form-group">
+                                <label for="certStudentName">Student Name</label>
+                                <input type="text" class="form-control" id="certStudentName" name="student_name" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="certAddress">Address</label>
+                                <textarea class="form-control" id="certAddress" name="address" rows="2" readonly></textarea>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h6 class="section-title">Medical Information</h6>
+                            <div class="form-group">
+                                <label for="certDiagnosis">Diagnosis</label>
+                                <input type="text" class="form-control" id="certDiagnosis" name="diagnosis" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="certRecommendation">Recommendation</label>
+                                <textarea class="form-control" id="certRecommendation" name="recommendation" rows="3" required></textarea>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h6 class="section-title">Certificate Details</h6>
+                            <div class="form-group">
+                                <label for="certType">Certificate Type</label>
+                                <select class="form-select" id="certType" name="certificate_type" required>
+                                    <option value="">Select Certificate Type</option>
+                                    <option value="Medical Certificate">Medical Certificate</option>
+                                    <option value="Dental Certificate">Dental Certificate</option>
+                                    <option value="Laboratory Request Form">Laboratory Request Form</option>
+                                    <option value="Excuse Slip">Excuse Slip</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="certDateIssued">Date Issued</label>
+                                <input type="date" class="form-control" id="certDateIssued" name="date_issued" required>
+                            </div>
+                        </div>
+
+                        <!-- Laboratory Request Form Fields (Initially Hidden) -->
+                        <div id="laboratoryFields" style="display: none;">
+                            <div class="detail-section">
+                                <h6 class="section-title">Laboratory Information</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="certStudentNumber">Student Number</label>
+                                            <input type="text" class="form-control" id="certStudentNumber" name="student_number">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="certCourseYear">Course & Year</label>
+                                            <input type="text" class="form-control" id="certCourseYear" name="course_year">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="certSchedule">Schedule</label>
+                                            <input type="text" class="form-control" id="certSchedule" name="schedule">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="certCellphone">Cellphone Number</label>
+                                            <input type="text" class="form-control" id="certCellphone" name="cellphone_number">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Laboratory Tests:</label>
+                                    <div class="lab-checkboxes">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="lab_tests[]" value="CBC" id="testCBC">
+                                            <label class="form-check-label" for="testCBC">CBC</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="lab_tests[]" value="CXR" id="testCXR">
+                                            <label class="form-check-label" for="testCXR">CXR</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="lab_tests[]" value="UA" id="testUA">
+                                            <label class="form-check-label" for="testUA">U/A</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="lab_tests[]" value="PREGNANCY" id="testPregnancy">
+                                            <label class="form-check-label" for="testPregnancy">PREGNANCY TEST (for female)</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="certMedicalOfficer">Medical Examination Officer</label>
+                                    <input type="text" class="form-control" id="certMedicalOfficer" name="medical_officer">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-print me-1"></i> Generate & Print
+                        </button>
+                    </div>
+                    <input type="hidden" id="certConsultationId" name="consultation_id">
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap Bundle -->
     <script src="../assets/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -1048,6 +1314,48 @@ try {
                     notesElement.innerHTML = '<span class="no-notes">No notes provided</span>';
                     notesElement.classList.add('no-notes');
                 }
+            });
+        }
+
+        // Certificate Modal functionality
+        const certificateModal = document.getElementById('certificateModal');
+        if (certificateModal) {
+            certificateModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                
+                // Extract info from data-* attributes
+                const consultationId = button.getAttribute('data-id');
+                const studentName = button.getAttribute('data-student');
+                const address = button.getAttribute('data-address');
+                const diagnosis = button.getAttribute('data-diagnosis');
+                const recommendation = button.getAttribute('data-recommendation');
+                
+                // Update the modal's content
+                document.getElementById('certStudentName').value = studentName || 'Not specified';
+                document.getElementById('certAddress').value = address || 'Not specified';
+                document.getElementById('certDiagnosis').value = diagnosis || 'Not specified';
+                document.getElementById('certRecommendation').value = recommendation || '';
+                document.getElementById('certConsultationId').value = consultationId;
+                
+                // Set today's date as default for date issued
+                const today = new Date();
+                const formattedDate = today.toISOString().split('T')[0];
+                document.getElementById('certDateIssued').value = formattedDate;
+                
+                // Show/hide laboratory form fields based on certificate type
+                const certType = document.getElementById('certType');
+                const labFields = document.getElementById('laboratoryFields');
+                
+                certType.addEventListener('change', function() {
+                    if (this.value === 'Laboratory Request Form') {
+                        labFields.style.display = 'block';
+                    } else {
+                        labFields.style.display = 'none';
+                    }
+                });
+                
+                // Trigger change event on page load
+                certType.dispatchEvent(new Event('change'));
             });
         }
 
@@ -1162,14 +1470,12 @@ try {
                 </body>
                 </html>
             `);
-            
             printWindow.document.close();
             printWindow.focus();
             setTimeout(() => {
                 printWindow.print();
             }, 500);
         }
-
         // Quick search with Enter key
         document.getElementById('searchInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {

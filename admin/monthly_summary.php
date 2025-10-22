@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'admin_logger.php';
+include '../includes/db_connect.php';
 
 // Check if admin is logged in
 if (!isset($_SESSION['admin_logged_in'])) {
@@ -20,8 +21,6 @@ if ($selected_month < 1 || $selected_month > 12) {
     $selected_month = date('n');
 }
 
-// Sample data - in a real application, this would come from your database
-// Based on the selected month and year
 $month_names = [
     1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April', 
     5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
@@ -30,242 +29,130 @@ $month_names = [
 
 $month = $month_names[$selected_month] . ' ' . $selected_year;
 
-// Sample data that would typically come from database queries
-$monthly_data = [
-    // January 2025
-    '1_2025' => [
-        'total_consultations' => 28,
-        'departments' => [
-            "Information Technology" => 8,
-            "Forestry" => 20
-        ],
-        'diagnostics' => [
-            "Flu" => 12,
-            "Allergies" => 9,
-            "Migraine" => 7
-        ],
-        'year_levels' => [
-            "1st Year" => 25,
-            "2nd Year" => 3
-        ]
-    ],
-    // February 2025
-    '2_2025' => [
-        'total_consultations' => 32,
-        'departments' => [
-            "Information Technology" => 10,
-            "Forestry" => 22
-        ],
-        'diagnostics' => [
-            "Flu" => 14,
-            "Allergies" => 11,
-            "Migraine" => 7
-        ],
-        'year_levels' => [
-            "1st Year" => 28,
-            "2nd Year" => 4
-        ]
-    ],
-    // March 2025
-    '3_2025' => [
-        'total_consultations' => 30,
-        'departments' => [
-            "Information Technology" => 9,
-            "Forestry" => 21
-        ],
-        'diagnostics' => [
-            "Flu" => 13,
-            "Allergies" => 10,
-            "Migraine" => 7
-        ],
-        'year_levels' => [
-            "1st Year" => 26,
-            "2nd Year" => 4
-        ]
-    ],
-    // April 2025
-    '4_2025' => [
-        'total_consultations' => 35,
-        'departments' => [
-            "Information Technology" => 12,
-            "Forestry" => 23
-        ],
-        'diagnostics' => [
-            "Flu" => 16,
-            "Allergies" => 12,
-            "Migraine" => 7
-        ],
-        'year_levels' => [
-            "1st Year" => 30,
-            "2nd Year" => 5
-        ]
-    ],
-    // May 2025
-    '5_2025' => [
-        'total_consultations' => 34,
-        'departments' => [
-            "Information Technology" => 11,
-            "Forestry" => 23
-        ],
-        'diagnostics' => [
-            "Flu" => 15,
-            "Allergies" => 10,
-            "Migraine" => 9
-        ],
-        'year_levels' => [
-            "1st Year" => 31,
-            "2nd Year" => 3
-        ]
-    ],
-    // June 2025
-    '6_2025' => [
-        'total_consultations' => 29,
-        'departments' => [
-            "Information Technology" => 10,
-            "Forestry" => 19
-        ],
-        'diagnostics' => [
-            "Flu" => 11,
-            "Allergies" => 10,
-            "Migraine" => 8
-        ],
-        'year_levels' => [
-            "1st Year" => 24,
-            "2nd Year" => 5
-        ]
-    ],
-    // July 2025
-    '7_2025' => [
-        'total_consultations' => 38,
-        'departments' => [
-            "Information Technology" => 14,
-            "Forestry" => 24
-        ],
-        'diagnostics' => [
-            "Flu" => 17,
-            "Allergies" => 13,
-            "Migraine" => 8
-        ],
-        'year_levels' => [
-            "1st Year" => 33,
-            "2nd Year" => 5
-        ]
-    ],
-    // August 2025
-    '8_2025' => [
-        'total_consultations' => 36,
-        'departments' => [
-            "Information Technology" => 13,
-            "Forestry" => 23
-        ],
-        'diagnostics' => [
-            "Flu" => 16,
-            "Allergies" => 12,
-            "Migraine" => 8
-        ],
-        'year_levels' => [
-            "1st Year" => 32,
-            "2nd Year" => 4
-        ]
-    ],
-    // September 2025
-    '9_2025' => [
-        'total_consultations' => 31,
-        'departments' => [
-            "Information Technology" => 10,
-            "Forestry" => 21
-        ],
-        'diagnostics' => [
-            "Flu" => 13,
-            "Allergies" => 11,
-            "Migraine" => 7
-        ],
-        'year_levels' => [
-            "1st Year" => 27,
-            "2nd Year" => 4
-        ]
-    ],
-    // October 2025
-    '10_2025' => [
-        'total_consultations' => 33,
-        'departments' => [
-            "Information Technology" => 11,
-            "Forestry" => 22
-        ],
-        'diagnostics' => [
-            "Flu" => 14,
-            "Allergies" => 12,
-            "Migraine" => 7
-        ],
-        'year_levels' => [
-            "1st Year" => 29,
-            "2nd Year" => 4
-        ]
-    ],
-    // November 2025
-    '11_2025' => [
-        'total_consultations' => 37,
-        'departments' => [
-            "Information Technology" => 13,
-            "Forestry" => 24
-        ],
-        'diagnostics' => [
-            "Flu" => 16,
-            "Allergies" => 13,
-            "Migraine" => 8
-        ],
-        'year_levels' => [
-            "1st Year" => 32,
-            "2nd Year" => 5
-        ]
-    ],
-    // December 2025
-    '12_2025' => [
-        'total_consultations' => 27,
-        'departments' => [
-            "Information Technology" => 9,
-            "Forestry" => 18
-        ],
-        'diagnostics' => [
-            "Flu" => 10,
-            "Allergies" => 9,
-            "Migraine" => 8
-        ],
-        'year_levels' => [
-            "1st Year" => 23,
-            "2nd Year" => 4
-        ]
-    ]
-];
+// REAL DATABASE QUERIES - FIXED COUNTING WITH DISTINCT
 
-// Get data for selected month or use default if not available
-$data_key = $selected_month . '_' . $selected_year;
-if (isset($monthly_data[$data_key])) {
-    $data = $monthly_data[$data_key];
-} else {
-    // Default data if month not in sample data
+// Function to get monthly consultation data
+function getMonthlyConsultationData($month, $year) {
+    global $pdo;
+    
     $data = [
-        'total_consultations' => 30,
-        'departments' => [
-            "Information Technology" => 10,
-            "Forestry" => 20
-        ],
-        'diagnostics' => [
-            "Flu" => 12,
-            "Allergies" => 10,
-            "Migraine" => 8
-        ],
-        'year_levels' => [
-            "1st Year" => 25,
-            "2nd Year" => 5
-        ]
+        'total_consultations' => 0,
+        'departments' => [],
+        'diagnostics' => [],
+        'year_levels' => []
     ];
+    
+    try {
+        // Total consultations for the selected month - FIXED: Use DISTINCT to avoid duplicates
+        $query = "SELECT COUNT(DISTINCT id) as total 
+                  FROM consultations 
+                  WHERE MONTH(consultation_date) = ? AND YEAR(consultation_date) = ?";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([$month, $year]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $data['total_consultations'] = $row['total'];
+        
+        // Consultations by department - FIXED: Use DISTINCT
+        $query = "SELECT si.department, COUNT(DISTINCT c.id) as count 
+                  FROM consultations c 
+                  JOIN student_information si ON c.student_number = si.student_number
+                  WHERE MONTH(c.consultation_date) = ? AND YEAR(c.consultation_date) = ?
+                  GROUP BY si.department";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([$month, $year]);
+        $departments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($departments as $dept) {
+            $data['departments'][$dept['department']] = $dept['count'];
+        }
+        
+        // Consultations by diagnosis - FIXED: Use DISTINCT
+        $query = "SELECT diagnosis, COUNT(DISTINCT id) as count 
+                  FROM consultations 
+                  WHERE MONTH(consultation_date) = ? AND YEAR(consultation_date) = ?
+                  GROUP BY diagnosis 
+                  ORDER BY count DESC";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([$month, $year]);
+        $diagnostics = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($diagnostics as $diag) {
+            $data['diagnostics'][$diag['diagnosis']] = $diag['count'];
+        }
+        
+        // Consultations by year level - FIXED: Use DISTINCT
+        $query = "SELECT si.year_level, COUNT(DISTINCT c.id) as count 
+                  FROM consultations c 
+                  JOIN student_information si ON c.student_number = si.student_number
+                  WHERE MONTH(c.consultation_date) = ? AND YEAR(c.consultation_date) = ?
+                  GROUP BY si.year_level";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([$month, $year]);
+        $year_levels = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($year_levels as $level) {
+            $data['year_levels'][$level['year_level']] = $level['count'];
+        }
+        
+    } catch (PDOException $e) {
+        error_log("Monthly summary error: " . $e->getMessage());
+        // Fallback to empty data
+    }
+    
+    return $data;
 }
+
+// Function to get yearly data for the bar chart - FIXED: Use DISTINCT
+function getYearlyConsultationData($year) {
+    global $pdo;
+    
+    $monthly_totals = [];
+    
+    try {
+        for ($m = 1; $m <= 12; $m++) {
+            $query = "SELECT COUNT(DISTINCT id) as total 
+                      FROM consultations 
+                      WHERE MONTH(consultation_date) = ? AND YEAR(consultation_date) = ?";
+            $stmt = $pdo->prepare($query);
+            $stmt->execute([$m, $year]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $monthly_totals[$m] = $row['total'];
+        }
+    } catch (PDOException $e) {
+        error_log("Yearly data error: " . $e->getMessage());
+        // Fallback to zeros
+        for ($m = 1; $m <= 12; $m++) {
+            $monthly_totals[$m] = 0;
+        }
+    }
+    
+    return $monthly_totals;
+}
+
+// Get data for selected month
+$data = getMonthlyConsultationData($selected_month, $selected_year);
+
+// Get yearly data for bar chart
+$all_months_data = getYearlyConsultationData($selected_year);
 
 $total_consultations = $data['total_consultations'];
 $departments = $data['departments'];
 $diagnostics = $data['diagnostics'];
 $year_levels = $data['year_levels'];
+
+// DEBUG: Get actual records for verification
+try {
+    $debug_query = "SELECT c.id, c.consultation_date, c.student_number, c.diagnosis, si.fullname
+                   FROM consultations c 
+                   JOIN student_information si ON c.student_number = si.student_number
+                   WHERE MONTH(c.consultation_date) = ? AND YEAR(c.consultation_date) = ?
+                   ORDER BY c.consultation_date";
+    $debug_stmt = $pdo->prepare($debug_query);
+    $debug_stmt->execute([$selected_month, $selected_year]);
+    $actual_records = $debug_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $actual_records = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -421,6 +308,10 @@ $year_levels = $data['year_levels'];
         .nav-item .arrow {
             margin-left: auto;
             transition: transform 0.3s ease;
+        }
+
+        .nav-item .arrow.rotate {
+            transform: rotate(180deg);
         }
 
         .submenu {
@@ -608,7 +499,7 @@ $year_levels = $data['year_levels'];
 
         /* Monthly Summary Styles */
         .monthly-summary {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
@@ -720,6 +611,102 @@ $year_levels = $data['year_levels'];
             background: #5a6268;
         }
 
+        /* Statistics Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Bar Chart Styles */
+        .bar-chart-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 0.5rem;
+            height: 200px;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+            padding: 0 1rem;
+        }
+
+        .bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 40px;
+        }
+
+        .bar-rect {
+            width: 35px;
+            border-radius: 4px 4px 0 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .bar-rect:hover {
+            opacity: 0.8;
+        }
+
+        .bar-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .bar-count {
+            font-size: 0.7rem;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* Debug Section */
+        .debug-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .debug-header {
+            color: #856404;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
         /* Responsive Design */
         @media (max-width: 992px) {
             .school-name {
@@ -808,6 +795,10 @@ $year_levels = $data['year_levels'];
             .month-btn {
                 padding: 0.4rem 0.8rem;
                 font-size: 0.85rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -919,13 +910,13 @@ $year_levels = $data['year_levels'];
                 </div>
 
                 <div class="nav-group">
-                    <button class="nav-item dropdown-btn" data-target="reportsMenu">
+                    <button class="nav-item dropdown-btn active" data-target="reportsMenu">
                         <i class="fas fa-chart-bar"></i>
                         <span>Reports</span>
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu show" id="reportsMenu">
-                        <a href="#" class="submenu-item active">
+                        <a href="monthly_summary.php" class="submenu-item active">
                             <i class="fas fa-file-invoice"></i>
                             Monthly Summary
                         </a>
@@ -1003,8 +994,7 @@ $year_levels = $data['year_levels'];
                 <div class="monthly-summary">
                     <!-- Year Selector -->
                     <div class="year-selector">
-                        <button class
-                        ="year-btn" onclick="changeYear(<?php echo $selected_year - 1; ?>)">
+                        <button class="year-btn" onclick="changeYear(<?php echo $selected_year - 1; ?>)">
                             <i class="fas fa-chevron-left"></i>
                         </button>
                         <div class="current-year"><?php echo $selected_year; ?></div>
@@ -1028,57 +1018,203 @@ $year_levels = $data['year_levels'];
                     </div>
 
                     <!-- Bar Chart - ALL 12 MONTHS -->
-                    <div style="background: white; padding: 2rem; border-radius: 10px; margin-bottom: 2rem;">
-                        <div style="display: flex; align-items: flex-end; justify-content: center; gap: 1rem; height: 200px; margin-bottom: 1rem; overflow-x: auto; padding: 0 1rem;">
+                    <div class="bar-chart-container">
+                        <h5 style="color: #1a3a5f; margin-bottom: 1.5rem; text-align: center;">
+                            <i class="fas fa-chart-bar me-2"></i>Monthly Consultations for <?php echo $selected_year; ?>
+                        </h5>
+                        
+                        <div class="bar-chart">
                             <?php 
-                            // Get all 12 months data for the selected year
-                            $all_months_data = [];
-                            for ($m = 1; $m <= 12; $m++) {
-                                $key = $m . '_' . $selected_year;
-                                if (isset($monthly_data[$key])) {
-                                    $all_months_data[$m] = $monthly_data[$key]['total_consultations'];
-                                } else {
-                                    $all_months_data[$m] = 30; // default value
-                                }
-                            }
+                            $max = max($all_months_data) > 0 ? max($all_months_data) : 1;
                             
-                            $max = max($all_months_data);
-                            
-                            // Display ALL 12 months
                             for ($m = 1; $m <= 12; $m++): 
                                 $height = ($all_months_data[$m] / $max) * 150;
-                                $is_selected = ($m == $selected_month) ? 'box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);' : '';
+                                $is_selected = ($m == $selected_month) ? '4px solid #667eea' : 'none';
+                                $bar_color = ($m == $selected_month) ? '#667eea' : '#4facfe';
                             ?>
-                            <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; min-width: 50px;">
-                                <div style="width: 50px; height: <?php echo $height; ?>px; background: #f4d35e; border-radius: 4px 4px 0 0; <?php echo $is_selected; ?>"></div>
-                                <span style="font-size: 0.7rem; font-weight: 600; color: <?php echo ($m == $selected_month) ? '#667eea' : '#333'; ?>;"><?php echo strtoupper(substr($month_names[$m], 0, 3)); ?></span>
+                            <div class="bar">
+                                <div class="bar-rect" 
+                                     style="height: <?php echo $height; ?>px; background: <?php echo $bar_color; ?>; border: <?php echo $is_selected; ?>;"
+                                     onclick="selectMonth(<?php echo $m; ?>, <?php echo $selected_year; ?>)"
+                                     title="<?php echo $month_names[$m]; ?>: <?php echo $all_months_data[$m]; ?> consultations">
+                                </div>
+                                <span class="bar-label" style="color: <?php echo ($m == $selected_month) ? '#667eea' : '#333'; ?>;">
+                                    <?php echo strtoupper(substr($month_names[$m], 0, 3)); ?>
+                                </span>
+                                <span class="bar-count">
+                                    <?php echo $all_months_data[$m]; ?>
+                                </span>
                             </div>
                             <?php endfor; ?>
+                        </div>
+                        
+                        <div style="text-align: center; color: #666; font-size: 0.8rem;">
+                            Click on bars to view monthly details
                         </div>
                     </div>
 
                     <h2 class="summary-title">MONTHLY SUMMARY (<?php echo strtoupper($month); ?>)</h2>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; background: #f8f9fa; padding: 2rem; border-radius: 10px;">
-                        <div>
-                            <p style="margin-bottom: 0.5rem;"><strong>Total Consultation:</strong> <?php echo $total_consultations; ?></p>
-                            <p style="margin-bottom: 0.5rem;"><strong>Top Diagnoses:</strong></p>
-                            <?php foreach($diagnostics as $diagnostic => $count): ?>
-                            <p style="margin-left: 1rem; margin-bottom: 0.25rem;"><?php echo $diagnostic; ?></p>
-                            <?php endforeach; ?>
+                    <!-- Statistics Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value"><?php echo $total_consultations; ?></div>
+                            <div class="stat-label">Total Consultations</div>
+                            <small class="text-muted">Based on <?php echo count($actual_records); ?> actual records</small>
                         </div>
-                        <div>
-                            <p style="margin-bottom: 0.5rem;"><strong>BY DEPARTMENT</strong></p>
-                            <?php foreach($departments as $dept => $count): ?>
-                            <p style="margin-left: 1rem; margin-bottom: 0.25rem;"><?php echo $dept; ?>: <?php echo $count; ?></p>
-                            <?php endforeach; ?>
-                            
-                            <p style="margin-bottom: 0.5rem; margin-top: 1rem;"><strong>BY YEAR LEVEL</strong></p>
-                            <?php foreach($year_levels as $level => $count): ?>
-                            <p style="margin-left: 1rem; margin-bottom: 0.25rem;"><?php echo $level; ?>: <?php echo $count; ?></p>
-                            <?php endforeach; ?>
+                        
+                        <div class="stat-card">
+                            <div class="stat-value"><?php echo count($diagnostics); ?></div>
+                            <div class="stat-label">Different Diagnoses</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-value"><?php echo count($departments); ?></div>
+                            <div class="stat-label">Departments Served</div>
                         </div>
                     </div>
+
+                    <!-- Detailed Breakdown -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px;">
+                            <h5 style="color: #1a3a5f; margin-bottom: 1rem;">
+                                <i class="fas fa-stethoscope me-2"></i>Top Diagnoses
+                            </h5>
+                            <?php if (!empty($diagnostics)): ?>
+                                <?php 
+                                arsort($diagnostics);
+                                $topDiagnostics = array_slice($diagnostics, 0, 5, true);
+                                ?>
+                                <?php foreach($topDiagnostics as $diagnosis => $count): ?>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #e9ecef;">
+                                    <span><?php echo htmlspecialchars($diagnosis); ?></span>
+                                    <span style="background: #667eea; color: white; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.8rem;">
+                                        <?php echo $count; ?> cases
+                                    </span>
+                                </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <p class="text-muted">No diagnosis data available</p>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px;">
+                            <h5 style="color: #1a3a5f; margin-bottom: 1rem;">
+                                <i class="fas fa-building me-2"></i>By Department
+                            </h5>
+                            <?php if (!empty($departments)): ?>
+                                <?php arsort($departments); ?>
+                                <?php foreach($departments as $dept => $count): ?>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #e9ecef;">
+                                    <span><?php echo htmlspecialchars($dept); ?></span>
+                                    <span style="font-weight: 600; color: #667eea;"><?php echo $count; ?></span>
+                                </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <p class="text-muted">No department data available</p>
+                            <?php endif; ?>
+                            
+                            <h5 style="color: #1a3a5f; margin-top: 1.5rem; margin-bottom: 1rem;">
+                                <i class="fas fa-graduation-cap me-2"></i>By Year Level
+                            </h5>
+                            <?php if (!empty($year_levels)): ?>
+                                <?php foreach($year_levels as $level => $count): ?>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #e9ecef;">
+                                    <span><?php echo htmlspecialchars($level); ?></span>
+                                    <span style="font-weight: 600; color: #667eea;"><?php echo $count; ?></span>
+                                </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <p class="text-muted">No year level data available</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Recent Consultations Table -->
+                    <div style="margin-top: 2rem;">
+                        <h4 style="color: #1a3a5f; margin-bottom: 1rem;">
+                            <i class="fas fa-list me-2"></i>Recent Consultations for <?php echo $month; ?>
+                        </h4>
+                        
+                        <?php if (!empty($actual_records)): ?>
+                            <div style="overflow-x: auto; background: white; border-radius: 10px; padding: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background: #2c3e50; color: white;">
+                                            <th style="padding: 12px 15px; text-align: left;">Date</th>
+                                            <th style="padding: 12px 15px; text-align: left;">Student</th>
+                                            <th style="padding: 12px 15px; text-align: left;">Student Number</th>
+                                            <th style="padding: 12px 15px; text-align: left;">Diagnosis</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach($actual_records as $consultation): ?>
+                                        <tr style="border-bottom: 1px solid #e9ecef;">
+                                            <td style="padding: 12px 15px;"><?php echo date('M d, Y', strtotime($consultation['consultation_date'])); ?></td>
+                                            <td style="padding: 12px 15px;"><?php echo htmlspecialchars($consultation['fullname']); ?></td>
+                                            <td style="padding: 12px 15px;"><?php echo htmlspecialchars($consultation['student_number']); ?></td>
+                                            <td style="padding: 12px 15px;"><?php echo htmlspecialchars($consultation['diagnosis']); ?></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div style="text-align: center; margin-top: 1rem;">
+                                <a href="view_records.php?month=<?php echo $selected_month; ?>&year=<?php echo $selected_year; ?>" 
+                                   class="btn btn-primary">
+                                    <i class="fas fa-list me-1"></i> View All Consultations
+                                </a>
+                            </div>
+                        <?php else: ?>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i> 
+                                No consultation records found for <?php echo $month; ?>.
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Debug Section - Shows actual records for verification -->
+                    <?php if (isset($_GET['debug'])): ?>
+                    <div class="debug-section">
+                        <div class="debug-header">
+                            <i class="fas fa-bug"></i>
+                            Debug Information - Actual Records in Database
+                        </div>
+                        
+                        <p><strong>Total Records Found:</strong> <?php echo count($actual_records); ?></p>
+                        <p><strong>Counted in Summary:</strong> <?php echo $total_consultations; ?></p>
+                        
+                        <?php if (!empty($actual_records)): ?>
+                            <div style="overflow-x: auto; margin-top: 1rem;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                                    <thead>
+                                        <tr style="background: #856404; color: white;">
+                                            <th style="padding: 8px; text-align: left;">ID</th>
+                                            <th style="padding: 8px; text-align: left;">Date</th>
+                                            <th style="padding: 8px; text-align: left;">Student Number</th>
+                                            <th style="padding: 8px; text-align: left;">Student Name</th>
+                                            <th style="padding: 8px; text-align: left;">Diagnosis</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach($actual_records as $record): ?>
+                                        <tr style="border-bottom: 1px solid #dee2e6;">
+                                            <td style="padding: 8px;"><?php echo $record['id']; ?></td>
+                                            <td style="padding: 8px;"><?php echo $record['consultation_date']; ?></td>
+                                            <td style="padding: 8px;"><?php echo $record['student_number']; ?></td>
+                                            <td style="padding: 8px;"><?php echo $record['fullname']; ?></td>
+                                            <td style="padding: 8px;"><?php echo $record['diagnosis']; ?></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php else: ?>
+                            <p class="text-muted">No records found for debugging.</p>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
 
                     <div class="divider"></div>
 
@@ -1087,14 +1223,20 @@ $year_levels = $data['year_levels'];
                             <i class="fas fa-print"></i>
                             Print Report
                         </button>
-                        <button class="btn-report secondary" onclick="exportToPDF()">
-                            <i class="fas fa-file-pdf"></i>
-                            Export to PDF
+                        <button class="btn-report secondary" onclick="exportToExcel()">
+                            <i class="fas fa-file-excel"></i>
+                            Export to Excel
                         </button>
                         <button class="btn-report secondary" onclick="goBack()">
                             <i class="fas fa-arrow-left"></i>
                             Back to Dashboard
                         </button>
+                        <?php if (!isset($_GET['debug'])): ?>
+                        <a href="?month=<?php echo $selected_month; ?>&year=<?php echo $selected_year; ?>&debug=1" class="btn-report secondary">
+                            <i class="fas fa-bug"></i>
+                            Debug View
+                        </a>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -1180,13 +1322,45 @@ $year_levels = $data['year_levels'];
 
         // Report functions
         function printReport() {
+            const originalTitle = document.title;
+            document.title = "Monthly Summary - <?php echo $month; ?> - ASCOT Clinic";
             window.print();
+            document.title = originalTitle;
         }
 
-        function exportToPDF() {
-            alert('PDF export functionality would be implemented here.');
-            // In a real application, you would use a library like jsPDF
-            // or make an API call to generate a PDF
+        function exportToExcel() {
+            const month = "<?php echo $month; ?>";
+            const total = "<?php echo $total_consultations; ?>";
+            
+            let csvContent = "Monthly Summary Report - " + month + "\n\n";
+            csvContent += "Total Consultations," + total + "\n\n";
+            
+            csvContent += "Top Diagnoses\n";
+            <?php 
+            arsort($diagnostics);
+            $topDiagnostics = array_slice($diagnostics, 0, 5, true);
+            foreach($topDiagnostics as $diagnosis => $count): 
+            ?>
+            csvContent += "<?php echo $diagnosis; ?>,<?php echo $count; ?>\n";
+            <?php endforeach; ?>
+            
+            csvContent += "\nBy Department\n";
+            <?php foreach($departments as $dept => $count): ?>
+            csvContent += "<?php echo $dept; ?>,<?php echo $count; ?>\n";
+            <?php endforeach; ?>
+            
+            csvContent += "\nBy Year Level\n";
+            <?php foreach($year_levels as $level => $count): ?>
+            csvContent += "<?php echo $level; ?>,<?php echo $count; ?>\n";
+            <?php endforeach; ?>
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'monthly_summary_<?php echo strtolower(str_replace(" ", "_", $month)); ?>.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
         }
 
         function goBack() {

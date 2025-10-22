@@ -57,17 +57,24 @@ if (isset($_GET['delete_id'])) {
 $filter = $_GET['filter'] ?? 'all';
 $department_filter = $_GET['department'] ?? 'all';
 
-// Fetch all students with medical history check
+// Fetch all students with medical history check - FIXED QUERY TO PREVENT DUPLICATES
 $students = [];
-$where_conditions = [];
 $params = [];
 
 try {
-    // Base query with LEFT JOIN for medical_history
+    // NEW QUERY: Get only the LATEST student_information record for each student
     $query = "
         SELECT 
-            si.*, 
-            u.email, 
+            si.id,
+            si.student_number,
+            si.fullname,
+            si.course_year,
+            si.cellphone_number,
+            si.address,
+            si.age,
+            si.sex,
+            si.created_at,
+            u.email,
             u.created_at as user_created,
             mh.medical_attention,
             mh.medical_conditions,
@@ -79,7 +86,16 @@ try {
             mh.food_allergies,
             mh.medicine_allergies
         FROM users u 
-        LEFT JOIN student_information si ON u.student_number = si.student_number 
+        INNER JOIN (
+            -- Get only the LATEST student_information record for each student_number
+            SELECT s1.*
+            FROM student_information s1
+            INNER JOIN (
+                SELECT student_number, MAX(created_at) as max_created
+                FROM student_information 
+                GROUP BY student_number
+            ) s2 ON s1.student_number = s2.student_number AND s1.created_at = s2.max_created
+        ) si ON u.student_number = si.student_number 
         LEFT JOIN medical_history mh ON u.student_number = mh.student_number
         WHERE 1=1
     ";
@@ -106,7 +122,7 @@ try {
         $params[] = "%$department_filter%";
     }
 
-    $query .= " ORDER BY COALESCE(si.created_at, u.created_at) DESC";
+    $query .= " ORDER BY si.student_number ASC";
 
     $stmt = $pdo->prepare($query);
     $stmt->execute($params);
@@ -187,7 +203,6 @@ function getProfileStatus($student) {
     ];
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -964,7 +979,7 @@ function getProfileStatus($student) {
             // Department filter change
             const departmentFilter = document.getElementById('departmentFilter');
             if (departmentFilter) {
-                departmentFilter.addEventListener('change', function() {
+                departmentFilter.addEventListener('change', function () {
                     const currentUrl = new URL(window.location.href);
                     currentUrl.searchParams.set('department', this.value);
                     window.location.href = currentUrl.toString();
