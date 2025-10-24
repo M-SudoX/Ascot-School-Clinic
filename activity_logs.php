@@ -10,9 +10,29 @@ if (!isset($_SESSION['student_id'])) {
 }
 
 $student_id = $_SESSION['student_id'];
+$student_number = $_SESSION['student_number'] ?? ($_SESSION['student_id'] ?? 'N/A');
 
 // ✅ I-log ang pag-visit sa activity logs page (automatic duplicate prevention na)
 logActivity($pdo, $student_id, "Viewed activity logs");
+
+$stmt = $pdo->prepare("SELECT fullname, student_number, course_year, cellphone_number 
+                       FROM student_information 
+                       WHERE student_number = :student_number LIMIT 1");
+$stmt->execute([':student_number' => $student_number]);
+$student_info = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// ✅ ERROR HANDLING: BACKUP SYSTEM KUNG WALANG MAKUHA SA DATABASE
+if (!$student_info) {
+    $student_info = [
+        'fullname' => $_SESSION['fullname'] ?? 'N/A',
+        'student_number' => $student_number,
+        'course_year' => 'Not set',
+        'cellphone_number' => 'Not set'
+    ];
+} else {
+    $_SESSION['fullname'] = $student_info['fullname'];
+    $_SESSION['student_number'] = $student_info['student_number'];
+}
 
 // ✅ Fetch ONLY SPECIFIC ACTION LOGS - hindi kasama ang viewed/accessed/login/logout
 try {
@@ -39,311 +59,415 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Activity Logs - ASCOT Online School Clinic</title>
+    <title>Activity Logs - ASCOT Clinic</title>
+    
+    <!-- Bootstrap -->
     <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
     <link href="assets/webfonts/all.min.css" rel="stylesheet">
-    <link href="assets/css/student_dashboard.css" rel="stylesheet">
     
     <style>
         :root {
-            --primary-color: #3498db;
-            --secondary-color: #2c3e50;
-            --accent-color: #e74c3c;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --sidebar-width: 280px;
-            --header-height: 80px;
+            --primary: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary: #764ba2;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
         }
 
         * {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            overflow-x: hidden;
+            background: #f5f6fa;
+            padding-top: 80px;
+            line-height: 1.6;
         }
 
-        /* ========== ENHANCED HEADER DESIGN ========== */
-        .header {
-            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            padding: 15px 0;
+        /* Header Styles */
+        .top-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 0.75rem 0;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
-            height: var(--header-height);
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            opacity: 0.05;
-            z-index: -1;
-        }
-
-        .header .logo-img {
+            z-index: 1030;
             height: 80px;
-            width: 80px;
-            margin-top: -15px;;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-            transition: transform 0.3s ease;
         }
 
-        .header .logo-img:hover {
-            transform: scale(1.05);
-        }
-
-        .header .college-info {
-            text-align: center;
-        }
-
-        .header .college-info h4 {
-            font-size: 1rem;
-            margin-bottom: 0.2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #2c3e50, #3498db);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .header .college-info p {
-            font-size: 0.85rem;
-            margin-bottom: 0;
-            color: #7f8c8d;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-
-        /* ========== ENHANCED SIDEBAR DESIGN ========== */
-        .sidebar {
-            background: linear-gradient(135deg, rgba(44, 62, 80, 0.95) 0%, rgba(52, 73, 94, 0.98) 100%);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 8px 0 32px rgba(0,0,0,0.2);
-            min-height: calc(100vh - var(--header-height));
-            padding: 30px 0;
-            position: fixed;
-            top: var(--header-height);
-            left: 0;
-            width: var(--sidebar-width);
-            z-index: 999;
-            overflow-y: auto;
-        }
-
-        .sidebar .nav {
-            padding: 0 20px;
-        }
-
-        .sidebar .nav-link {
-            color: #ecf0f1 !important;
-            padding: 15px 20px;
-            margin: 8px 0;
-            border-radius: 12px;
-            border-left: 4px solid transparent;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .sidebar .nav-link::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: left 0.5s ease;
         }
 
-        .sidebar .nav-link:hover::before {
-            left: 100%;
+        .logo-img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
         }
 
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            background: linear-gradient(135deg, rgba(52, 152, 219, 0.2) 0%, rgba(41, 128, 185, 0.2) 100%);
-            border-left: 4px solid #3498db;
-            transform: translateX(8px);
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        .school-info {
+            flex: 1;
         }
 
-        .sidebar .nav-link i {
-            width: 25px;
-            text-align: center;
-            margin-right: 15px;
+        .republic {
+            font-size: 0.7rem;
+            opacity: 0.9;
+            letter-spacing: 0.5px;
+        }
+
+        .school-name {
             font-size: 1.1rem;
-            transition: transform 0.3s ease;
+            font-weight: 700;
+            margin: 0.1rem 0;
+            line-height: 1.2;
         }
 
-        .sidebar .nav-link:hover i {
-            transform: scale(1.2);
+        .clinic-title {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            font-weight: 500;
         }
 
-        .sidebar .nav-link.active i {
-            color: #3498db;
-        }
-
-        .logout-btn .nav-link {
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2) 0%, rgba(192, 57, 43, 0.2) 100%);
-            border: 1px solid rgba(231, 76, 60, 0.3);
-            margin-top: 20px;
-        }
-
-        .logout-btn .nav-link:hover {
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.3) 0%, rgba(192, 57, 43, 0.3) 100%);
-            border-left: 4px solid #e74c3c;
-            transform: translateX(8px);
-        }
-
-        /* ========== MOBILE SIDEBAR ENHANCEMENTS ========== */
-        .mobile-menu-btn {
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 20px;
+            top: 95px;
             left: 20px;
-            z-index: 1100;
-            background: linear-gradient(135deg, #3498db, #2980b9);
+            z-index: 1025;
+            background: var(--primary);
             color: white;
             border: none;
-            border-radius: 12px;
-            padding: 12px 16px;
-            font-size: 1.3rem;
-            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
             transition: all 0.3s ease;
         }
 
-        .mobile-menu-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.6);
+        .mobile-menu-toggle:hover {
+            transform: scale(1.05);
+            background: var(--primary-dark);
         }
 
+        /* Dashboard Container */
+        .dashboard-container {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 260px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1020;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.9rem 1.25rem;
+            color: #444;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: #f8f9fa;
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
+            color: var(--primary);
+            border-left: 4px solid var(--primary);
+        }
+
+        .nav-item i {
+            width: 22px;
+            margin-right: 0.9rem;
+            font-size: 1.1rem;
+        }
+
+        .nav-item span {
+            flex: 1;
+        }
+
+        .nav-item.logout {
+            color: var(--danger);
+            margin-top: auto;
+        }
+
+        .nav-item.logout:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-x: hidden;
+            margin-left: 260px;
+            margin-top: 0;
+        }
+
+        /* Sidebar Overlay for Mobile */
         .sidebar-overlay {
             display: none;
             position: fixed;
-            top: 0;
+            top: 80px;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 998;
-            backdrop-filter: blur(5px);
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1019;
         }
 
-        /* ========== MAIN CONTENT ENHANCEMENTS ========== */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 30px;
-            background: rgba(248, 249, 250, 0.95);
-            backdrop-filter: blur(10px);
-            min-height: calc(100vh - var(--header-height));
-            margin-top: var(--header-height);
+        .sidebar-overlay.active {
+            display: block;
         }
 
-        /* ========== ORIGINAL ACTIVITY LOGS STYLES (PRESERVED) ========== */
-        .activity-table {
-            background: #fff;
+        /* Welcome Section */
+        .welcome-section {
+            background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(102,126,234,0.2);
+            border-left: 5px solid var(--primary);
+        }
+
+        .welcome-content h1 {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-content p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        /* Activity Logs Card */
+        .activity-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .card-title {
+            color: var(--primary);
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .card-icon {
+            width: 45px;
+            height: 45px;
             border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            background: var(--primary);
+            transition: all 0.3s ease;
         }
 
-        .activity-table h3 {
-            color: #333;
+        .card-icon:hover {
+            transform: scale(1.1);
+        }
+
+        /* Table Styles */
+        .activity-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .activity-table th {
+            background: rgba(102,126,234,0.1);
+            color: var(--primary);
             font-weight: 600;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #ffda6a;
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 2px solid rgba(102,126,234,0.2);
         }
 
-        table th {
-            background: #ffda6a;
-            text-align: center;
-            font-weight: bold;
-            padding: 15px;
-        }
-
-        table td {
+        .activity-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
             vertical-align: middle;
-            padding: 12px;
+        }
+
+        .activity-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .activity-table tr:hover {
+            background: rgba(102,126,234,0.02);
+        }
+
+        .action-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .action-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .icon-primary { background: var(--primary); }
+        .icon-success { background: var(--success); }
+        .icon-info { background: var(--info); }
+        .icon-warning { background: var(--warning); }
+        .icon-danger { background: var(--danger); }
+        .icon-secondary { background: var(--gray); }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--gray);
+        }
+
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #dee2e6;
+            display: block;
+        }
+
+        .no-data h4 {
+            color: var(--gray);
+            margin-bottom: 0.5rem;
         }
 
         .alert-info {
-            background: #d1ecf1;
-            border-color: #bee5eb;
+            background: rgba(23, 162, 184, 0.1);
+            border: 1px solid rgba(23, 162, 184, 0.2);
             color: #0c5460;
             border-radius: 8px;
-            padding: 15px;
-        }
-        
-        /* Center aligned action cells */
-        .action-cell {
-            text-align: center;
-            padding: 12px;
-        }
-        
-        .action-content {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        
-        .action-icon {
-            width: 16px;
-        }
-        
-        .text-muted-empty {
-            color: #6c757d;
-            font-style: italic;
-            padding: 40px 0;
-            text-align: center;
-        }
-        
-        .table-bordered {
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        
-        .table-bordered th,
-        .table-bordered td {
-            border: 1px solid #dee2e6;
-        }
-        
-        .table tbody tr:hover {
-            background-color: rgba(0, 0, 0, 0.02);
+            padding: 1rem;
+            margin-bottom: 1.5rem;
         }
 
-        /* ========== RESPONSIVE BREAKPOINTS ========== */
-        @media (max-width: 991.98px) {
+        /* Responsive Design */
+        @media (max-width: 1200px) {
             .sidebar {
-                left: -100%;
-                width: 300px;
-                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                width: 240px;
+            }
+            
+            .main-content {
+                margin-left: 240px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .school-name {
+                font-size: 1rem;
+            }
+
+            .logo-img {
+                width: 50px;
+                height: 50px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding-top: 70px;
+            }
+            
+            .top-header {
+                height: 70px;
+                padding: 0.5rem 0;
+            }
+            
+            .mobile-menu-toggle {
+                display: block;
+                top: 85px;
+                left: 20px;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 70px;
+                height: calc(100vh - 70px);
+                z-index: 1020;
+                transform: translateX(-100%);
+                overflow-y: auto;
+                width: 280px;
             }
 
             .sidebar.active {
-                left: 0;
+                transform: translateX(0);
             }
 
-            .mobile-menu-btn {
-                display: block;
+            .sidebar-overlay {
+                top: 70px;
             }
 
             .sidebar-overlay.active {
@@ -351,260 +475,354 @@ try {
             }
 
             .main-content {
+                padding: 2rem 1.25rem 1.25rem;
+                width: 100%;
                 margin-left: 0;
-                padding: 20px;
+            }
+
+            .header-content {
+                padding: 0 1rem;
+            }
+
+            .school-name {
+                font-size: 0.9rem;
+            }
+
+            .republic, .clinic-title {
+                font-size: 0.65rem;
+            }
+
+            .activity-card {
+                padding: 1.5rem;
+            }
+
+            .activity-table {
+                font-size: 0.9rem;
+            }
+
+            .activity-table th,
+            .activity-table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .action-cell {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
             }
         }
 
-        @media (max-width: 767.98px) {
-            :root {
-                --header-height: 70px;
+        @media (max-width: 576px) {
+            .activity-card {
+                padding: 1.25rem;
             }
 
-            .header {
-                padding: 10px 0;
+            .welcome-section {
+                padding: 1.5rem;
             }
 
-            .header .logo-img {
-                height: 40px;
+            .welcome-content h1 {
+                font-size: 1.5rem;
             }
 
             .main-content {
-                padding: 15px;
-                margin-top: 70px;
+                padding: 1.75rem 1rem 1rem;
+            }
+            
+            .mobile-menu-toggle {
+                top: 80px;
+                width: 45px;
+                height: 45px;
             }
 
             .activity-table {
-                padding: 20px;
-                margin-top: 10px;
+                font-size: 0.85rem;
             }
 
-            table {
-                font-size: 14px;
+            .activity-table th,
+            .activity-table td {
+                padding: 0.5rem 0.25rem;
             }
-
-            .action-content {
-                flex-direction: column;
-                gap: 4px;
+        }
+        
+        @media (max-width: 480px) {
+            .logo-img {
+                width: 40px;
+                height: 40px;
             }
-
-            .mobile-menu-btn {
-                top: 15px;
+            
+            .school-name {
+                font-size: 0.8rem;
+            }
+            
+            .republic, .clinic-title {
+                font-size: 0.6rem;
+            }
+            
+            .mobile-menu-toggle {
+                width: 45px;
+                height: 45px;
+                top: 80px;
                 left: 15px;
-                padding: 10px 14px;
-                font-size: 1.2rem;
             }
-        }
+            
+            .main-content {
+                padding: 1.5rem 1rem 1rem;
+            }
 
-        @media (max-width: 575.98px) {
             .activity-table {
-                padding: 15px;
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
+
+        @media (max-width: 375px) {
+            .mobile-menu-toggle {
+                top: 75px;
+                left: 15px;
+                width: 40px;
+                height: 40px;
             }
             
-            table {
-                font-size: 13px;
-            }
-            
-            table th,
-            table td {
-                padding: 8px 4px;
+            .main-content {
+                padding: 1.25rem 0.75rem 0.75rem;
             }
         }
 
-        /* ========== CUSTOM SCROLLBAR ========== */
-        ::-webkit-scrollbar {
-            width: 8px;
+        /* ANIMATIONS */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        ::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.1);
-            border-radius: 4px;
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
         }
 
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            border-radius: 4px;
+        .stagger-animation > * {
+            opacity: 0;
+            animation: fadeInUp 0.6s ease-out forwards;
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #2980b9, #21618c);
-        }
+        .stagger-animation > *:nth-child(1) { animation-delay: 0.1s; }
+        .stagger-animation > *:nth-child(2) { animation-delay: 0.2s; }
+        .stagger-animation > *:nth-child(3) { animation-delay: 0.3s; }
+        .stagger-animation > *:nth-child(4) { animation-delay: 0.4s; }
     </style>
 </head>
 <body>
-    <!-- MOBILE MENU BUTTON -->
-    <button class="mobile-menu-btn" id="mobileMenuBtn">
+    <!-- Mobile Menu Toggle Button -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
-    
-    <!-- SIDEBAR OVERLAY -->
+
+    <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- ENHANCED HEADER -->
-    <div class="header">
+    <!-- Header -->
+    <header class="top-header">
         <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <img src="img/logo.png" alt="ASCOT Logo" class="logo-img">
-                </div>
-                <div class="col">
-                    <div class="college-info">
-                        <h4>Republic of the Philippines</h4>
-                        <h4>AURORA STATE COLLEGE OF TECHNOLOGY</h4>
-                        <p>ONLINE SCHOOL CLINIC</p>
-                    </div>
+            <div class="header-content">
+                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img">
+                <div class="school-info">
+                    <div class="republic">Republic of the Philippines</div>
+                    <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
+                    <div class="clinic-title">ONLINE SCHOOL CLINIC</div>
                 </div>
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- CONTENT -->
-    <div class="container-fluid">
-        <div class="row">
-            <!-- ENHANCED SIDEBAR -->
-            <div class="col-md-3 col-lg-2 sidebar" id="sidebar">
-                <nav class="nav flex-column">
-                    <a class="nav-link" href="student_dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                    <a class="nav-link" href="update_profile.php"><i class="fas fa-user-edit"></i> Update Profile</a>
-                    <a class="nav-link" href="schedule_consultation.php"><i class="fas fa-calendar-alt"></i> Schedule Consultation</a>
-                    <a class="nav-link" href="student_report.php"><i class="fas fa-chart-bar"></i> Report</a>
-                    <a class="nav-link" href="student_announcement.php"><i class="fas fa-bullhorn"></i> Announcement</a>
-                    <a class="nav-link active" href="activity_logs.php"><i class="fas fa-clipboard-list"></i> Activity Logs</a>
-                </nav>
-                <div class="logout-btn mt-3">
-                    <a class="nav-link text-danger" href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <nav class="sidebar-nav">
+                <a href="student_dashboard.php" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="update_profile.php" class="nav-item">
+                    <i class="fas fa-user-edit"></i>
+                    <span>Update Profile</span>
+                </a>
+
+                <a href="schedule_consultation.php" class="nav-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Schedule Consultation</span>
+                </a>
+
+                <a href="student_report.php" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Report</span>
+                </a>
+
+                <a href="student_announcement.php" class="nav-item">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Announcement</span>
+                </a>
+
+                <a href="activity_logs.php" class="nav-item active">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Activity Logs</span>
+                </a>
+                
+                <a href="logout.php" class="nav-item logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- WELCOME SECTION -->
+            <div class="welcome-section fade-in">
+                <div class="welcome-content">
+                    <h1>Activity Logs <i class="fas fa-clipboard-list"></i></h1>
+                    <p>Track your important activities and actions in the system</p>
                 </div>
             </div>
 
-            <!-- MAIN CONTENT (ORIGINAL DESIGN PRESERVED) -->
-            <div class="col-md-9 col-lg-10 main-content">
-                <div class="activity-table">
-                    <h3>Activity Logs</h3>
-                    
-                    <?php if (isset($error)): ?>
-                        <div class="alert alert-info">
-                            <strong>Info:</strong> <?php echo $error; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <table class="table table-bordered mt-4">
-                        <thead>
-                            <tr>
-                                <th class="text-center">ID</th>
-                                <th class="text-center">Action</th>
-                                <th class="text-center">Date & Time</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (!empty($logs)): ?>
+            <!-- ACTIVITY LOGS CARD -->
+            <div class="activity-card fade-in">
+                <div class="card-header">
+                    <h3 class="card-title">Activity History</h3>
+                    <div class="card-icon">
+                        <i class="fas fa-history"></i>
+                    </div>
+                </div>
+                
+                <?php if (isset($error)): ?>
+                    <div class="alert alert-info">
+                        <strong>Info:</strong> <?php echo $error; ?>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if (!empty($logs)): ?>
+                    <div class="table-responsive">
+                        <table class="activity-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Action</th>
+                                    <th>Date & Time</th>
+                                </tr>
+                            </thead>
+                            <tbody class="stagger-animation">
                                 <?php foreach ($logs as $log): ?>
                                     <tr>
-                                        <td class="text-center"><?php echo htmlspecialchars($log['id']); ?></td>
-                                        <td class="action-cell">
-                                            <div class="action-content">
+                                        <td><?php echo htmlspecialchars($log['id']); ?></td>
+                                        <td>
+                                            <div class="action-cell">
                                                 <?php 
                                                 // Add icons based on action type
                                                 $action = htmlspecialchars($log['action']);
+                                                $iconClass = '';
                                                 $icon = '';
                                                 
                                                 if (strpos($action, 'profile') !== false) {
-                                                    $icon = '<i class="fas fa-user-edit text-primary action-icon"></i>';
+                                                    $iconClass = 'icon-primary';
+                                                    $icon = 'fas fa-user-edit';
                                                 } elseif (strpos($action, 'medical') !== false) {
-                                                    $icon = '<i class="fas fa-file-medical text-info action-icon"></i>';
+                                                    $iconClass = 'icon-info';
+                                                    $icon = 'fas fa-file-medical';
                                                 } elseif (strpos($action, 'password') !== false) {
-                                                    $icon = '<i class="fas fa-key text-warning action-icon"></i>';
+                                                    $iconClass = 'icon-warning';
+                                                    $icon = 'fas fa-key';
                                                 } elseif (strpos($action, 'consultation') !== false) {
                                                     if (strpos($action, 'Scheduled') !== false) {
-                                                        $icon = '<i class="fas fa-calendar-plus text-success action-icon"></i>';
+                                                        $iconClass = 'icon-success';
+                                                        $icon = 'fas fa-calendar-plus';
                                                     } elseif (strpos($action, 'Edited') !== false) {
-                                                        $icon = '<i class="fas fa-edit text-primary action-icon"></i>';
+                                                        $iconClass = 'icon-primary';
+                                                        $icon = 'fas fa-edit';
                                                     } elseif (strpos($action, 'Cancelled') !== false) {
-                                                        $icon = '<i class="fas fa-times-circle text-danger action-icon"></i>';
+                                                        $iconClass = 'icon-danger';
+                                                        $icon = 'fas fa-times-circle';
                                                     } else {
-                                                        $icon = '<i class="fas fa-calendar-check text-info action-icon"></i>';
+                                                        $iconClass = 'icon-info';
+                                                        $icon = 'fas fa-calendar-check';
                                                     }
                                                 } else {
-                                                    $icon = '<i class="fas fa-history text-secondary action-icon"></i>';
+                                                    $iconClass = 'icon-secondary';
+                                                    $icon = 'fas fa-history';
                                                 }
-                                                
-                                                echo $icon;
                                                 ?>
+                                                <div class="action-icon <?php echo $iconClass; ?>">
+                                                    <i class="<?php echo $icon; ?>"></i>
+                                                </div>
                                                 <span><?php echo $action; ?></span>
                                             </div>
                                         </td>
-                                        <td class="text-center"><?php echo date('M d, Y h:i A', strtotime($log['log_date'])); ?></td>
+                                        <td><?php echo date('M d, Y h:i A', strtotime($log['log_date'])); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="3" class="text-center text-muted-empty">
-                                        <i class="fas fa-clipboard-list fa-2x mb-3 d-block"></i>
-                                        No important activities recorded yet.
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <div class="no-data">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h4>No Activities Recorded</h4>
+                        <p>Your important activities will appear here</p>
+                    </div>
+                <?php endif; ?>
             </div>
-        </div>
+        </main>
     </div>
 
+    <!-- JS -->
     <script src="assets/js/bootstrap.bundle.min.js"></script>
+    
     <script>
-        // MOBILE SIDEBAR FUNCTIONALITY
         document.addEventListener('DOMContentLoaded', function() {
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            // MOBILE MENU FUNCTIONALITY
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
-            
-            function toggleSidebar() {
+
+            mobileMenuToggle.addEventListener('click', function() {
                 sidebar.classList.toggle('active');
                 sidebarOverlay.classList.toggle('active');
-                document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
-                
-                const icon = mobileMenuBtn.querySelector('i');
-                if (sidebar.classList.contains('active')) {
-                    icon.className = 'fas fa-times';
-                    mobileMenuBtn.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
-                } else {
-                    icon.className = 'fas fa-bars';
-                    mobileMenuBtn.style.background = 'linear-gradient(135deg, #3498db, #2980b9)';
-                }
-            }
-            
-            function closeSidebar() {
+                const icon = this.querySelector('i');
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-times');
+            });
+
+            sidebarOverlay.addEventListener('click', function() {
                 sidebar.classList.remove('active');
                 sidebarOverlay.classList.remove('active');
-                document.body.style.overflow = '';
-                mobileMenuBtn.querySelector('i').className = 'fas fa-bars';
-                mobileMenuBtn.style.background = 'linear-gradient(135deg, #3498db, #2980b9)';
-            }
-            
-            if (mobileMenuBtn && sidebar && sidebarOverlay) {
-                mobileMenuBtn.addEventListener('click', toggleSidebar);
-                sidebarOverlay.addEventListener('click', closeSidebar);
-                
-                const navLinks = sidebar.querySelectorAll('.nav-link');
-                navLinks.forEach(link => {
-                    link.addEventListener('click', function() {
-                        if (window.innerWidth <= 991.98) {
-                            closeSidebar();
-                        }
+                mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+            });
+
+            // Close sidebar when clicking nav items on mobile
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        sidebar.classList.remove('active');
+                        sidebarOverlay.classList.remove('active');
+                        mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
                     });
                 });
-                
-                document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape' && sidebar.classList.contains('active')) {
-                        closeSidebar();
-                    }
-                });
             }
-            
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 991.98) {
-                    closeSidebar();
-                }
+
+            // LOADING ANIMATIONS
+            const staggerElements = document.querySelectorAll('.stagger-animation > *');
+            staggerElements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            const fadeElements = document.querySelectorAll('.fade-in');
+            fadeElements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.2}s`;
             });
         });
     </script>

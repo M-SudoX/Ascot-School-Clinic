@@ -96,428 +96,367 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard - ASCOT Online School Clinic</title>
-    <!-- CSS FILES FOR STYLING -->
-    <link href="assets/css/bootstrap.min.css" rel="stylesheet">  <!-- BOOTSTRAP FRAMEWORK -->
-    <link href="assets/webfonts/all.min.css" rel="stylesheet">   <!-- FONT AWESOME ICONS -->
-    <link href="assets/css/student_dashboard.css" rel="stylesheet"> <!-- CUSTOM STYLES -->
+    <title>Student Dashboard - ASCOT Clinic</title>
+    
+    <!-- Bootstrap -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="assets/webfonts/all.min.css" rel="stylesheet">
+    
     <style>
         :root {
-            --primary-color: #3498db;
-            --secondary-color: #2c3e50;
-            --accent-color: #e74c3c;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --info-color: #17a2b8;
-            --sidebar-width: 280px;
-            --header-height: 80px;
-            --card-radius: 20px;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --primary: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary: #764ba2;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            transition: var(--transition);
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            overflow-x: hidden;
-            color: #2c3e50;
+            background: #f5f6fa;
+            padding-top: 80px;
+            line-height: 1.6;
         }
 
-        /* ========== ENHANCED HEADER DESIGN ========== */
-        .header {
-            background: linear-gradient(135deg, #ffda6a 0%, #fff7de 100%);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            padding: 15px 0;
+        /* Header Styles - IMPROVED */
+        .top-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 0.75rem 0;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
-            height: var(--header-height);
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            opacity: 0.05;
-            z-index: -1;
-        }
-
-        .header .logo-img {
+            z-index: 1030;
             height: 80px;
-            width: 80px;
-            margin-top: -15px;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-            transition: transform 0.3s ease;
         }
 
-        .header .logo-img:hover {
-            transform: scale(1.05);
-        }
-
-        .header .college-info {
-            text-align: center;
-        }
-
-        .header .college-info h4 {
-            font-size: 1rem;
-            margin-bottom: 0.2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #2c3e50, #3498db);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .header .college-info p {
-            font-size: 0.85rem;
-            margin-bottom: 0;
-            color: #7f8c8d;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-
-        .header .student-welcome {
-            text-align: right;
-            color: #2c3e50;
-            font-weight: 600;
-        }
-
-        .header .student-welcome .student-name {
-            color: #3498db;
-            font-weight: 700;
-        }
-
-        /* ========== ENHANCED SIDEBAR DESIGN ========== */
-        .sidebar {
-            background: linear-gradient(135deg, rgba(44, 62, 80, 0.95) 0%, rgba(52, 73, 94, 0.98) 100%);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 8px 0 32px rgba(0,0,0,0.2);
-            min-height: calc(100vh - var(--header-height));
-            padding: 30px 0;
-            position: fixed;
-            top: var(--header-height);
-            left: 0;
-            width: var(--sidebar-width);
-            z-index: 999;
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.1);
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.3);
-            border-radius: 3px;
-        }
-
-        .sidebar .nav {
-            padding: 0 20px;
-        }
-
-        .sidebar .nav-link {
-            color: #ecf0f1 !important;
-            padding: 15px 20px;
-            margin: 8px 0;
-            border-radius: 12px;
-            border-left: 4px solid transparent;
-            transition: var(--transition);
-            font-weight: 500;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .sidebar .nav-link::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: left 0.5s ease;
         }
 
-        .sidebar .nav-link:hover::before {
-            left: 100%;
+        .logo-img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
         }
 
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            background: linear-gradient(135deg, rgba(52, 152, 219, 0.2) 0%, rgba(41, 128, 185, 0.2) 100%);
-            border-left: 4px solid #3498db;
-            transform: translateX(8px);
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        .school-info {
+            flex: 1;
         }
 
-        .sidebar .nav-link i {
-            width: 25px;
-            text-align: center;
-            margin-right: 15px;
+        .republic {
+            font-size: 0.7rem;
+            opacity: 0.9;
+            letter-spacing: 0.5px;
+        }
+
+        .school-name {
             font-size: 1.1rem;
-            transition: transform 0.3s ease;
+            font-weight: 700;
+            margin: 0.1rem 0;
+            line-height: 1.2;
         }
 
-        .sidebar .nav-link:hover i {
-            transform: scale(1.2);
+        .clinic-title {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            font-weight: 500;
         }
 
-        .sidebar .nav-link.active i {
-            color: #3498db;
-        }
-
-        .logout-btn .nav-link {
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2) 0%, rgba(192, 57, 43, 0.2) 100%);
-            border: 1px solid rgba(231, 76, 60, 0.3);
-            margin-top: 20px;
-        }
-
-        .logout-btn .nav-link:hover {
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.3) 0%, rgba(192, 57, 43, 0.3) 100%);
-            border-left: 4px solid #e74c3c;
-            transform: translateX(8px);
-        }
-
-        /* ========== MOBILE SIDEBAR ENHANCEMENTS ========== */
-        .mobile-menu-btn {
+        /* Mobile Menu Toggle - COMPLETELY FIXED POSITION */
+        .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1100;
-            background: linear-gradient(135deg, #3498db, #2980b9);
+            top: 95px; /* MAS MALAYO SA HEADER */
+            left: 20px; /* MAS MALAYO SA GILID */
+            z-index: 1025;
+            background: var(--primary);
             color: white;
             border: none;
-            border-radius: 12px;
-            padding: 12px 16px;
-            font-size: 1.3rem;
-            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-            transition: var(--transition);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        .mobile-menu-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.6);
+        .mobile-menu-toggle:hover {
+            transform: scale(1.05);
+            background: var(--primary-dark);
         }
 
+        /* Dashboard Container - IMPROVED */
+        .dashboard-container {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Sidebar Styles - IMPROVED */
+        .sidebar {
+            width: 260px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1020;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.9rem 1.25rem;
+            color: #444;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: #f8f9fa;
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
+            color: var(--primary);
+            border-left: 4px solid var(--primary);
+        }
+
+        .nav-item i {
+            width: 22px;
+            margin-right: 0.9rem;
+            font-size: 1.1rem;
+        }
+
+        .nav-item span {
+            flex: 1;
+        }
+
+        .nav-item .arrow {
+            margin-left: auto;
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .nav-item .arrow.rotate {
+            transform: rotate(180deg);
+        }
+
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .submenu.show {
+            max-height: 500px;
+        }
+
+        .submenu-item {
+            display: flex;
+            align-items: center;
+            padding: 0.7rem 1.25rem 0.7rem 3.25rem;
+            color: #666;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        .submenu-item:hover {
+            background: #e9ecef;
+            color: var(--primary);
+        }
+
+        .submenu-item i {
+            width: 18px;
+            margin-right: 0.7rem;
+            font-size: 0.9rem;
+        }
+
+        .nav-item.logout {
+            color: var(--danger);
+            margin-top: auto;
+        }
+
+        .nav-item.logout:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        /* Main Content - IMPROVED */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-x: hidden;
+            margin-left: 260px;
+            margin-top: 0;
+        }
+
+        /* Sidebar Overlay for Mobile - IMPROVED */
         .sidebar-overlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 998;
-            backdrop-filter: blur(5px);
-        }
-
-        /* ========== MAIN CONTENT ENHANCEMENTS ========== */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 30px;
-            background: rgba(248, 249, 250, 0.95);
-            backdrop-filter: blur(10px);
-            min-height: calc(100vh - var(--header-height));
-            margin-top: var(--header-height);
-        }
-
-        /* ========== WELCOME SECTION ========== */
-        .welcome-section {
-            background: linear-gradient(135deg, rgba(255, 218, 106, 0.9) 0%, rgba(255, 247, 222, 0.95) 100%);
-            backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: var(--card-radius);
-            margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .welcome-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
+            top: 80px;
             left: 0;
             right: 0;
-            height: 4px;
-            background: linear-gradient(135deg, #3498db, #2980b9);
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1019;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        /* Welcome Section - IMPROVED */
+        .welcome-section {
+            background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(102,126,234,0.2);
+            border-left: 5px solid var(--primary);
         }
 
         .welcome-content h1 {
-            color: #2c3e50;
-            font-weight: 800;
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            background: linear-gradient(135deg, #2c3e50, #3498db);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
         }
 
         .welcome-content p {
-            color: #7f8c8d;
-            font-size: 1.2rem;
-            font-weight: 600;
+            color: var(--gray);
+            font-size: 1.1rem;
             margin-bottom: 0;
         }
 
-        /* ========== DASHBOARD CARDS ========== */
+        /* Dashboard Grid - IMPROVED */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
 
         .dashboard-card {
-            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%);
-            backdrop-filter: blur(10px);
-            border-radius: var(--card-radius);
-            padding: 25px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            position: relative;
-            overflow: hidden;
-            transition: var(--transition);
-        }
-
-        .dashboard-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-        }
-
-        .dashboard-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
         }
 
         .card-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
         }
 
         .card-title {
-            color: #2c3e50;
+            color: var(--primary);
             font-size: 1.3rem;
             font-weight: 700;
             margin: 0;
         }
 
         .card-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 12px;
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             color: white;
-            cursor: pointer;
-            transition: var(--transition);
+            background: var(--primary);
+            transition: all 0.3s ease;
         }
 
         .card-icon:hover {
             transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
         }
 
-        /* ========== INFO CARD SPECIFIC STYLES ========== */
-        .info-card .card-icon {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-        }
-
+        /* INFO CARD STYLES - IMPROVED */
         .info-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid rgba(236, 240, 241, 0.8);
-            position: relative;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f3f4;
         }
 
         .info-row:last-child {
             border-bottom: none;
         }
 
-        .info-row::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 0;
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            border-radius: 2px;
-            transition: height 0.3s ease;
-        }
-
-        .info-row:hover::before {
-            height: 80%;
-        }
-
         .info-label {
             font-weight: 600;
-            color: #7f8c8d;
-            font-size: 0.95rem;
+            color: #6c757d;
             display: flex;
             align-items: center;
         }
 
         .info-label::before {
-            content: '▶';
-            margin-right: 10px;
-            color: #3498db;
-            font-size: 0.8rem;
+            content: '•';
+            color: var(--primary);
+            margin-right: 0.5rem;
+            font-weight: bold;
         }
 
         .info-value {
             font-weight: 600;
-            color: #2c3e50;
-            font-size: 1rem;
+            color: var(--dark);
             text-align: right;
         }
 
-        /* ========== APPOINTMENTS CARD ========== */
-        .appointments-card .card-icon {
-            background: linear-gradient(135deg, #27ae60, #219a52);
-        }
-
+        /* APPOINTMENTS CARD - IMPROVED */
         .appointment-item {
             display: flex;
             align-items: center;
-            gap: 15px;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(236, 240, 241, 0.8);
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f3f4;
         }
 
         .appointment-item:last-child {
@@ -525,18 +464,19 @@ try {
         }
 
         .appointment-date {
-            background: linear-gradient(135deg, #3498db, #2980b9);
+            background: var(--primary);
             color: white;
-            padding: 8px 12px;
+            padding: 0.75rem;
             border-radius: 8px;
             text-align: center;
             min-width: 70px;
         }
 
         .appointment-date .day {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 700;
             display: block;
+            line-height: 1;
         }
 
         .appointment-date .month {
@@ -550,20 +490,20 @@ try {
         }
 
         .appointment-details h6 {
-            margin: 0 0 5px 0;
-            color: #2c3e50;
+            margin: 0 0 0.25rem 0;
+            color: var(--dark);
             font-weight: 600;
         }
 
         .appointment-details p {
             margin: 0;
-            color: #7f8c8d;
+            color: #6c757d;
             font-size: 0.9rem;
         }
 
         .appointment-status {
-            padding: 4px 8px;
-            border-radius: 12px;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
         }
@@ -578,30 +518,26 @@ try {
             color: #155724;
         }
 
-        .no-appointments {
+        .no-data {
             text-align: center;
-            padding: 20px;
-            color: #7f8c8d;
+            padding: 2rem;
+            color: #6c757d;
         }
 
-        .no-appointments i {
-            font-size: 2rem;
-            margin-bottom: 10px;
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #dee2e6;
             display: block;
-            color: #bdc3c7;
         }
 
-        /* ========== ACTIVITIES CARD ========== */
-        .activities-card .card-icon {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-        }
-
+        /* ACTIVITIES CARD - IMPROVED */
         .activity-item {
             display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(236, 240, 241, 0.8);
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f3f4;
         }
 
         .activity-item:last-child {
@@ -617,6 +553,8 @@ try {
             justify-content: center;
             font-size: 1rem;
             color: white;
+            background: var(--primary);
+            flex-shrink: 0;
         }
 
         .activity-details {
@@ -624,254 +562,106 @@ try {
         }
 
         .activity-details p {
-            margin: 0;
-            color: #2c3e50;
+            margin: 0 0 0.25rem 0;
+            color: var(--dark);
             font-weight: 500;
         }
 
         .activity-time {
             font-size: 0.8rem;
-            color: #7f8c8d;
+            color: #6c757d;
         }
 
-        /* ========== QUICK ACTIONS ========== */
+        /* QUICK ACTIONS - IMPROVED */
         .quick-actions {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
         }
 
         .action-btn {
-            background: linear-gradient(135deg, #3498db, #2980b9);
+            background: var(--primary);
             color: white;
             border: none;
-            border-radius: 12px;
-            padding: 15px;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
             text-align: center;
             text-decoration: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 0.5rem;
             font-weight: 600;
-            transition: var(--transition);
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+            transition: all 0.3s ease;
         }
 
         .action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.5);
+            background: var(--primary-dark);
             color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
 
-        .action-btn i {
-            font-size: 1.2rem;
-        }
-
-        /* ========== CALENDAR MODAL STYLES ========== */
-        .calendar-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 2000;
-            backdrop-filter: blur(10px);
-        }
-
-        .calendar-modal.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .calendar-container {
-            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%);
-            border-radius: var(--card-radius);
-            padding: 30px;
-            width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-            position: relative;
-        }
-
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid rgba(52, 152, 219, 0.3);
-        }
-
-        .calendar-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #2c3e50;
-            margin: 0;
-        }
-
-        .calendar-nav {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .calendar-nav-btn {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 12px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .calendar-nav-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
-        }
-
-        .calendar-close {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 12px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .calendar-close:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .calendar-day-header {
-            text-align: center;
-            font-weight: 700;
-            color: #3498db;
-            padding: 10px;
-            background: rgba(52, 152, 219, 0.1);
-            border-radius: 8px;
-        }
-
-        .calendar-day {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-            position: relative;
-            border: 2px solid transparent;
-        }
-
-        .calendar-day:hover {
-            background: rgba(52, 152, 219, 0.1);
-            transform: scale(1.05);
-        }
-
-        .calendar-day.other-month {
-            color: #bdc3c7;
-        }
-
-        .calendar-day.today {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            font-weight: 700;
-        }
-
-        .calendar-day.has-appointment::after {
-            content: '';
-            position: absolute;
-            bottom: 4px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 6px;
-            height: 6px;
-            background: #e74c3c;
-            border-radius: 50%;
-        }
-
-        .calendar-appointments {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid rgba(52, 152, 219, 0.3);
-        }
-
-        .calendar-appointments h4 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            font-weight: 700;
-        }
-
-        .appointment-list {
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .appointment-list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            margin-bottom: 8px;
-            background: rgba(52, 152, 219, 0.05);
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
-        }
-
-        .appointment-list-item.pending {
-            border-left-color: #f39c12;
-        }
-
-        .appointment-list-item.approved {
-            border-left-color: #27ae60;
-        }
-
-        .appointment-list-item.completed {
-            border-left-color: #7f8c8d;
-        }
-
-        /* ========== RESPONSIVE BREAKPOINTS ========== */
-        @media (max-width: 1199.98px) {
-            .dashboard-grid {
-                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        /* Responsive Design - COMPLETELY FIXED MOBILE SPACING */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 240px;
             }
             
-            .welcome-content h1 {
-                font-size: 2.2rem;
+            .main-content {
+                margin-left: 240px;
             }
         }
 
-        @media (max-width: 991.98px) {
+        @media (max-width: 992px) {
+            .school-name {
+                font-size: 1rem;
+            }
+
+            .logo-img {
+                width: 50px;
+                height: 50px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding-top: 70px;
+            }
+            
+            .top-header {
+                height: 70px;
+                padding: 0.5rem 0;
+            }
+            
+            .mobile-menu-toggle {
+                display: block;
+                top: 85px; /* MAS MALAYO SA HEADER */
+                left: 20px; /* MAS MALAYO SA GILID */
+            }
+
             .sidebar {
-                left: -100%;
-                width: 300px;
-                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                position: fixed;
+                left: 0;
+                top: 70px;
+                height: calc(100vh - 70px);
+                z-index: 1020;
+                transform: translateX(-100%);
+                overflow-y: auto;
+                width: 280px;
             }
 
             .sidebar.active {
-                left: 0;
+                transform: translateX(0);
             }
 
-            .mobile-menu-btn {
-                display: block;
+            .sidebar-overlay {
+                top: 70px;
             }
 
             .sidebar-overlay.active {
@@ -879,116 +669,102 @@ try {
             }
 
             .main-content {
+                padding: 2rem 1.25rem 1.25rem; /* MAS MALAKING PADDING SA ITAAS */
+                width: 100%;
                 margin-left: 0;
-                padding: 20px;
-            }
-
-            .header .student-welcome {
-                display: none;
-            }
-
-            .calendar-container {
-                width: 95%;
-                padding: 20px;
-            }
-        }
-
-        @media (max-width: 767.98px) {
-            :root {
-                --header-height: 70px;
-            }
-
-            .header {
-                padding: 10px 0;
-            }
-
-            .header .logo-img {
-                height: 40px;
-            }
-
-            .main-content {
-                padding: 15px;
-                margin-top: 70px;
-            }
-
-            .welcome-section {
-                padding: 20px;
-            }
-
-            .welcome-content h1 {
-                font-size: 1.8rem;
             }
 
             .dashboard-grid {
                 grid-template-columns: 1fr;
-                gap: 20px;
+                margin-top: 1.5rem; /* MAS MALAKING SPACE SA ITAAS NG MGA BUTTON */
+            }
+
+            .header-content {
+                padding: 0 1rem;
+            }
+
+            .school-name {
+                font-size: 0.9rem;
+            }
+
+            .republic, .clinic-title {
+                font-size: 0.65rem;
             }
 
             .dashboard-card {
-                padding: 20px;
+                padding: 1.5rem;
             }
+        }
 
-            .quick-actions {
-                grid-template-columns: 1fr;
-            }
-
-            .mobile-menu-btn {
-                top: 15px;
-                left: 15px;
-                padding: 10px 14px;
-                font-size: 1.2rem;
-            }
-
-            .calendar-grid {
-                gap: 4px;
-            }
-
-            .calendar-day {
+        @media (max-width: 576px) {
+            .action-btn {
+                padding: 1rem 1.25rem;
                 font-size: 0.9rem;
             }
-        }
 
-        @media (max-width: 575.98px) {
+            .dashboard-card {
+                padding: 1.25rem;
+            }
+
+            .welcome-section {
+                padding: 1.5rem;
+            }
+
             .welcome-content h1 {
-                font-size: 1.6rem;
+                font-size: 1.5rem;
             }
 
-            .card-title {
-                font-size: 1.1rem;
+            .main-content {
+                padding: 1.75rem 1rem 1rem; /* ADJUSTED PADDING */
             }
-
-            .info-row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 5px;
+            
+            .mobile-menu-toggle {
+                top: 80px;
+                width: 45px;
+                height: 45px;
             }
-
-            .info-value {
-                text-align: left;
+        }
+        
+        @media (max-width: 480px) {
+            .logo-img {
+                width: 40px;
+                height: 40px;
             }
-
-            .appointment-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
+            
+            .school-name {
+                font-size: 0.8rem;
             }
-
-            .appointment-date {
-                align-self: flex-start;
+            
+            .republic, .clinic-title {
+                font-size: 0.6rem;
             }
-
-            .calendar-header {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
+            
+            .mobile-menu-toggle {
+                width: 45px;
+                height: 45px;
+                top: 80px;
+                left: 15px;
             }
-
-            .calendar-nav {
-                justify-content: center;
+            
+            .main-content {
+                padding: 1.5rem 1rem 1rem;
             }
         }
 
-        /* ========== ANIMATIONS ========== */
+        @media (max-width: 375px) {
+            .mobile-menu-toggle {
+                top: 75px;
+                left: 15px;
+                width: 40px;
+                height: 40px;
+            }
+            
+            .main-content {
+                padding: 1.25rem 0.75rem 0.75rem;
+            }
+        }
+
+        /* ANIMATIONS */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -1013,386 +789,264 @@ try {
         .stagger-animation > *:nth-child(2) { animation-delay: 0.2s; }
         .stagger-animation > *:nth-child(3) { animation-delay: 0.3s; }
         .stagger-animation > *:nth-child(4) { animation-delay: 0.4s; }
-
-        /* ========== CUSTOM SCROLLBAR ========== */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.1);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #2980b9, #21618c);
-        }
     </style>
 </head>
 <body>
-    <!-- MOBILE MENU BUTTON -->
-    <button class="mobile-menu-btn" id="mobileMenuBtn">
+    <!-- Mobile Menu Toggle Button - COMPLETELY FIXED POSITION -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
-    
-    <!-- SIDEBAR OVERLAY -->
+
+    <!-- Sidebar Overlay for Mobile - IMPROVED -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- CALENDAR MODAL -->
-    <div class="calendar-modal" id="calendarModal">
-        <div class="calendar-container">
-            <div class="calendar-header">
-                <h2 class="calendar-title" id="calendarTitle">October 2024</h2>
-                <div class="calendar-nav">
-                    <button class="calendar-nav-btn" id="prevMonth">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <button class="calendar-nav-btn" id="todayBtn">Today</button>
-                    <button class="calendar-nav-btn" id="nextMonth">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                    <button class="calendar-close" id="closeCalendar">
-                        <i class="fas fa-times"></i> Close
-                    </button>
-                </div>
-            </div>
-            
-            <div class="calendar-grid" id="calendarGrid">
-                <!-- Calendar days will be generated by JavaScript -->
-            </div>
-            
-            <div class="calendar-appointments">
-                <h4>Appointments for <span id="selectedDate"></span></h4>
-                <div class="appointment-list" id="appointmentList">
-                    <!-- Appointments will be populated by JavaScript -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ENHANCED HEADER SECTION -->
-    <div class="header">
+    <!-- Header - IMPROVED (INALIS NA ANG WELCOME MESSAGE SA RIGHT) -->
+    <header class="top-header">
         <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <img src="img/logo.png" alt="ASCOT Logo" class="logo-img">
+            <div class="header-content">
+                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img">
+                <div class="school-info">
+                    <div class="republic">Republic of the Philippines</div>
+                    <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
+                    <div class="clinic-title">ONLINE SCHOOL CLINIC</div>
                 </div>
-                <div class="col">
-                    <div class="college-info">
-                        <h4>Republic of the Philippines</h4>
-                        <h4>AURORA STATE COLLEGE OF TECHNOLOGY</h4>
-                        <p>ONLINE SCHOOL CLINIC</p>
-                    </div>
-                </div>
-                <div class="col-auto d-none d-lg-block">
-                    <div class="student-welcome">
-                        Welcome, <span class="student-name"><?php echo htmlspecialchars($student_info['fullname']); ?></span>
-                    </div>
-                </div>
+                <!-- INALIS NA ANG WELCOME MESSAGE AT STUDENT NAME SA RIGHT SIDE -->
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- MAIN LAYOUT CONTAINER -->
-    <div class="container-fluid p-0">
-        <div class="row g-0">
-            <!-- ENHANCED SIDEBAR NAVIGATION -->
-            <div class="col-md-3 col-lg-2 sidebar" id="sidebar">
-                <!-- MOBILE SIDEBAR HEADER -->
-                <div class="d-block d-md-none text-center mb-4 p-4 border-bottom border-secondary">
-                    <img src="img/logo.png" alt="ASCOT Logo" style="height: 50px; margin-bottom: 15px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">
-                    <h6 class="text-white mb-2">Student Portal</h6>
-                    <small class="text-light"><?php echo htmlspecialchars($student_info['fullname']); ?></small>
-                </div>
+    <div class="dashboard-container">
+        <!-- Sidebar - IMPROVED -->
+        <aside class="sidebar" id="sidebar">
+            <nav class="sidebar-nav">
+                <a href="student_dashboard.php" class="nav-item active">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="update_profile.php" class="nav-item">
+                    <i class="fas fa-user-edit"></i>
+                    <span>Update Profile</span>
+                </a>
+
+                <a href="schedule_consultation.php" class="nav-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Schedule Consultation</span>
+                </a>
+
+                <a href="student_report.php" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Report</span>
+                </a>
+
+                <a href="student_announcement.php" class="nav-item">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Announcement</span>
+                </a>
+
+                <a href="activity_logs.php" class="nav-item">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Activity Logs</span>
+                </a>
                 
-                <nav class="nav flex-column stagger-animation">
-                    <!-- NAVIGATION LINKS -->
-                    <a class="nav-link active" href="student_dashboard.php">
-                        <i class="fas fa-tachometer-alt"></i> Dashboard
-                    </a>
-                    <a class="nav-link" href="update_profile.php">
-                        <i class="fas fa-user-edit"></i> Update Profile
-                    </a>
-                    <a class="nav-link" href="schedule_consultation.php">
-                        <i class="fas fa-calendar-alt"></i> Schedule Consultation
-                    </a>
-                    <a class="nav-link" href="student_report.php">
-                        <i class="fas fa-chart-bar"></i> Report
-                    </a>
-                    <a class="nav-link" href="student_announcement.php">
-                        <i class="fas fa-bullhorn"></i> Announcement
-                    </a>
-                    <a class="nav-link" href="activity_logs.php">
-                        <i class="fas fa-clipboard-list"></i> Activity Logs
-                    </a>
-                </nav>
-                <!-- LOGOUT BUTTON -->
-                <div class="logout-btn px-3">
-                    <a class="nav-link text-danger" href="logout.php">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
+                <a href="logout.php" class="nav-item logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- WELCOME SECTION -->
+            <div class="welcome-section fade-in">
+                <div class="welcome-content">
+                    <h1>Welcome, <?php echo htmlspecialchars(explode(' ', $student_info['fullname'])[0]); ?>! 👋</h1>
+                    <p>Here's what's happening with your health consultations today</p>
                 </div>
             </div>
 
-            <!-- MAIN CONTENT AREA -->
-            <div class="col-md-9 col-lg-10 main-content">
-                <!-- WELCOME SECTION -->
-                <div class="welcome-section fade-in">
-                    <div class="welcome-content">
-                        <h1>Welcome, <?php echo htmlspecialchars(explode(' ', $student_info['fullname'])[0]); ?>! 👋</h1>
-                        <p>Here's what's happening with your health consultations today</p>
+            <!-- DASHBOARD GRID -->
+            <div class="dashboard-grid">
+                <!-- STUDENT INFORMATION CARD -->
+                <div class="dashboard-card info-card fade-in">
+                    <div class="card-header">
+                        <h3 class="card-title">Student Information</h3>
+                        <div class="card-icon">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="stagger-animation">
+                        <!-- DISPLAY STUDENT FULL NAME -->
+                        <div class="info-row">
+                            <span class="info-label">Full Name:</span>
+                            <span class="info-value"><?php echo htmlspecialchars($student_info['fullname']); ?></span>
+                        </div>
+                        
+                        <!-- DISPLAY STUDENT ID NUMBER -->
+                        <div class="info-row">
+                            <span class="info-label">ID Number:</span>
+                            <span class="info-value"><?php echo htmlspecialchars($student_info['student_number']); ?></span>
+                        </div>
+                        
+                        <!-- DISPLAY COURSE AND YEAR -->
+                        <div class="info-row">
+                            <span class="info-label">Course/Year:</span>
+                            <span class="info-value">
+                                <?php 
+                                $course_year = $student_info['course_year'] ?? 'Not set';
+                                echo (empty($course_year) || $course_year === 'Not set') 
+                                    ? '<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Not set</span>'
+                                    : htmlspecialchars($course_year);
+                                ?>
+                            </span>
+                        </div>
+                        
+                        <!-- DISPLAY CONTACT NUMBER -->
+                        <div class="info-row">
+                            <span class="info-label">Contact No:</span>
+                            <span class="info-value">
+                                <?php 
+                                $contact = $student_info['cellphone_number'] ?? 'Not set';
+                                echo (empty($contact) || $contact === 'Not set') 
+                                    ? '<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Not set</span>'
+                                    : htmlspecialchars($contact);
+                                ?>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- QUICK ACTIONS -->
+                    <div class="quick-actions">
+                        <a href="update_profile.php" class="action-btn">
+                            <i class="fas fa-edit"></i> Update Profile
+                        </a>
                     </div>
                 </div>
 
-                <!-- DASHBOARD GRID -->
-                <div class="dashboard-grid">
-                    <!-- STUDENT INFORMATION CARD -->
-                    <div class="dashboard-card info-card fade-in">
-                        <div class="card-header">
-                            <h3 class="card-title">Student Information</h3>
-                            <div class="card-icon">
-                                <i class="fas fa-user-graduate"></i>
-                            </div>
-                        </div>
-                        
-                        <div class="stagger-animation">
-                            <!-- DISPLAY STUDENT FULL NAME -->
-                            <div class="info-row">
-                                <span class="info-label">Full Name:</span>
-                                <span class="info-value"><?php echo htmlspecialchars($student_info['fullname']); ?></span>
-                            </div>
-                            
-                            <!-- DISPLAY STUDENT ID NUMBER -->
-                            <div class="info-row">
-                                <span class="info-label">ID Number:</span>
-                                <span class="info-value"><?php echo htmlspecialchars($student_info['student_number']); ?></span>
-                            </div>
-                            
-                            <!-- DISPLAY COURSE AND YEAR -->
-                            <div class="info-row">
-                                <span class="info-label">Course/Year:</span>
-                                <span class="info-value">
-                                    <?php 
-                                    $course_year = $student_info['course_year'] ?? 'Not set';
-                                    echo (empty($course_year) || $course_year === 'Not set') 
-                                        ? '<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Not set</span>'
-                                        : htmlspecialchars($course_year);
-                                    ?>
-                                </span>
-                            </div>
-                            
-                            <!-- DISPLAY CONTACT NUMBER -->
-                            <div class="info-row">
-                                <span class="info-label">Contact No:</span>
-                                <span class="info-value">
-                                    <?php 
-                                    $contact = $student_info['cellphone_number'] ?? 'Not set';
-                                    echo (empty($contact) || $contact === 'Not set') 
-                                        ? '<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Not set</span>'
-                                        : htmlspecialchars($contact);
-                                    ?>
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- QUICK ACTIONS -->
-                        <div class="quick-actions mt-4">
-                            <a href="update_profile.php" class="action-btn">
-                                <i class="fas fa-edit"></i> Update Profile
-                            </a>
+                <!-- UPCOMING APPOINTMENTS CARD -->
+                <div class="dashboard-card appointments-card fade-in">
+                    <div class="card-header">
+                        <h3 class="card-title">Upcoming Appointments</h3>
+                        <div class="card-icon" id="calendarIcon">
+                            <i class="fas fa-calendar-alt"></i>
                         </div>
                     </div>
-
-                    <!-- UPCOMING APPOINTMENTS CARD -->
-                    <div class="dashboard-card appointments-card fade-in">
-                        <div class="card-header">
-                            <h3 class="card-title">Upcoming Appointments</h3>
-                            <div class="card-icon" id="calendarIcon">
-                                <i class="fas fa-calendar-alt"></i>
-                            </div>
+                    
+                    <?php if (!empty($upcoming_appointments)): ?>
+                        <div class="stagger-animation">
+                            <?php foreach ($upcoming_appointments as $appointment): ?>
+                                <div class="appointment-item">
+                                    <div class="appointment-date">
+                                        <span class="day"><?php echo date('d', strtotime($appointment['date'])); ?></span>
+                                        <span class="month"><?php echo date('M', strtotime($appointment['date'])); ?></span>
+                                    </div>
+                                    <div class="appointment-details">
+                                        <h6><?php echo htmlspecialchars($appointment['requested']); ?></h6>
+                                        <p><i class="fas fa-clock me-1"></i><?php echo date('g:i A', strtotime($appointment['time'])); ?></p>
+                                    </div>
+                                    <span class="appointment-status status-<?php echo strtolower($appointment['status']); ?>">
+                                        <?php echo $appointment['status']; ?>
+                                    </span>
+                                </div>
+                            <?php endforeach; ?>
                         </div>
-                        
-                        <?php if (!empty($upcoming_appointments)): ?>
-                            <div class="stagger-animation">
-                                <?php foreach ($upcoming_appointments as $appointment): ?>
-                                    <div class="appointment-item">
-                                        <div class="appointment-date">
-                                            <span class="day"><?php echo date('d', strtotime($appointment['date'])); ?></span>
-                                            <span class="month"><?php echo date('M', strtotime($appointment['date'])); ?></span>
-                                        </div>
-                                        <div class="appointment-details">
-                                            <h6><?php echo htmlspecialchars($appointment['requested']); ?></h6>
-                                            <p><i class="fas fa-clock me-1"></i><?php echo date('g:i A', strtotime($appointment['time'])); ?></p>
-                                        </div>
-                                        <span class="appointment-status status-<?php echo strtolower($appointment['status']); ?>">
-                                            <?php echo $appointment['status']; ?>
+                    <?php else: ?>
+                        <div class="no-data">
+                            <i class="fas fa-calendar-times"></i>
+                            <p>No upcoming appointments</p>
+                            <small>Schedule your first consultation</small>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="quick-actions">
+                        <a href="schedule_consultation.php" class="action-btn">
+                            <i class="fas fa-plus"></i> New Appointment
+                        </a>
+                    </div>
+                </div>
+
+                <!-- RECENT ACTIVITIES CARD -->
+                <div class="dashboard-card activities-card fade-in">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Activities</h3>
+                        <div class="card-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                    </div>
+                    
+                    <?php if (!empty($recent_activities)): ?>
+                        <div class="stagger-animation">
+                            <?php foreach ($recent_activities as $activity): ?>
+                                <div class="activity-item">
+                                    <div class="activity-icon">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div class="activity-details">
+                                        <p><?php echo htmlspecialchars($activity['action']); ?></p>
+                                        <span class="activity-time">
+                                            <i class="fas fa-clock me-1"></i>
+                                            <?php echo date('M d, Y h:i A', strtotime($activity['log_date'])); ?>
                                         </span>
                                     </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php else: ?>
-                            <div class="no-appointments">
-                                <i class="fas fa-calendar-times"></i>
-                                <p>No upcoming appointments</p>
-                                <small>Schedule your first consultation</small>
-                            </div>
-                        <?php endif; ?>
-
-                        <div class="quick-actions mt-4">
-                            <a href="schedule_consultation.php" class="action-btn">
-                                <i class="fas fa-plus"></i> New Appointment
-                            </a>
+                                </div>
+                            <?php endforeach; ?>
                         </div>
-                    </div>
-
-                    <!-- RECENT ACTIVITIES CARD -->
-                    <div class="dashboard-card activities-card fade-in">
-                        <div class="card-header">
-                            <h3 class="card-title">Recent Activities</h3>
-                            <div class="card-icon">
-                                <i class="fas fa-history"></i>
-                            </div>
+                    <?php else: ?>
+                        <div class="no-data">
+                            <i class="fas fa-history"></i>
+                            <p>No recent activities</p>
+                            <small>Your activities will appear here</small>
                         </div>
-                        
-                        <?php if (!empty($recent_activities)): ?>
-                            <div class="stagger-animation">
-                                <?php foreach ($recent_activities as $activity): ?>
-                                    <div class="activity-item">
-                                        <div class="activity-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
-                                            <i class="fas fa-check-circle"></i>
-                                        </div>
-                                        <div class="activity-details">
-                                            <p><?php echo htmlspecialchars($activity['action']); ?></p>
-                                            <span class="activity-time">
-                                                <i class="fas fa-clock me-1"></i>
-                                                <?php echo date('M d, Y h:i A', strtotime($activity['log_date'])); ?>
-                                            </span>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php else: ?>
-                            <div class="no-appointments">
-                                <i class="fas fa-history"></i>
-                                <p>No recent activities</p>
-                                <small>Your activities will appear here</small>
-                            </div>
-                        <?php endif; ?>
+                    <?php endif; ?>
 
-                        <div class="quick-actions mt-4">
-                            <a href="activity_logs.php" class="action-btn">
-                                <i class="fas fa-list"></i> View All Activities
-                            </a>
-                        </div>
+                    <div class="quick-actions">
+                        <a href="activity_logs.php" class="action-btn">
+                            <i class="fas fa-list"></i> View All Activities
+                        </a>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
-    <!-- JAVASCRIPT FILES -->
+    <!-- JS -->
     <script src="assets/js/bootstrap.bundle.min.js"></script>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // MOBILE SIDEBAR FUNCTIONALITY
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            // MOBILE MENU FUNCTIONALITY - IMPROVED
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
-            
-            function toggleSidebar() {
+
+            mobileMenuToggle.addEventListener('click', function() {
                 sidebar.classList.toggle('active');
                 sidebarOverlay.classList.toggle('active');
-                document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
-                
-                // UPDATE MENU ICON
-                const icon = mobileMenuBtn.querySelector('i');
-                if (sidebar.classList.contains('active')) {
-                    icon.className = 'fas fa-times';
-                    mobileMenuBtn.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
-                } else {
-                    icon.className = 'fas fa-bars';
-                    mobileMenuBtn.style.background = 'linear-gradient(135deg, #3498db, #2980b9)';
-                }
-            }
-            
-            function closeSidebar() {
+                const icon = this.querySelector('i');
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-times');
+            });
+
+            sidebarOverlay.addEventListener('click', function() {
                 sidebar.classList.remove('active');
                 sidebarOverlay.classList.remove('active');
-                document.body.style.overflow = '';
-                mobileMenuBtn.querySelector('i').className = 'fas fa-bars';
-                mobileMenuBtn.style.background = 'linear-gradient(135deg, #3498db, #2980b9)';
-            }
-            
-            if (mobileMenuBtn && sidebar && sidebarOverlay) {
-                // TOGGLE SIDEBAR ON BUTTON CLICK
-                mobileMenuBtn.addEventListener('click', toggleSidebar);
-                
-                // CLOSE SIDEBAR WHEN OVERLAY IS CLICKED
-                sidebarOverlay.addEventListener('click', closeSidebar);
-                
-                // CLOSE SIDEBAR WHEN NAV LINK IS CLICKED (ON MOBILE)
-                const navLinks = sidebar.querySelectorAll('.nav-link');
-                navLinks.forEach(link => {
-                    link.addEventListener('click', function() {
-                        if (window.innerWidth <= 991.98) {
-                            closeSidebar();
-                        }
+                mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+            });
+
+            // Close sidebar when clicking nav items on mobile
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        sidebar.classList.remove('active');
+                        sidebarOverlay.classList.remove('active');
+                        mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
                     });
                 });
-                
-                // CLOSE SIDEBAR ON ESC KEY PRESS
-                document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape' && sidebar.classList.contains('active')) {
-                        closeSidebar();
-                    }
-                });
-            }
-            
-            // AUTO-CLOSE SIDEBAR ON WINDOW RESIZE
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 991.98) {
-                    closeSidebar();
-                }
-            });
-            
-            // SWIPE GESTURE SUPPORT FOR MOBILE
-            let touchStartX = 0;
-            let touchEndX = 0;
-            
-            document.addEventListener('touchstart', function(e) {
-                touchStartX = e.changedTouches[0].screenX;
-            });
-            
-            document.addEventListener('touchend', function(e) {
-                touchEndX = e.changedTouches[0].screenX;
-                handleSwipe();
-            });
-            
-            function handleSwipe() {
-                const swipeThreshold = 50;
-                const swipeDistance = touchEndX - touchStartX;
-                
-                // SWIPE RIGHT TO OPEN SIDEBAR
-                if (swipeDistance > swipeThreshold && window.innerWidth <= 991.98) {
-                    sidebar.classList.add('active');
-                    sidebarOverlay.classList.add('active');
-                    document.body.style.overflow = 'hidden';
-                    mobileMenuBtn.querySelector('i').className = 'fas fa-times';
-                    mobileMenuBtn.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
-                }
-                // SWIPE LEFT TO CLOSE SIDEBAR
-                else if (swipeDistance < -swipeThreshold && window.innerWidth <= 991.98) {
-                    closeSidebar();
-                }
             }
 
-            // ADD LOADING ANIMATIONS
+            // LOADING ANIMATIONS
             const staggerElements = document.querySelectorAll('.stagger-animation > *');
             staggerElements.forEach((element, index) => {
                 element.style.animationDelay = `${index * 0.1}s`;
@@ -1402,217 +1056,6 @@ try {
             fadeElements.forEach((element, index) => {
                 element.style.animationDelay = `${index * 0.2}s`;
             });
-
-            // REAL-TIME CLOCK
-            function updateClock() {
-                const now = new Date();
-                const timeString = now.toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: true 
-                });
-                const dateString = now.toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                
-                // You can display this in your dashboard if needed
-                console.log(`${dateString} - ${timeString}`);
-            }
-            
-            // Update clock every second
-            setInterval(updateClock, 1000);
-            updateClock(); // Initial call
-
-            // ========== CALENDAR FUNCTIONALITY ==========
-            const calendarModal = document.getElementById('calendarModal');
-            const calendarIcon = document.getElementById('calendarIcon');
-            const closeCalendar = document.getElementById('closeCalendar');
-            const calendarGrid = document.getElementById('calendarGrid');
-            const calendarTitle = document.getElementById('calendarTitle');
-            const prevMonthBtn = document.getElementById('prevMonth');
-            const nextMonthBtn = document.getElementById('nextMonth');
-            const todayBtn = document.getElementById('todayBtn');
-            const selectedDateEl = document.getElementById('selectedDate');
-            const appointmentList = document.getElementById('appointmentList');
-
-            let currentDate = new Date();
-            let currentMonth = currentDate.getMonth();
-            let currentYear = currentDate.getFullYear();
-
-            // PHP appointments data converted to JavaScript
-            const appointments = <?php echo json_encode($calendar_appointments); ?>;
-
-            // OPEN CALENDAR MODAL
-            calendarIcon.addEventListener('click', function() {
-                calendarModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-                generateCalendar(currentMonth, currentYear);
-            });
-
-            // CLOSE CALENDAR MODAL
-            closeCalendar.addEventListener('click', function() {
-                calendarModal.classList.remove('active');
-                document.body.style.overflow = '';
-            });
-
-            // CLOSE MODAL WHEN CLICKING OUTSIDE
-            calendarModal.addEventListener('click', function(e) {
-                if (e.target === calendarModal) {
-                    calendarModal.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            });
-
-            // CLOSE MODAL ON ESC KEY
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && calendarModal.classList.contains('active')) {
-                    calendarModal.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            });
-
-            // NAVIGATE MONTHS
-            prevMonthBtn.addEventListener('click', function() {
-                currentMonth--;
-                if (currentMonth < 0) {
-                    currentMonth = 11;
-                    currentYear--;
-                }
-                generateCalendar(currentMonth, currentYear);
-            });
-
-            nextMonthBtn.addEventListener('click', function() {
-                currentMonth++;
-                if (currentMonth > 11) {
-                    currentMonth = 0;
-                    currentYear++;
-                }
-                generateCalendar(currentMonth, currentYear);
-            });
-
-            // GO TO TODAY
-            todayBtn.addEventListener('click', function() {
-                currentDate = new Date();
-                currentMonth = currentDate.getMonth();
-                currentYear = currentDate.getFullYear();
-                generateCalendar(currentMonth, currentYear);
-            });
-
-            // GENERATE CALENDAR
-            function generateCalendar(month, year) {
-                calendarGrid.innerHTML = '';
-                
-                // Set calendar title
-                const monthNames = ["January", "February", "March", "April", "May", "June",
-                    "July", "August", "September", "October", "November", "December"];
-                calendarTitle.textContent = `${monthNames[month]} ${year}`;
-
-                // Add day headers
-                const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                dayHeaders.forEach(day => {
-                    const dayHeader = document.createElement('div');
-                    dayHeader.className = 'calendar-day-header';
-                    dayHeader.textContent = day;
-                    calendarGrid.appendChild(dayHeader);
-                });
-
-                // Get first day of month and number of days
-                const firstDay = new Date(year, month, 1).getDay();
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                const today = new Date();
-
-                // Add empty cells for days before the first day of the month
-                for (let i = 0; i < firstDay; i++) {
-                    const emptyDay = document.createElement('div');
-                    emptyDay.className = 'calendar-day other-month';
-                    calendarGrid.appendChild(emptyDay);
-                }
-
-                // Add days of the month
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const dayElement = document.createElement('div');
-                    dayElement.className = 'calendar-day';
-                    dayElement.textContent = day;
-
-                    const currentDay = new Date(year, month, day);
-                    
-                    // Check if today
-                    if (currentDay.toDateString() === today.toDateString()) {
-                        dayElement.classList.add('today');
-                    }
-
-                    // Check if has appointments
-                    const hasAppointment = appointments.some(app => {
-                        const appDate = new Date(app.date);
-                        return appDate.toDateString() === currentDay.toDateString();
-                    });
-
-                    if (hasAppointment) {
-                        dayElement.classList.add('has-appointment');
-                    }
-
-                    // Add click event
-                    dayElement.addEventListener('click', function() {
-                        showAppointmentsForDate(currentDay);
-                    });
-
-                    calendarGrid.appendChild(dayElement);
-                }
-            }
-
-            // SHOW APPOINTMENTS FOR SELECTED DATE
-            function showAppointmentsForDate(date) {
-                const dateString = date.toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                
-                selectedDateEl.textContent = dateString;
-
-                const filteredAppointments = appointments.filter(app => {
-                    const appDate = new Date(app.date);
-                    return appDate.toDateString() === date.toDateString();
-                });
-
-                appointmentList.innerHTML = '';
-
-                if (filteredAppointments.length === 0) {
-                    appointmentList.innerHTML = '<p class="text-muted text-center">No appointments for this date</p>';
-                } else {
-                    filteredAppointments.forEach(app => {
-                        const appElement = document.createElement('div');
-                        appElement.className = `appointment-list-item ${app.status.toLowerCase()}`;
-                        
-                        const time = new Date(`1970-01-01T${app.time}`).toLocaleTimeString('en-US', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
-                        });
-
-                        appElement.innerHTML = `
-                            <div>
-                                <strong>${app.requested}</strong>
-                                <div class="text-muted">${time}</div>
-                            </div>
-                            <span class="appointment-status status-${app.status.toLowerCase()}">
-                                ${app.status}
-                            </span>
-                        `;
-
-                        appointmentList.appendChild(appElement);
-                    });
-                }
-            }
-
-            // INITIALIZE CALENDAR
-            generateCalendar(currentMonth, currentYear);
-            showAppointmentsForDate(currentDate);
         });
     </script>
 </body>

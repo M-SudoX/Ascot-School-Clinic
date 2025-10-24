@@ -31,7 +31,7 @@ $month = $month_names[$selected_month] . ' ' . $selected_year;
 
 // REAL DATABASE QUERIES - FIXED COUNTING WITH DISTINCT
 
-// Function to get monthly consultation data
+// Function to get monthly consultation data - IMPROVED DUPLICATION HANDLING
 function getMonthlyConsultationData($month, $year) {
     global $pdo;
     
@@ -52,7 +52,7 @@ function getMonthlyConsultationData($month, $year) {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $data['total_consultations'] = $row['total'];
         
-        // Consultations by department - FIXED: Use DISTINCT
+        // Consultations by department - FIXED: Use DISTINCT and proper grouping
         $query = "SELECT si.department, COUNT(DISTINCT c.id) as count 
                   FROM consultations c 
                   JOIN student_information si ON c.student_number = si.student_number
@@ -66,10 +66,11 @@ function getMonthlyConsultationData($month, $year) {
             $data['departments'][$dept['department']] = $dept['count'];
         }
         
-        // Consultations by diagnosis - FIXED: Use DISTINCT
+        // Consultations by diagnosis - FIXED: Use DISTINCT and handle empty diagnoses
         $query = "SELECT diagnosis, COUNT(DISTINCT id) as count 
                   FROM consultations 
                   WHERE MONTH(consultation_date) = ? AND YEAR(consultation_date) = ?
+                  AND diagnosis IS NOT NULL AND diagnosis != ''
                   GROUP BY diagnosis 
                   ORDER BY count DESC";
         $stmt = $pdo->prepare($query);
@@ -77,7 +78,9 @@ function getMonthlyConsultationData($month, $year) {
         $diagnostics = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         foreach ($diagnostics as $diag) {
-            $data['diagnostics'][$diag['diagnosis']] = $diag['count'];
+            if (!empty($diag['diagnosis'])) {
+                $data['diagnostics'][$diag['diagnosis']] = $diag['count'];
+            }
         }
         
         // Consultations by year level - FIXED: Use DISTINCT
@@ -140,9 +143,9 @@ $departments = $data['departments'];
 $diagnostics = $data['diagnostics'];
 $year_levels = $data['year_levels'];
 
-// DEBUG: Get actual records for verification
+// DEBUG: Get actual records for verification - FIXED DUPLICATION
 try {
-    $debug_query = "SELECT c.id, c.consultation_date, c.student_number, c.diagnosis, si.fullname
+    $debug_query = "SELECT DISTINCT c.id, c.consultation_date, c.student_number, c.diagnosis, si.fullname
                    FROM consultations c 
                    JOIN student_information si ON c.student_number = si.student_number
                    WHERE MONTH(c.consultation_date) = ? AND YEAR(c.consultation_date) = ?
@@ -1159,13 +1162,6 @@ try {
                                     </tbody>
                                 </table>
                             </div>
-                            
-                            <div style="text-align: center; margin-top: 1rem;">
-                                <a href="view_records.php?month=<?php echo $selected_month; ?>&year=<?php echo $selected_year; ?>" 
-                                   class="btn btn-primary">
-                                    <i class="fas fa-list me-1"></i> View All Consultations
-                                </a>
-                            </div>
                         <?php else: ?>
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle me-2"></i> 
@@ -1223,20 +1219,6 @@ try {
                             <i class="fas fa-print"></i>
                             Print Report
                         </button>
-                        <button class="btn-report secondary" onclick="exportToExcel()">
-                            <i class="fas fa-file-excel"></i>
-                            Export to Excel
-                        </button>
-                        <button class="btn-report secondary" onclick="goBack()">
-                            <i class="fas fa-arrow-left"></i>
-                            Back to Dashboard
-                        </button>
-                        <?php if (!isset($_GET['debug'])): ?>
-                        <a href="?month=<?php echo $selected_month; ?>&year=<?php echo $selected_year; ?>&debug=1" class="btn-report secondary">
-                            <i class="fas fa-bug"></i>
-                            Debug View
-                        </a>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>

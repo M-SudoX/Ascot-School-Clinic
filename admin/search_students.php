@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
 
         /* Header Styles - FIXED */
         .top-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(90deg,rgba(50, 37, 168, 1) 4%, rgba(43, 43, 224, 1) 39%, rgba(235, 243, 245, 1) 100%);
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -323,7 +323,92 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
             display: block;
         }
 
-        /* Search Page Specific Styles */
+        /* Enhanced Search Bar Styles */
+        .search-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .search-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: rgba(255,255,255,0.1);
+            transform: rotate(45deg);
+        }
+
+        .search-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .search-subtitle {
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input-group {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .search-input {
+            border: none;
+            border-radius: 50px;
+            padding: 1rem 1.5rem 1rem 3rem;
+            font-size: 1.1rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            transform: translateY(-2px);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1.2rem;
+            top: 25%;
+            transform: translateY(-50%);
+            color: #667eea;
+            z-index: 10
+        }
+
+        .search-btn {
+            border-radius: 50px;
+            padding: 0.6rem 2rem;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            border: none;
+            margin-top: 10px;
+        
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .search-tips {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            text-align: center;
+        }
+
         .search-highlight {
             background-color: #fff3cd;
             font-weight: bold;
@@ -415,6 +500,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
 
             .card {
                 padding: 1rem;
+            }
+
+            .search-container {
+                padding: 1.5rem;
+            }
+
+            .search-title {
+                font-size: 1.3rem;
+            }
+
+            .search-input {
+                font-size: 1rem;
+                padding: 0.8rem 1rem 0.8rem 2.5rem;
+            }
+
+            .search-icon {
+                left: 1rem;
             }
         }
 
@@ -569,11 +671,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
         <main class="main-content">
             <!-- Page Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-search"></i> Search Students</h2>
-                <div class="d-flex gap-2">
-                    
-                    </button>
-                </div>
+                <h2><i class="fas fa-search me-2"></i>Search Students</h2>
             </div>
 
             <!-- Success/Error Messages -->
@@ -591,46 +689,40 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
                 </div>
             <?php endif; ?>
 
-            <!-- Search Section -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <form method="POST" action="">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="input-group">
-                                    <input type="text" class="form-control" name="search_query" 
-                                           placeholder="Search by name, student number, or course..." 
-                                           value="<?php echo htmlspecialchars($search_query); ?>">
-                                    <button type="submit" name="search" class="btn btn-primary">
-                                        <i class="fas fa-search"></i> Search
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                            </div>
-                            <div class="col-md-3">
-                                <a href="search_students.php" class="btn btn-outline-secondary w-100">
-                                    <i class="fas fa-refresh"></i> Clear Filters
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Advanced Search -->
-                        <div class="advanced-search">                              
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                </div>
-                                <div class="col-md-4">
-                                </div>
-                                <div class="col-md-4">
-                                    <button type="submit" name="search" class="btn btn-outline-primary w-100">
-                                        <i class="fas fa-filter"></i> Apply Filters
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+            <!-- Enhanced Professional Search Bar -->
+            <div class="search-container">
+                <div class="text-center mb-4">
+                    <h3 class="search-title">Find Students Quickly</h3>
+                    <p class="search-subtitle">Search by name, student number, email, course, or contact information</p>
                 </div>
+                
+                <form method="POST" action="">
+                    <div class="search-input-group">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="form-control search-input" name="search_query" 
+                               placeholder="Enter student name, student number, email, course, or contact number..." 
+                               value="<?php echo htmlspecialchars($search_query); ?>"
+                               aria-label="Search students">
+                        <div class="input-group-append mt-3 mt-md-0">
+                            <div>
+                                <div>
+
+                                </div>    
+                            </div>
+                            <button type="submit" name="search" class="btn btn-light search-btn ms-2">
+                                <div></div>
+                                <i class="fas fa-search me-2"></i>Search
+                            </button>
+                            <a href="search_students.php" class="btn btn-outline-light search-btn ms-2">
+                                <i class="fas fa-refresh me-2"></i>Clear
+                            </a>
+                        </div>
+                    </div>
+                    <div class="search-tips">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        Tip: You can search using partial names or numbers for better results
+                    </div>
+                </form>
             </div>
 
             <!-- Search Results -->
@@ -699,7 +791,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
                         <div class="card-body text-center py-5">
                             <i class="fas fa-search fa-3x text-muted mb-3"></i>
                             <h5 class="text-muted">No students found</h5>
-                            <p class="text-muted">Try searching with different keywords or filters</p>
+                            <p class="text-muted">Try searching with different keywords or check your spelling</p>
                             <a href="search_students.php" class="btn btn-primary">
                                 <i class="fas fa-refresh"></i> Try Again
                             </a>

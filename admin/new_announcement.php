@@ -1,3 +1,413 @@
+<?php
+session_start();
+
+// Set timezone to Philippines
+date_default_timezone_set('Asia/Manila');
+
+// Include database connection
+require_once '../includes/db_connect.php';
+
+// Manual include ng PHPMailer classes
+require_once '../PHPMailer/src/Exception.php';
+require_once '../PHPMailer/src/PHPMailer.php';
+require_once '../PHPMailer/src/SMTP.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+// Function to automatically expire announcements
+function expireAnnouncements($pdo) {
+    try {
+        $currentDateTime = date('Y-m-d H:i:s');
+        $stmt = $pdo->prepare("
+            UPDATE announcements 
+            SET is_active = 0, 
+                status = 'inactive',
+                updated_at = NOW()
+            WHERE expiry_date IS NOT NULL 
+            AND expiry_date <= ? 
+            AND is_active = 1
+            AND status = 'active'
+        ");
+        $stmt->execute([$currentDateTime]);
+        
+        $expiredCount = $stmt->rowCount();
+        if ($expiredCount > 0) {
+            error_log("Automatically expired $expiredCount announcements at $currentDateTime");
+        }
+        
+        return $expiredCount;
+    } catch (PDOException $e) {
+        error_log("Error expiring announcements: " . $e->getMessage());
+        return 0;
+    }
+}
+
+// Process form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Get form data
+    $sentBy = $_POST['sentBy'] ?? '';
+    $subject = $_POST['subject'] ?? '';
+    $content = $_POST['content'] ?? '';
+    $announcementType = $_POST['announcementType'] ?? [];
+    $emailRecipientType = $_POST['emailRecipientType'] ?? 'all';
+    $emailSpecificStudents = $_POST['emailSpecificStudents'] ?? [];
+    $expiryDate = $_POST['expiryDate'] ?? '';
+    $expiryTime = $_POST['expiryTime'] ?? '';
+    
+    // Validate required fields
+    if (empty($sentBy) || empty($subject) || empty($content)) {
+        $error_message = "Please fill in all required fields.";
+    } else {
+        try {
+            // Start transaction
+            $pdo->beginTransaction();
+            
+            // Check if we are posting on front page
+            $postOnFront = in_array('front', $announcementType) ? 1 : 0;
+            $sendEmail = in_array('email', $announcementType) ? 1 : 0;
+
+            // Handle file upload
+            $attachment = null;
+            if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
+                $uploadDir = '../uploads/announcements/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0755, true);
+                }
+                $fileName = time() . '_' . basename($_FILES['attachment']['name']);
+                $filePath = $uploadDir . $fileName;
+                if (move_uploaded_file($_FILES['attachment']['tmp_name'], $filePath)) {
+                    $attachment = $fileName;
+                }
+            }
+
+            // Calculate expiry datetime
+            $expiryDatetime = null;
+            $isActive = 1; // Default to active
+            if (!empty($expiryDate) && !empty($expiryTime)) {
+                $expiryDatetime = $expiryDate . ' ' . $expiryTime . ':00';
+                
+                // Check if expiry is in the future
+                $currentDateTime = date('Y-m-d H:i:s');
+                if ($expiryDatetime <= $currentDateTime) {
+                    $isActive = 0; // Set to inactive if expiry is in past
+                }
+            }
+
+            // Insert into announcements table
+            $stmt = $pdo->prepare("
+                INSERT INTO announcements (title, content, sent_by, attachment, is_active, post_on_front, send_email, expiry_date, created_at, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)
+            ");
+            $status = $isActive ? 'active' : 'inactive';
+            $stmt->execute([$subject, $content, $sentBy, $attachment, $isActive, $postOnFront, $sendEmail, $expiryDatetime, $status]);
+            $announcementId = $pdo->lastInsertId();
+
+            // Handle email recipients if email is selected
+            if ($sendEmail) {
+                // Get recipient students based on selection
+                $recipientStudents = [];
+                
+                if ($emailRecipientType === 'all') {
+                    // Get all verified users with valid email - FIXED: Use DISTINCT to avoid duplicates
+                    $stmt = $pdo->prepare("
+                        SELECT DISTINCT u.id, u.fullname, u.email 
+                        FROM users u
+                        WHERE u.email IS NOT NULL 
+                        AND u.email != '' 
+                        AND TRIM(u.email) != ''
+                        AND u.email LIKE '%@%'
+                        AND u.is_verified = 1
+                    ");
+                    $stmt->execute();
+                    $recipientStudents = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                } else if ($emailRecipientType === 'specific' && !empty($emailSpecificStudents)) {
+                    // Get specific selected students - FIXED: Use DISTINCT to avoid duplicates
+                    $placeholders = str_repeat('?,', count($emailSpecificStudents) - 1) . '?';
+                    $stmt = $pdo->prepare("
+                        SELECT DISTINCT u.id, u.fullname, u.email 
+                        FROM users u
+                        WHERE u.id IN ($placeholders)
+                        AND u.email IS NOT NULL 
+                        AND u.email != '' 
+                        AND TRIM(u.email) != ''
+                        AND u.email LIKE '%@%'
+                        AND u.is_verified = 1
+                    ");
+                    $stmt->execute($emailSpecificStudents);
+                    $recipientStudents = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                }
+                
+                // Insert into announcement_recipients and announcement_emails
+                foreach ($recipientStudents as $student) {
+                    // Insert into announcement_recipients
+                    $stmt = $pdo->prepare("
+                        INSERT INTO announcement_recipients (announcement_id, student_id, recipient_type, created_at)
+                        VALUES (?, ?, 'email', NOW())
+                    ");
+                    $stmt->execute([$announcementId, $student['id']]);
+                    
+                    // Insert into announcement_emails
+                    $stmt = $pdo->prepare("
+                        INSERT INTO announcement_emails (announcement_id, recipient_email, recipient_name, status, sent_at, error_message)
+                        VALUES (?, ?, ?, 'pending', NOW(), '')
+                    ");
+                    $stmt->execute([$announcementId, $student['email'], $student['fullname']]);
+                }
+                
+                // USE PHPMailer FOR EMAIL SENDING
+                $emailSentCount = 0;
+                $emailFailedCount = 0;
+                $errors = [];
+                
+                // Get current date and time for email
+                $currentDateTime = date('F j, Y g:i A');
+                
+                foreach ($recipientStudents as $student) {
+                    $to = $student['email'];
+                    $name = $student['fullname'];
+                    
+                    try {
+                        // Create PHPMailer instance
+                        $mail = new PHPMailer(true);
+                        
+                        // Server settings for Gmail
+                        $mail->isSMTP();
+                        $mail->Host = 'smtp.gmail.com';
+                        $mail->SMTPAuth = true;
+                        $mail->Username = 'cachemeifucan05@gmail.com';
+                        $mail->Password = 'zusittxqokhgzotm';
+                        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                        $mail->Port = 587;
+                        $mail->SMTPOptions = array(
+                            'ssl' => array(
+                                'verify_peer' => false,
+                                'verify_peer_name' => false,
+                                'allow_self_signed' => true
+                            )
+                        );
+                        
+                        // Recipients
+                        $mail->setFrom('cachemeifucan05@gmail.com', 'ASCOT Clinic');
+                        $mail->addAddress($to, $name);
+                        
+                        // Content
+                        $mail->isHTML(true);
+                        $mail->Subject = $subject;
+                        
+                        // Add expiry notice to email content if applicable
+                        $emailContent = $content;
+                        if (!empty($expiryDatetime)) {
+                            $expiryFormatted = date('F j, Y g:i A', strtotime($expiryDatetime));
+                            $emailContent .= "\n\nThis announcement will expire on: $expiryFormatted";
+                        }
+                        
+                        // Email template with current date and time
+                        $emailMessage = "
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset='UTF-8'>
+                            <title>$subject</title>
+                            <style>
+                                body { 
+                                    font-family: Arial, sans-serif; 
+                                    line-height: 1.6; 
+                                    color: #333; 
+                                    margin: 0; 
+                                    padding: 0; 
+                                    background: #f5f6fa; 
+                                }
+                                .container { 
+                                    max-width: 600px; 
+                                    margin: 0 auto; 
+                                    background: white; 
+                                    border-radius: 10px;
+                                    overflow: hidden;
+                                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                                }
+                                .header { 
+                                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                    color: white; 
+                                    padding: 30px 20px; 
+                                    text-align: center; 
+                                }
+                                .header h1 { 
+                                    margin: 0 0 10px 0;
+                                    font-size: 24px;
+                                }
+                                .header p {
+                                    margin: 0;
+                                    opacity: 0.9;
+                                }
+                                .content { 
+                                    padding: 30px; 
+                                }
+                                .announcement { 
+                                    background: #f8f9fa; 
+                                    padding: 20px; 
+                                    border-radius: 8px; 
+                                    border-left: 4px solid #667eea; 
+                                    margin-bottom: 20px;
+                                }
+                                .announcement h2 { 
+                                    color: #1a3a5f; 
+                                    margin-top: 0; 
+                                    border-bottom: 2px solid #e9ecef;
+                                    padding-bottom: 10px;
+                                }
+                                .sender-info { 
+                                    background: #e9ecef; 
+                                    padding: 15px; 
+                                    border-radius: 8px; 
+                                    font-size: 14px; 
+                                    margin-top: 20px;
+                                }
+                                .expiry-notice {
+                                    background: #fff3cd;
+                                    border: 1px solid #ffeaa7;
+                                    color: #856404;
+                                    padding: 12px 15px;
+                                    border-radius: 8px;
+                                    margin-top: 15px;
+                                    font-size: 14px;
+                                }
+                                .footer { 
+                                    text-align: center; 
+                                    padding: 20px; 
+                                    color: #666; 
+                                    font-size: 12px; 
+                                    background: white; 
+                                    border-top: 1px solid #e9ecef;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class='container'>
+                                <div class='header'>
+                                    <h1>AURORA STATE COLLEGE OF TECHNOLOGY</h1>
+                                    <p>Online School Clinic</p>
+                                </div>
+                                <div class='content'>
+                                    <div class='announcement'>
+                                        <h2>$subject</h2>
+                                        <div>" . nl2br(htmlspecialchars($emailContent)) . "</div>
+                                    </div>
+                                    " . (!empty($expiryDatetime) ? "
+                                    <div class='expiry-notice'>
+                                        <strong>⚠️ Expiry Notice:</strong> This announcement will expire on " . date('F j, Y g:i A', strtotime($expiryDatetime)) . "
+                                    </div>
+                                    " : "") . "
+                                    <div class='sender-info'>
+                                        <p><strong>Sent by:</strong> $sentBy</p>
+                                        <p><strong>Date:</strong> $currentDateTime</p>
+                                    </div>
+                                </div>
+                                <div class='footer'>
+                                    <p>This is an automated message from ASCOT Online Clinic System.</p>
+                                    <p>Please do not reply to this email.</p>
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+                        ";
+                        
+                        $mail->Body = $emailMessage;
+                        $mail->AltBody = "ASCOT Clinic Announcement\n\nSubject: $subject\n\n$emailContent\n\nSent by: $sentBy\nDate: $currentDateTime";
+                        
+                        // Send email
+                        if ($mail->send()) {
+                            $emailSentCount++;
+                            
+                            // Update email status to sent
+                            $stmt = $pdo->prepare("
+                                UPDATE announcement_emails 
+                                SET status = 'sent', 
+                                    sent_at = NOW(),
+                                    error_message = ''
+                                WHERE announcement_id = ? AND recipient_email = ?
+                            ");
+                            $stmt->execute([$announcementId, $to]);
+                        } else {
+                            throw new Exception('Failed to send email');
+                        }
+                        
+                    } catch (Exception $e) {
+                        $emailFailedCount++;
+                        $errorMsg = $e->getMessage();
+                        $errors[] = "Failed to send to $to: $errorMsg";
+                        
+                        // Update email status to failed
+                        $stmt = $pdo->prepare("
+                            UPDATE announcement_emails 
+                            SET status = 'failed', 
+                                error_message = ?
+                            WHERE announcement_id = ? AND recipient_email = ?
+                        ");
+                        $stmt->execute([$errorMsg, $announcementId, $to]);
+                    }
+                    
+                    // Small delay to avoid overwhelming the SMTP server
+                    usleep(300000); // 0.3 second delay
+                }
+                
+                // Update announcement with email counts
+                $stmt = $pdo->prepare("
+                    UPDATE announcements 
+                    SET email_sent_count = ?, 
+                        email_failed_count = ?
+                    WHERE id = ?
+                ");
+                $stmt->execute([$emailSentCount, $emailFailedCount, $announcementId]);
+                
+                // Log any errors
+                if (!empty($errors)) {
+                    error_log("Email sending errors for announcement $announcementId: " . implode(" | ", $errors));
+                }
+            }
+
+            // Commit transaction
+            $pdo->commit();
+
+            $_SESSION['success_message'] = "Announcement created successfully!" . 
+                ($sendEmail ? " Emails sent: $emailSentCount, Failed: $emailFailedCount" : "") .
+                (!empty($expiryDatetime) ? " This announcement will automatically expire on " . date('F j, Y g:i A', strtotime($expiryDatetime)) . "." : "");
+            
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit;
+            
+        } catch (PDOException $e) {
+            // Rollback transaction on error
+            $pdo->rollBack();
+            $error_message = "Error saving announcement: " . $e->getMessage();
+        } catch (Exception $e) {
+            // Rollback transaction on error
+            $pdo->rollBack();
+            $error_message = "Error sending emails: " . $e->getMessage();
+        }
+    }
+}
+
+// Auto-expire announcements on page load
+$expiredCount = expireAnnouncements($pdo);
+
+// Fetch active students from database for the form - FIXED: Get unique students by grouping or using DISTINCT
+try {
+    $stmt = $pdo->prepare("
+        SELECT DISTINCT u.id, u.fullname, u.student_number, u.email, 
+               (SELECT si.course_year FROM student_information si WHERE si.student_number = u.student_number ORDER BY si.id DESC LIMIT 1) as course_year 
+        FROM users u 
+        WHERE u.is_verified = 1 
+        ORDER BY u.fullname
+    ");
+    $stmt->execute();
+    $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $students = [];
+    error_log("Database error: " . $e->getMessage());
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,20 +426,19 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
-            padding-top: 100px; /* Added for fixed header */
+            padding-top: 100px;
         }
 
-        /* Fixed Header Styles */
         .top-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: fixed; /* Made fixed */
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            z-index: 1002; /* Higher z-index */
+            z-index: 1002;
         }
 
         .header-content {
@@ -64,11 +473,10 @@
             opacity: 0.9;
         }
 
-        /* Mobile Menu Toggle */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 110px; /* Adjusted for fixed header */
+            top: 110px;
             left: 20px;
             z-index: 1001;
             background: #667eea;
@@ -87,24 +495,22 @@
             background: #764ba2;
         }
 
-        /* Dashboard Container */
         .dashboard-container {
             display: flex;
             min-height: calc(100vh - 100px);
         }
 
-        /* Fixed Sidebar Styles */
         .sidebar {
             width: 280px;
             background: white;
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
             padding: 2rem 0;
             transition: transform 0.3s ease;
-            position: fixed; /* Made fixed */
-            top: 100px; /* Below the fixed header */
+            position: fixed;
+            top: 100px;
             left: 0;
-            height: calc(100vh - 100px); /* Full height minus header */
-            overflow-y: auto; /* Scrollable if content is long */
+            height: calc(100vh - 100px);
+            overflow-y: auto;
             z-index: 1000;
         }
 
@@ -202,16 +608,14 @@
             background: rgba(220, 53, 69, 0.1);
         }
 
-        /* Main Content - Adjusted for fixed sidebar */
         .main-content {
             flex: 1;
             padding: 2rem;
             overflow-x: hidden;
-            margin-left: 280px; /* Space for fixed sidebar */
-            width: calc(100% - 280px); /* Adjusted width */
+            margin-left: 280px;
+            width: calc(100% - 280px);
         }
 
-        /* Notification Styles */
         .notification-dropdown {
             position: relative;
         }
@@ -319,7 +723,6 @@
             background: #f8f9fa;
         }
 
-        /* Content Section */
         .content {
             background: white;
             border-radius: 15px;
@@ -340,7 +743,6 @@
             font-size: 24px;
         }
 
-        /* Form Styles */
         .announcement-form {
             max-width: 800px;
         }
@@ -536,7 +938,6 @@
             background: #5a6268;
         }
 
-        /* Email Preview Styles */
         .email-preview {
             background: #f8f9fa;
             border: 1px solid #dee2e6;
@@ -584,7 +985,6 @@
             font-size: 0.9rem;
         }
 
-        /* Student Selection Styles */
         .student-selection {
             display: none;
             margin-top: 15px;
@@ -667,7 +1067,6 @@
             color: #6c757d;
         }
 
-        /* Time Picker Styles */
         .expiry-time-container {
             display: flex;
             gap: 15px;
@@ -724,12 +1123,16 @@
             margin-top: 5px;
         }
 
-        /* Student Search */
+        .expiry-preview .expired-notice {
+            color: #dc3545;
+            font-weight: 500;
+            margin-top: 5px;
+        }
+
         .student-search {
             margin-bottom: 15px;
         }
 
-        /* Email Recipient Selection */
         .email-recipient-selection {
             display: none;
             margin-top: 20px;
@@ -743,7 +1146,6 @@
             display: block;
         }
 
-        /* Responsive Design */
         @media (max-width: 992px) {
             .school-name {
                 font-size: 1rem;
@@ -757,27 +1159,27 @@
 
         @media (max-width: 768px) {
             body {
-                padding-top: 80px; /* Adjusted for smaller header on mobile */
+                padding-top: 80px;
             }
 
             .top-header {
-                padding: 0.5rem 0; /* Reduced padding on mobile */
+                padding: 0.5rem 0;
             }
 
             .mobile-menu-toggle {
                 display: block;
-                top: 85px; /* Adjusted for smaller header */
+                top: 85px;
             }
 
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 80px; /* Adjusted for smaller header */
-                height: calc(100vh - 80px); /* Adjusted height */
+                top: 80px;
+                height: calc(100vh - 80px);
                 z-index: 1000;
                 transform: translateX(-100%);
                 overflow-y: auto;
-                width: 280px; /* Fixed width */
+                width: 280px;
             }
 
             .sidebar.active {
@@ -787,7 +1189,7 @@
             .sidebar-overlay {
                 display: none;
                 position: fixed;
-                top: 80px; /* Start below header */
+                top: 80px;
                 left: 0;
                 right: 0;
                 bottom: 0;
@@ -802,7 +1204,7 @@
             .main-content {
                 padding: 1rem;
                 width: 100%;
-                margin-left: 0; /* Remove sidebar margin on mobile */
+                margin-left: 0;
             }
 
             .notification-menu {
@@ -1050,8 +1452,16 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 <?php endif; ?>
+
+                <?php if ($expiredCount > 0): ?>
+                    <div class="alert alert-info alert-dismissible fade show" role="alert" style="margin-bottom: 2rem;">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <?php echo $expiredCount; ?> announcement(s) have been automatically expired.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                <?php endif; ?>
                 
-                <form class="announcement-form" id="announcementForm" method="POST" enctype="multipart/form-data">
+                <form class="announcement-form" id="announcementForm" method="POST" action="" enctype="multipart/form-data">
                     <!-- Sent By Section -->
                     <div class="form-section">
                         <h3 class="form-section-title">
@@ -1126,7 +1536,7 @@
                                                         <span class="student-name"><?php echo htmlspecialchars($student['fullname']); ?></span>
                                                         <span class="student-details">
                                                             <?php echo htmlspecialchars($student['student_number']); ?> - 
-                                                            <?php echo htmlspecialchars($student['course_year']); ?>
+                                                            <?php echo htmlspecialchars($student['course_year'] ?? 'Not specified'); ?>
                                                             <?php if (!empty($student['email'])): ?>
                                                                 <br><small class="text-success">✓ Has email: <?php echo htmlspecialchars($student['email']); ?></small>
                                                             <?php else: ?>
@@ -1141,6 +1551,7 @@
                                         <div class="alert alert-warning">
                                             <i class="fas fa-exclamation-triangle"></i> 
                                             No students found in the database. 
+                                            <br><small>Please check your database connection or add students first.</small>
                                         </div>
                                     <?php endif; ?>
                                 </div>
@@ -1213,10 +1624,14 @@
                                     <span class="value" id="expiryPreviewText"></span>
                                 </div>
                                 <div class="time-remaining" id="timeRemaining"></div>
+                                <div class="expired-notice" id="expiredNotice" style="display: none;">
+                                    ⚠️ This expiry time has already passed
+                                </div>
                             </div>
                             
                             <small class="form-text text-muted">
                                 Leave empty if announcement should not expire. Minimum date is today.
+                                Announcements will automatically expire after the specified date and time.
                             </small>
                         </div>
                     </div>
@@ -1334,14 +1749,13 @@
             }
         });
 
-        // NEW FUNCTIONS FOR EMAIL RECIPIENT SELECTION
-        // Toggle email recipient selection based on send email checkbox
+        // Email recipient selection functionality
         function toggleEmailRecipientSelection() {
             const sendEmailCheckbox = document.getElementById('sendEmail');
             const emailRecipientSelection = document.getElementById('emailRecipientSelection');
             const emailWarning = document.getElementById('emailWarning');
             
-            if (sendEmailCheckbox.checked) {
+            if (sendEmailCheckbox && sendEmailCheckbox.checked) {
                 emailRecipientSelection.classList.add('active');
                 emailWarning.style.display = 'block';
                 updateEmailRecipientCount();
@@ -1352,118 +1766,124 @@
             }
         }
 
-        // Toggle specific student selection for email
         function toggleEmailSpecificStudentSelection() {
-            const emailRecipientType = document.querySelector('input[name="emailRecipientType"]:checked').value;
+            const emailRecipientType = document.querySelector('input[name="emailRecipientType"]:checked');
             const emailSpecificSelection = document.getElementById('emailSpecificStudentsSelection');
             
-            if (emailRecipientType === 'specific') {
+            if (emailRecipientType && emailRecipientType.value === 'specific') {
                 emailSpecificSelection.classList.add('active');
                 updateEmailSelectedCount();
-                updateEmailRecipientCount();
             } else {
                 emailSpecificSelection.classList.remove('active');
-                updateEmailRecipientCount();
             }
+            updateEmailRecipientCount();
         }
 
-        // Update email selected count
         function updateEmailSelectedCount() {
-            const selectedCount = document.querySelectorAll('.email-student-checkbox-input:checked').length;
-            document.getElementById('emailSelectedCount').textContent = selectedCount + ' selected';
+            const selectedCheckboxes = document.querySelectorAll('.email-student-checkbox-input:checked');
+            const selectedCount = selectedCheckboxes.length;
+            const emailSelectedCount = document.getElementById('emailSelectedCount');
+            
+            if (emailSelectedCount) {
+                emailSelectedCount.textContent = selectedCount + ' selected';
+            }
             
             const totalStudents = document.querySelectorAll('.email-student-checkbox-input').length;
             const selectAll = document.getElementById('selectEmailAllStudents');
             
-            if (selectedCount === 0) {
-                selectAll.checked = false;
-                selectAll.indeterminate = false;
-            } else if (selectedCount === totalStudents) {
-                selectAll.checked = true;
-                selectAll.indeterminate = false;
-            } else {
-                selectAll.checked = false;
-                selectAll.indeterminate = true;
+            if (selectAll) {
+                if (selectedCount === 0) {
+                    selectAll.checked = false;
+                    selectAll.indeterminate = false;
+                } else if (selectedCount === totalStudents) {
+                    selectAll.checked = true;
+                    selectAll.indeterminate = false;
+                } else {
+                    selectAll.checked = false;
+                    selectAll.indeterminate = true;
+                }
             }
         }
 
-        // Setup select all for email students
         function setupEmailSelectAll() {
             const selectAll = document.getElementById('selectEmailAllStudents');
             const studentCheckboxes = document.querySelectorAll('.email-student-checkbox-input');
             
-            selectAll.addEventListener('change', function() {
-                studentCheckboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
-                });
-                updateEmailSelectedCount();
-                if (document.querySelector('input[name="emailRecipientType"]:checked').value === 'specific') {
+            if (selectAll) {
+                selectAll.addEventListener('change', function() {
+                    studentCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                    updateEmailSelectedCount();
                     updateEmailRecipientCount();
-                }
-            });
+                });
+            }
         }
 
-        // Update email recipient count
+        // Update email recipient count using AJAX
         function updateEmailRecipientCount() {
-            const sendEmailChecked = document.getElementById('sendEmail').checked;
+            const sendEmailCheckbox = document.getElementById('sendEmail');
+            const emailRecipientCount = document.getElementById('emailRecipientCount');
             
-            if (!sendEmailChecked) {
-                document.getElementById('emailRecipientCount').innerHTML = 
-                    `<i class="fas fa-users me-2"></i>Email recipients: 0 students (email not selected)`;
+            if (!sendEmailCheckbox || !sendEmailCheckbox.checked) {
+                if (emailRecipientCount) {
+                    emailRecipientCount.innerHTML = 
+                        `<i class="fas fa-users me-2"></i>Email recipients: 0 students (email not selected)`;
+                }
                 return;
             }
             
-            const emailRecipientType = document.querySelector('input[name="emailRecipientType"]:checked').value;
+            const emailRecipientType = document.querySelector('input[name="emailRecipientType"]:checked');
             
-            if (emailRecipientType === 'specific') {
-                const selectedStudents = Array.from(document.querySelectorAll('.email-student-checkbox-input:checked'))
-                    .map(checkbox => checkbox.value);
-                const selectedCount = selectedStudents.length;
+            if (emailRecipientType && emailRecipientType.value === 'specific') {
+                const selectedStudents = document.querySelectorAll('.email-student-checkbox-input:checked');
+                const selectedIds = Array.from(selectedStudents).map(cb => cb.value);
                 
-                if (selectedCount > 0) {
-                    document.getElementById('emailRecipientCount').innerHTML = 
-                        `<i class="fas fa-users me-2"></i>Email recipients: ${selectedCount} students`;
-                    
-                    // Fetch actual count with valid emails
-                    fetch(`get_recipient_count.php?type=specific&specific_students=${selectedStudents.join(',')}`)
+                if (selectedIds.length > 0) {
+                    // Fetch count from server for specific students
+                    fetch(`get_recipient_count.php?type=specific&specific_students=${selectedIds.join(',')}`)
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                document.getElementById('emailRecipientCount').innerHTML = 
-                                    `<i class="fas fa-users me-2"></i>Email recipients: ${data.count} students (with valid email)`;
+                                emailRecipientCount.innerHTML = 
+                                    `<i class="fas fa-users me-2"></i>Email recipients: ${data.count} students`;
+                            } else {
+                                emailRecipientCount.innerHTML = 
+                                    `<i class="fas fa-users me-2"></i>Email recipients: 0 students (error)`;
                             }
                         })
                         .catch(error => {
-                            console.error('Error fetching recipient count:', error);
+                            console.error('Error:', error);
+                            emailRecipientCount.innerHTML = 
+                                `<i class="fas fa-users me-2"></i>Email recipients: ${selectedIds.length} students`;
                         });
                 } else {
-                    document.getElementById('emailRecipientCount').innerHTML = 
+                    emailRecipientCount.innerHTML = 
                         `<i class="fas fa-users me-2"></i>Email recipients: 0 students`;
                 }
             } else {
-                document.getElementById('emailRecipientCount').innerHTML = 
-                    `<i class="fas fa-spinner fa-spin me-2"></i>Loading email recipient count...`;
+                // For "all students", fetch from server
+                const type = emailRecipientType ? emailRecipientType.value : 'all';
                 
-                fetch(`get_recipient_count.php?type=${emailRecipientType}`)
+                fetch(`get_recipient_count.php?type=${type}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            document.getElementById('emailRecipientCount').innerHTML = 
+                            emailRecipientCount.innerHTML = 
                                 `<i class="fas fa-users me-2"></i>Email recipients: ${data.count} students`;
                         } else {
-                            document.getElementById('emailRecipientCount').innerHTML = 
-                                `<i class="fas fa-users me-2"></i>Email recipients: Unable to load count`;
+                            emailRecipientCount.innerHTML = 
+                                `<i class="fas fa-users me-2"></i>Email recipients: 0 students (error)`;
                         }
                     })
                     .catch(error => {
-                        console.error('Error fetching recipient count:', error);
-                        document.getElementById('emailRecipientCount').innerHTML = 
-                            `<i class="fas fa-users me-2"></i>Email recipients: Error loading count`;
+                        console.error('Error:', error);
+                        emailRecipientCount.innerHTML = 
+                            `<i class="fas fa-users me-2"></i>Email recipients: 0 students (error)`;
                     });
             }
         }
 
-        // Email student search functionality
         function initEmailStudentSearch() {
             const searchInput = document.getElementById('emailStudentSearch');
             if (!searchInput) return;
@@ -1482,11 +1902,44 @@
             });
         }
 
-        // Update email preview
         function updateEmailPreview() {
             const subject = document.getElementById('subject').value || 'Announcement Subject';
             const content = document.getElementById('content').value || 'Announcement content will appear here...';
             const sentBy = document.getElementById('sentBy').value || 'Administrator';
+            const expiryDate = document.getElementById('expiryDate').value;
+            const expiryTime = document.getElementById('expiryTime').value;
+            const previewContent = document.getElementById('previewContent');
+            
+            if (!previewContent) return;
+            
+            const currentDate = new Date();
+            const formattedDate = currentDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            let emailContent = content;
+            let expiryNotice = '';
+            
+            if (expiryDate && expiryTime) {
+                const expiryDateTime = new Date(expiryDate + 'T' + expiryTime);
+                const expiryFormatted = expiryDateTime.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                emailContent += "\n\nThis announcement will expire on: " + expiryFormatted;
+                expiryNotice = `
+                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 12px 15px; border-radius: 8px; margin-top: 15px; font-size: 14px;">
+                        <strong>⚠️ Expiry Notice:</strong> This announcement will expire on ${expiryFormatted}
+                    </div>
+                `;
+            }
             
             const previewHTML = `
                 <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 100%;">
@@ -1497,11 +1950,12 @@
                     <div style="padding: 20px; background: #f8f9fa;">
                         <h3 style="color: #1a3a5f; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;">${subject}</h3>
                         <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; margin-bottom: 15px;">
-                            ${content.replace(/\n/g, '<br>')}
+                            ${emailContent.replace(/\n/g, '<br>')}
                         </div>
+                        ${expiryNotice}
                         <div style="background: #e9ecef; padding: 12px; border-radius: 8px; font-size: 14px;">
                             <p style="margin: 0;"><strong>Sent by:</strong> ${sentBy}</p>
-                            <p style="margin: 5px 0 0 0;"><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+                            <p style="margin: 5px 0 0 0;"><strong>Date:</strong> ${formattedDate}</p>
                         </div>
                     </div>
                     <div style="text-align: center; padding: 15px; color: #666; font-size: 12px; background: white; border-top: 1px solid #e9ecef;">
@@ -1511,22 +1965,21 @@
                 </div>
             `;
             
-            document.getElementById('previewContent').innerHTML = previewHTML;
+            previewContent.innerHTML = previewHTML;
         }
 
-        // NEW FUNCTIONS FOR EXPIRY TIME
         function updateExpiryPreview() {
             const dateInput = document.getElementById('expiryDate');
             const timeInput = document.getElementById('expiryTime');
             const preview = document.getElementById('expiryPreview');
             const previewText = document.getElementById('expiryPreviewText');
             const timeRemaining = document.getElementById('timeRemaining');
+            const expiredNotice = document.getElementById('expiredNotice');
 
-            if (dateInput.value && timeInput.value) {
+            if (dateInput && timeInput && dateInput.value && timeInput.value) {
                 const expiryDateTime = new Date(dateInput.value + 'T' + timeInput.value);
                 const now = new Date();
                 
-                // Format the date for display
                 const formattedDate = expiryDateTime.toLocaleDateString('en-US', {
                     weekday: 'long',
                     year: 'numeric',
@@ -1536,9 +1989,8 @@
                     minute: '2-digit'
                 });
                 
-                previewText.textContent = formattedDate;
+                if (previewText) previewText.textContent = formattedDate;
                 
-                // Calculate time remaining
                 const timeDiff = expiryDateTime - now;
                 if (timeDiff > 0) {
                     const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
@@ -1554,16 +2006,26 @@
                         remainingText = `${minutes} minute${minutes > 1 ? 's' : ''} from now`;
                     }
                     
-                    timeRemaining.textContent = `⏰ ${remainingText}`;
-                    timeRemaining.style.color = '#e67e22';
+                    if (timeRemaining) {
+                        timeRemaining.textContent = `⏰ ${remainingText}`;
+                        timeRemaining.style.color = '#e67e22';
+                        timeRemaining.style.display = 'block';
+                    }
+                    if (expiredNotice) {
+                        expiredNotice.style.display = 'none';
+                    }
                 } else {
-                    timeRemaining.textContent = '⚠️ This time has already passed';
-                    timeRemaining.style.color = '#e74c3c';
+                    if (timeRemaining) {
+                        timeRemaining.style.display = 'none';
+                    }
+                    if (expiredNotice) {
+                        expiredNotice.style.display = 'block';
+                    }
                 }
                 
-                preview.style.display = 'block';
+                if (preview) preview.style.display = 'block';
             } else {
-                preview.style.display = 'none';
+                if (preview) preview.style.display = 'none';
             }
         }
 
@@ -1573,192 +2035,54 @@
             
             presetButtons.forEach(button => {
                 button.addEventListener('click', function() {
-                    timeInput.value = this.getAttribute('data-time');
-                    updateExpiryPreview();
+                    if (timeInput) {
+                        timeInput.value = this.getAttribute('data-time');
+                        updateExpiryPreview();
+                    }
                 });
             });
         }
 
         function setMinimumDate() {
             const dateInput = document.getElementById('expiryDate');
-            const today = new Date().toISOString().split('T')[0];
-            dateInput.min = today;
-            
-            // Set default date to tomorrow if empty
-            if (!dateInput.value) {
-                const tomorrow = new Date();
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                dateInput.value = tomorrow.toISOString().split('T')[0];
+            if (dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.min = today;
+                
+                if (!dateInput.value) {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    dateInput.value = tomorrow.toISOString().split('T')[0];
+                }
             }
         }
 
-        // Event listeners for email functionality
-        const sendEmailCheckbox = document.getElementById('sendEmail');
-        sendEmailCheckbox.addEventListener('change', toggleEmailRecipientSelection);
-
-        // Email recipient type change
-        document.querySelectorAll('input[name="emailRecipientType"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                toggleEmailSpecificStudentSelection();
-                updateEmailRecipientCount();
-            });
-        });
-
-        // Email student checkbox changes
-        document.querySelectorAll('.email-student-checkbox-input').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                updateEmailSelectedCount();
-                if (document.querySelector('input[name="emailRecipientType"]:checked').value === 'specific') {
-                    updateEmailRecipientCount();
-                }
-            });
-        });
-
-        // Email functionality
-        const previewEmailBtn = document.getElementById('previewEmailBtn');
-        const emailPreview = document.getElementById('emailPreview');
-        const subjectInput = document.getElementById('subject');
-        const contentInput = document.getElementById('content');
-        const sentBySelect = document.getElementById('sentBy');
-
-        subjectInput.addEventListener('input', updateEmailPreview);
-        contentInput.addEventListener('input', updateEmailPreview);
-        sentBySelect.addEventListener('change', updateEmailPreview);
-
-        previewEmailBtn.addEventListener('click', function() {
-            emailPreview.classList.toggle('active');
-            if (emailPreview.classList.contains('active')) {
-                updateEmailPreview();
-                this.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Preview';
-            } else {
-                this.innerHTML = '<i class="fas fa-eye"></i> Preview Email';
-            }
-        });
-
-        // Form submission
-        const announcementForm = document.getElementById('announcementForm');
-        const cancelBtn = document.getElementById('cancelBtn');
-
-        announcementForm.addEventListener('submit', function(e) {
-            // Client-side validation
-            const sentBy = document.getElementById('sentBy').value;
-            const subject = document.getElementById('subject').value;
-            const content = document.getElementById('content').value;
-            const sendEmail = document.getElementById('sendEmail').checked;
-            const postFront = document.getElementById('postFront').checked;
-            
-            // Check if at least one announcement type is selected
-            if (!sendEmail && !postFront) {
-                e.preventDefault();
-                alert('Please select at least one announcement type (Send Email or Post on Front Page)');
-                return;
-            }
-            
-            if (!sentBy) {
-                e.preventDefault();
-                alert('Please select a sender');
-                return;
-            }
-            
-            if (!subject) {
-                e.preventDefault();
-                alert('Please enter a subject');
-                return;
-            }
-            
-            if (!content) {
-                e.preventDefault();
-                alert('Please enter announcement content');
-                return;
-            }
-            
-            // Validate specific email students selection
-            if (sendEmail) {
-                const emailRecipientType = document.querySelector('input[name="emailRecipientType"]:checked').value;
-                
-                if (emailRecipientType === 'specific') {
-                    const selectedStudents = document.querySelectorAll('.email-student-checkbox-input:checked').length;
-                    if (selectedStudents === 0) {
-                        e.preventDefault();
-                        alert('Please select at least one student for email announcement');
-                        return;
-                    }
-                }
-                
-                const emailRecipientCountText = document.querySelector('#emailRecipientCount').textContent;
-                
-                if (!confirm(`This will send emails to all selected recipients.\n${emailRecipientCountText}\n\nThis may take several minutes. Do you want to continue?`)) {
-                    e.preventDefault();
-                    return;
-                }
-            }
-            
-            // Validate expiry date if provided
-            const expiryDate = document.getElementById('expiryDate').value;
-            const expiryTime = document.getElementById('expiryTime').value;
-            if (expiryDate) {
-                const expiryDateTime = new Date(expiryDate + 'T' + (expiryTime || '23:59'));
-                const now = new Date();
-                
-                if (expiryDateTime <= now) {
-                    e.preventDefault();
-                    alert('Please select a future date and time for expiry');
-                    return;
-                }
-            }
-            
-            // File validation
-            const fileInput = document.getElementById('attachment');
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                const fileSize = file.size / 1024 / 1024; // MB
-                const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'avi', 'mov', 'wmv', 'webm', 'pdf', 'doc', 'docx'];
-                const fileExtension = file.name.split('.').pop().toLowerCase();
-                
-                if (!allowedExtensions.includes(fileExtension)) {
-                    e.preventDefault();
-                    alert('Please select a valid file type (images, videos, PDF, or documents)');
-                    return;
-                }
-                
-                if (fileSize > 10) {
-                    e.preventDefault();
-                    alert('File size must be less than 10MB');
-                    return;
-                }
-            }
-            
-            // Show loading state
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-            submitBtn.disabled = true;
-        });
-
-        // Cancel button
-        cancelBtn.addEventListener('click', function() {
-            if (confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
-                window.location.href = 'admin_dashboard.php';
-            }
-        });
-
-        // File upload preview
-        const fileInput = document.getElementById('attachment');
-        fileInput.addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
-                if (fileSize > 10) {
-                    alert('File size should be less than 10MB');
-                    this.value = '';
-                }
-            }
-        });
-
-        // Initialize
+        // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize email functionality
+            const sendEmailCheckbox = document.getElementById('sendEmail');
+            if (sendEmailCheckbox) {
+                sendEmailCheckbox.addEventListener('change', toggleEmailRecipientSelection);
+            }
+
+            // Email recipient type change
+            document.querySelectorAll('input[name="emailRecipientType"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    toggleEmailSpecificStudentSelection();
+                    updateEmailRecipientCount();
+                });
+            });
+
+            // Email student checkbox changes
+            document.querySelectorAll('.email-student-checkbox-input').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    updateEmailSelectedCount();
+                    updateEmailRecipientCount();
+                });
+            });
+
+            // Initialize functions
             toggleEmailRecipientSelection();
-            toggleEmailSpecificStudentSelection();
             setupEmailSelectAll();
             initEmailStudentSearch();
             updateEmailSelectedCount();
@@ -1771,12 +2095,145 @@
             const dateInput = document.getElementById('expiryDate');
             const timeInput = document.getElementById('expiryTime');
             
-            dateInput.addEventListener('change', updateExpiryPreview);
-            timeInput.addEventListener('change', updateExpiryPreview);
+            if (dateInput) dateInput.addEventListener('change', updateExpiryPreview);
+            if (timeInput) timeInput.addEventListener('change', updateExpiryPreview);
             
-            // Initial preview update
             updateExpiryPreview();
         });
+
+        // Email preview functionality
+        const previewEmailBtn = document.getElementById('previewEmailBtn');
+        const emailPreview = document.getElementById('emailPreview');
+        const subjectInput = document.getElementById('subject');
+        const contentInput = document.getElementById('content');
+        const sentBySelect = document.getElementById('sentBy');
+        const expiryDateInput = document.getElementById('expiryDate');
+        const expiryTimeInput = document.getElementById('expiryTime');
+
+        if (subjectInput) subjectInput.addEventListener('input', updateEmailPreview);
+        if (contentInput) contentInput.addEventListener('input', updateEmailPreview);
+        if (sentBySelect) sentBySelect.addEventListener('change', updateEmailPreview);
+        if (expiryDateInput) expiryDateInput.addEventListener('change', updateEmailPreview);
+        if (expiryTimeInput) expiryTimeInput.addEventListener('change', updateEmailPreview);
+
+        if (previewEmailBtn) {
+            previewEmailBtn.addEventListener('click', function() {
+                if (emailPreview) {
+                    emailPreview.classList.toggle('active');
+                    if (emailPreview.classList.contains('active')) {
+                        updateEmailPreview();
+                        this.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Preview';
+                    } else {
+                        this.innerHTML = '<i class="fas fa-eye"></i> Preview Email';
+                    }
+                }
+            });
+        }
+
+        // Form submission
+        const announcementForm = document.getElementById('announcementForm');
+        const cancelBtn = document.getElementById('cancelBtn');
+
+        if (announcementForm) {
+            announcementForm.addEventListener('submit', function(e) {
+                const sentBy = document.getElementById('sentBy')?.value;
+                const subject = document.getElementById('subject')?.value;
+                const content = document.getElementById('content')?.value;
+                const sendEmail = document.getElementById('sendEmail')?.checked;
+                const postFront = document.getElementById('postFront')?.checked;
+                const expiryDate = document.getElementById('expiryDate')?.value;
+                const expiryTime = document.getElementById('expiryTime')?.value;
+                
+                if (!sendEmail && !postFront) {
+                    e.preventDefault();
+                    alert('Please select at least one announcement type (Send Email or Post on Front Page)');
+                    return;
+                }
+                
+                if (!sentBy) {
+                    e.preventDefault();
+                    alert('Please select a sender');
+                    return;
+                }
+                
+                if (!subject) {
+                    e.preventDefault();
+                    alert('Please enter a subject');
+                    return;
+                }
+                
+                if (!content) {
+                    e.preventDefault();
+                    alert('Please enter announcement content');
+                    return;
+                }
+                
+                // Check if expiry date is in the past
+                if (expiryDate && expiryTime) {
+                    const expiryDateTime = new Date(expiryDate + 'T' + expiryTime);
+                    const now = new Date();
+                    if (expiryDateTime <= now) {
+                        if (!confirm('The expiry date and time you selected has already passed. This announcement will be created as expired. Do you want to continue?')) {
+                            e.preventDefault();
+                            return;
+                        }
+                    }
+                }
+                
+                if (sendEmail) {
+                    const emailRecipientType = document.querySelector('input[name="emailRecipientType"]:checked');
+                    if (!emailRecipientType) {
+                        e.preventDefault();
+                        alert('Please select email recipient type');
+                        return;
+                    }
+                    
+                    if (emailRecipientType.value === 'specific') {
+                        const selectedStudents = document.querySelectorAll('.email-student-checkbox-input:checked').length;
+                        if (selectedStudents === 0) {
+                            e.preventDefault();
+                            alert('Please select at least one student for email announcement');
+                            return;
+                        }
+                    }
+                    
+                    if (!confirm('Are you sure you want to send this email announcement?')) {
+                        e.preventDefault();
+                        return;
+                    }
+                }
+                
+                // Show loading state
+                const submitBtn = document.getElementById('submitBtn');
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                    submitBtn.disabled = true;
+                }
+            });
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
+                    window.location.href = 'admin_dashboard.php';
+                }
+            });
+        }
+
+        // File upload validation
+        const fileInput = document.getElementById('attachment');
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                    if (fileSize > 10) {
+                        alert('File size should be less than 10MB');
+                        this.value = '';
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>

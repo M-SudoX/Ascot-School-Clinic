@@ -522,6 +522,11 @@ function getRecipientDisplay($recipient_type = null) {
             transition: all 0.3s ease;
         }
 
+        .btn-action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed !important;
+        }
+
         .btn-view {
             background: #17a2b8;
             color: white;
@@ -529,15 +534,6 @@ function getRecipientDisplay($recipient_type = null) {
 
         .btn-view:hover {
             background: #138496;
-        }
-
-        .btn-edit {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .btn-edit:hover {
-            background: #e0a800;
         }
 
         .btn-expire {
@@ -565,6 +561,50 @@ function getRecipientDisplay($recipient_type = null) {
 
         .btn-delete:hover {
             background: #5a6268;
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            border-bottom: none;
+            padding: 1.5rem;
+        }
+
+        .modal-header .btn-close {
+            filter: invert(1);
+            opacity: 0.8;
+        }
+
+        .modal-body {
+            padding: 2rem;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .announcement-detail {
+            margin-bottom: 1.5rem;
+        }
+
+        .announcement-detail label {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .announcement-detail .content-box {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
         }
 
         /* Responsive Design */
@@ -669,6 +709,10 @@ function getRecipientDisplay($recipient_type = null) {
             .btn-action {
                 width: 100%;
                 margin-bottom: 0.25rem;
+            }
+
+            .modal-body {
+                padding: 1rem;
             }
         }
     </style>
@@ -897,11 +941,6 @@ function getRecipientDisplay($recipient_type = null) {
                                                         onclick="viewAnnouncement(<?php echo $announcement['id']; ?>)">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
-                                                <button class="btn-action btn-edit" 
-                                                        title="Edit Announcement"
-                                                        onclick="editAnnouncement(<?php echo $announcement['id']; ?>)">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
                                                 
                                                 <!-- EXPIRED/ACTIVATE BUTTON -->
                                                 <?php if (($announcement['is_active'] ?? 1)): ?>
@@ -911,10 +950,12 @@ function getRecipientDisplay($recipient_type = null) {
                                                         <i class="fas fa-ban"></i>
                                                     </button>
                                                 <?php else: ?>
-                                                    <button class="btn-action btn-activate" 
-                                                            title="Activate Announcement"
-                                                            onclick="activateAnnouncement(<?php echo $announcement['id']; ?>, '<?php echo htmlspecialchars($announcement['title']); ?>')">
-                                                        <i class="fas fa-check"></i>
+                                                    <!-- Show disabled button for expired announcements -->
+                                                    <button class="btn-action btn-expire" 
+                                                            title="Cannot activate expired announcement"
+                                                            disabled
+                                                            style="opacity: 0.5; cursor: not-allowed;">
+                                                        <i class="fas fa-ban"></i>
                                                     </button>
                                                 <?php endif; ?>
                                                 
@@ -933,6 +974,26 @@ function getRecipientDisplay($recipient_type = null) {
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- View Announcement Modal -->
+    <div class="modal fade" id="viewAnnouncementModal" tabindex="-1" aria-labelledby="viewAnnouncementModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewAnnouncementModalLabel">
+                        <i class="fas fa-eye me-2"></i>Announcement Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="announcementDetails">
+                    <!-- Details will be loaded here by JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
@@ -971,28 +1032,78 @@ function getRecipientDisplay($recipient_type = null) {
             }
         });
 
-        // View Announcement Function
+        // View Announcement Function - Show modal with details
         function viewAnnouncement(id) {
-            alert('Viewing announcement ID: ' + id);
-            // You can implement modal view here
-        }
-
-        // Edit Announcement Function  
-        function editAnnouncement(id) {
-            alert('Edit feature coming soon! Announcement ID: ' + id);
+            // In a real application, you would fetch the announcement details via AJAX
+            // For this example, we'll use the data we already have
+            
+            // Find the announcement row
+            const rows = document.querySelectorAll('tr');
+            let announcementData = null;
+            
+            rows.forEach(row => {
+                const firstCell = row.querySelector('td');
+                if (firstCell && firstCell.textContent.trim() === id.toString()) {
+                    // Extract data from the row
+                    const cells = row.querySelectorAll('td');
+                    announcementData = {
+                        id: cells[0].textContent.trim(),
+                        title: cells[1].textContent.trim(),
+                        recipient: cells[2].textContent.trim(),
+                        type: cells[3].textContent.trim(),
+                        date: cells[4].textContent.trim(),
+                        status: cells[5].textContent.trim()
+                    };
+                }
+            });
+            
+            if (announcementData) {
+                // Create HTML for modal content
+                const modalContent = `
+                    <div class="announcement-detail">
+                        <label>Title:</label>
+                        <div class="content-box">${announcementData.title}</div>
+                    </div>
+                    <div class="announcement-detail">
+                        <label>Recipient:</label>
+                        <div>${announcementData.recipient}</div>
+                    </div>
+                    <div class="announcement-detail">
+                        <label>Type:</label>
+                        <div>${announcementData.type}</div>
+                    </div>
+                    <div class="announcement-detail">
+                        <label>Date Sent:</label>
+                        <div>${announcementData.date}</div>
+                    </div>
+                    <div class="announcement-detail">
+                        <label>Status:</label>
+                        <div><span class="status-${announcementData.status.toLowerCase()}">${announcementData.status}</span></div>
+                    </div>
+                    <div class="announcement-detail">
+                        <label>Content Preview:</label>
+                        <div class="content-box">
+                            <p>This is a preview of the announcement content. In a real application, this would show the actual content of the announcement.</p>
+                            <p><strong>Note:</strong> The actual content would be loaded from the database.</p>
+                        </div>
+                    </div>
+                `;
+                
+                // Set modal content
+                document.getElementById('announcementDetails').innerHTML = modalContent;
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('viewAnnouncementModal'));
+                modal.show();
+            } else {
+                alert('Announcement details not found!');
+            }
         }
 
         // EXPIRE Announcement Function - SET is_active = 0
         function expireAnnouncement(id, title) {
-            if (confirm(`Are you sure you want to mark "${title}" as EXPIRED?\n\nThis will remove it from student view.`)) {
+            if (confirm(`Are you sure you want to mark "${title}" as EXPIRED?\n\nOnce expired, it cannot be activated again.`)) {
                 window.location.href = `announcement_history.php?expire_id=${id}`;
-            }
-        }
-
-        // ACTIVATE Announcement Function - SET is_active = 1  
-        function activateAnnouncement(id, title) {
-            if (confirm(`Are you sure you want to ACTIVATE "${title}"?\n\nThis will make it visible to students again.`)) {
-                window.location.href = `announcement_history.php?activate_id=${id}`;
             }
         }
 

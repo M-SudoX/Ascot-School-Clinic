@@ -767,7 +767,7 @@
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="reportsMenu">
-                        <a href="consultation_report.php" class="submenu-item">
+                        <a href="monthly_summary.php" class="submenu-item">
                             <i class="fas fa-file-invoice"></i>
                             Monthly Summary
                         </a>
@@ -785,7 +785,7 @@
                             <i class="fas fa-users-cog"></i>
                             Users Logs
                         </a>
-                        <a href="#" class="submenu-item">
+                        <a href="backup_restore.php" class="submenu-item">
                             <i class="fas fa-clipboard-list"></i>
                             Back up & Restore
                         </a>

@@ -100,7 +100,7 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                 border: 1px solid #ddd;
             }
             
-            /* UPDATED HEADER STYLE - NO BACKGROUND, SMALLER PADDING */
+            /* UPDATED HEADER STYLE - WITH LOGO AND YELLOW STRIPE */
             .header-container {
                 display: flex;
                 align-items: center;
@@ -121,10 +121,29 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                 top: 0;
             }
             
+            .logo-container {
+                flex-shrink: 0;
+                margin-right: 8px;
+                padding-top: 0;
+                margin-left: 25px; /* CHANGED: Increased significantly to move logo right */
+                position: relative;
+                left: 10px; /* CHANGED: Additional positioning */
+            }
+            
+            .ascot-logo {
+                width: 65px;
+                height: 65px;
+                object-fit: contain;
+                margin-right: -8px; /* CHANGED: Reduced negative margin significantly */
+                position: relative;
+                left: 5px; /* CHANGED: Additional positioning */
+            }
+            
             .header-content {
                 flex: 1;
                 text-align: center;
-                padding: 0 10px;
+                padding: 0 5px;
+                margin-left: 10px; /* CHANGED: Added margin to push content right */
             }
             
             .republic {
@@ -422,6 +441,11 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                     print-color-adjust: exact;
                 }
                 
+                .logo-container {
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                
                 .certificate-title {
                     background: transparent !important;
                     -webkit-print-color-adjust: exact;
@@ -441,9 +465,12 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
         <?php if ($certificate_type === 'Laboratory Request Form'): ?>
             <!-- LABORATORY REQUEST FORM -->
             <div class="page">
-                <!-- Header Section -->
+                <!-- Header Section with Logo and Yellow Stripe -->
                 <div class="header-container">
                     <div class="yellow-stripe"></div>
+                    <div class="logo-container">
+                        <img src="../img/logo.png" alt="ASCOT Logo" class="ascot-logo">
+                    </div>
                     <div class="header-content">
                         <div class="republic">Republic of the Philippines</div>
                         <div class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</div>
@@ -518,7 +545,6 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                             </div>
                         </div>
                     </div>
-
                     <!-- Medical Examination Officer -->
                     <div class="form-row" style="margin-top: 30px;">
                         <div class="form-field" style="flex: 0.6;">
@@ -527,7 +553,6 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                         </div>
                     </div>
                 </div>
-
                 <!-- Footer -->
                 <div class="form-footer">
                     HSU-F007<br>
@@ -538,9 +563,12 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
         <?php else: ?>
             <!-- MEDICAL AND DENTAL CERTIFICATES -->
             <div class="page">
-                <!-- Header Section -->
+                <!-- Header Section with Logo and Yellow Stripe -->
                 <div class="header-container">
                     <div class="yellow-stripe"></div>
+                    <div class="logo-container">
+                        <img src="../img/logo.png" alt="ASCOT Logo" class="ascot-logo">
+                    </div>
                     <div class="header-content">
                         <div class="republic">Republic of the Philippines</div>
                         <div class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</div>

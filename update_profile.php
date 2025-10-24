@@ -167,224 +167,214 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Update Profile - ASCOT Online School Clinic</title>
+  <title>Update Profile - ASCOT Clinic</title>
+  
+  <!-- Bootstrap -->
   <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
   <link href="assets/webfonts/all.min.css" rel="stylesheet">
-  <link href="assets/css/update_profile.css" rel="stylesheet">
+  
   <style>
     :root {
-        --primary-color: #3498db;
-        --secondary-color: #2c3e50;
-        --accent-color: #e74c3c;
-        --success-color: #27ae60;
-        --warning-color: #f39c12;
-        --sidebar-width: 280px;
-        --header-height: 80px;
+        --primary: #667eea;
+        --primary-dark: #5a6fd8;
+        --secondary: #764ba2;
+        --success: #28a745;
+        --info: #17a2b8;
+        --warning: #ffc107;
+        --danger: #dc3545;
+        --light: #f8f9fa;
+        --dark: #343a40;
+        --gray: #6c757d;
     }
 
     * {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
     }
 
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        overflow-x: hidden;
+        background: #f5f6fa;
+        padding-top: 80px;
+        line-height: 1.6;
     }
 
-    /* ========== ENHANCED HEADER DESIGN ========== */
-    .header {
-        background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%);
-        backdrop-filter: blur(20px);
-        border-bottom: 1px solid rgba(255,255,255,0.2);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        padding: 15px 0;
+    /* Header Styles - IMPROVED */
+    .top-header {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        color: white;
+        padding: 0.75rem 0;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
-        z-index: 1000;
-        height: var(--header-height);
+        z-index: 1030;
+        height: 80px;
     }
 
-    .header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        opacity: 0.05;
-        z-index: -1;
-    }
-
-    .header .logo-img {
-        height:80px;
-        width: 80px;
-        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-        transition: transform 0.3s ease;
-        margin-top: -16px;
-    }
-
-    .header .logo-img:hover {
-        transform: scale(1.05);
-    }
-
-    .header .college-info {
-        text-align: center;
-    }
-
-    .header .college-info h4 {
-        font-size: 1rem;
-        margin-bottom: 0.2rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #2c3e50, #3498db);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .header .college-info p {
-        font-size: 0.85rem;
-        margin-bottom: 0;
-        color: #7f8c8d;
-        font-weight: 600;
-        letter-spacing: 1px;
-    }
-
-    /* ========== ENHANCED SIDEBAR DESIGN ========== */
-    .sidebar {
-        background: linear-gradient(135deg, rgba(44, 62, 80, 0.95) 0%, rgba(52, 73, 94, 0.98) 100%);
-        backdrop-filter: blur(20px);
-        border-right: 1px solid rgba(255,255,255,0.1);
-        box-shadow: 8px 0 32px rgba(0,0,0,0.2);
-        min-height: calc(100vh - var(--header-height));
-        padding: 30px 0;
-        position: fixed;
-        top: var(--header-height);
-        left: 0;
-        width: var(--sidebar-width);
-        z-index: 999;
-        overflow-y: auto;
-    }
-
-    .sidebar .nav {
-        padding: 0 20px;
-    }
-
-    .sidebar .nav-link {
-        color: #ecf0f1 !important;
-        padding: 15px 20px;
-        margin: 8px 0;
-        border-radius: 12px;
-        border-left: 4px solid transparent;
-        transition: all 0.3s ease;
-        font-weight: 500;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .sidebar .nav-link::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
         height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-        transition: left 0.5s ease;
     }
 
-    .sidebar .nav-link:hover::before {
-        left: 100%;
+    .logo-img {
+        width: 60px;
+        height: 60px;
+        object-fit: contain;
+        filter: brightness(0) invert(1);
     }
 
-    .sidebar .nav-link:hover,
-    .sidebar .nav-link.active {
-        background: linear-gradient(135deg, rgba(52, 152, 219, 0.2) 0%, rgba(41, 128, 185, 0.2) 100%);
-        border-left: 4px solid #3498db;
-        transform: translateX(8px);
-        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    .school-info {
+        flex: 1;
     }
 
-    .sidebar .nav-link i {
-        width: 25px;
-        text-align: center;
-        margin-right: 15px;
+    .republic {
+        font-size: 0.7rem;
+        opacity: 0.9;
+        letter-spacing: 0.5px;
+    }
+
+    .school-name {
         font-size: 1.1rem;
-        transition: transform 0.3s ease;
+        font-weight: 700;
+        margin: 0.1rem 0;
+        line-height: 1.2;
     }
 
-    .sidebar .nav-link:hover i {
-        transform: scale(1.2);
+    .clinic-title {
+        font-size: 0.8rem;
+        opacity: 0.9;
+        font-weight: 500;
     }
 
-    .sidebar .nav-link.active i {
-        color: #3498db;
-    }
-
-    .logout-btn .nav-link {
-        background: linear-gradient(135deg, rgba(231, 76, 60, 0.2) 0%, rgba(192, 57, 43, 0.2) 100%);
-        border: 1px solid rgba(231, 76, 60, 0.3);
-        margin-top: 20px;
-    }
-
-    .logout-btn .nav-link:hover {
-        background: linear-gradient(135deg, rgba(231, 76, 60, 0.3) 0%, rgba(192, 57, 43, 0.3) 100%);
-        border-left: 4px solid #e74c3c;
-        transform: translateX(8px);
-    }
-
-    /* ========== MOBILE SIDEBAR ENHANCEMENTS ========== */
-    .mobile-menu-btn {
+    /* Mobile Menu Toggle - COMPLETELY FIXED POSITION */
+    .mobile-menu-toggle {
         display: none;
         position: fixed;
-        top: 20px;
-        left: 20px;
-        z-index: 1100;
-        background: linear-gradient(135deg, #3498db, #2980b9);
+        top: 95px; /* MAS MALAYO SA HEADER */
+        left: 20px; /* MAS MALAYO SA GILID */
+        z-index: 1025;
+        background: var(--primary);
         color: white;
         border: none;
-        border-radius: 12px;
-        padding: 12px 16px;
-        font-size: 1.3rem;
-        box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        cursor: pointer;
         transition: all 0.3s ease;
     }
 
-    .mobile-menu-btn:hover {
-        transform: scale(1.1);
-        box-shadow: 0 8px 25px rgba(52, 152, 219, 0.6);
+    .mobile-menu-toggle:hover {
+        transform: scale(1.05);
+        background: var(--primary-dark);
     }
 
+    /* Dashboard Container - IMPROVED */
+    .dashboard-container {
+        display: flex;
+        min-height: calc(100vh - 80px);
+    }
+
+    /* Sidebar Styles - IMPROVED */
+    .sidebar {
+        width: 260px;
+        background: white;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        padding: 1.5rem 0;
+        transition: transform 0.3s ease;
+        position: fixed;
+        top: 80px;
+        left: 0;
+        bottom: 0;
+        overflow-y: auto;
+        z-index: 1020;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        padding: 0.9rem 1.25rem;
+        color: #444;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .nav-item:hover {
+        background: #f8f9fa;
+        color: var(--primary);
+    }
+
+    .nav-item.active {
+        background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
+        color: var(--primary);
+        border-left: 4px solid var(--primary);
+    }
+
+    .nav-item i {
+        width: 22px;
+        margin-right: 0.9rem;
+        font-size: 1.1rem;
+    }
+
+    .nav-item span {
+        flex: 1;
+    }
+
+    .nav-item.logout {
+        color: var(--danger);
+        margin-top: auto;
+    }
+
+    .nav-item.logout:hover {
+        background: rgba(220, 53, 69, 0.1);
+    }
+
+    /* Main Content - IMPROVED */
+    .main-content {
+        flex: 1;
+        padding: 1.5rem;
+        overflow-x: hidden;
+        margin-left: 260px;
+        margin-top: 0;
+    }
+
+    /* Sidebar Overlay for Mobile - IMPROVED */
     .sidebar-overlay {
         display: none;
         position: fixed;
-        top: 0;
+        top: 80px;
         left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.7);
-        z-index: 998;
-        backdrop-filter: blur(5px);
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1019;
     }
 
-    /* ========== MAIN CONTENT ENHANCEMENTS ========== */
-    .main-content {
-        margin-left: var(--sidebar-width);
-        padding: 30px;
-        background: rgba(248, 249, 250, 0.95);
-        backdrop-filter: blur(10px);
-        min-height: calc(100vh - var(--header-height));
-        margin-top: var(--header-height);
+    .sidebar-overlay.active {
+        display: block;
     }
 
-    /* ========== FORM HEADER ENHANCEMENT ========== */
+    /* Form Header Enhancement */
     .form-header-with-logo {
         background: linear-gradient(135deg, rgba(255, 218, 106, 0.9) 0%, rgba(255, 247, 222, 0.95) 100%);
-        backdrop-filter: blur(10px);
         padding: 20px;
         border-radius: 15px;
         margin-bottom: 30px;
@@ -425,10 +415,9 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         font-size: 0.9rem;
     }
 
-    /* ========== FORM SECTIONS ENHANCEMENT ========== */
+    /* Health Form Container */
     .health-form-container {
         background: rgba(255,255,255,0.95);
-        backdrop-filter: blur(10px);
         border-radius: 20px;
         padding: 30px;
         box-shadow: 0 15px 50px rgba(0,0,0,0.1);
@@ -460,7 +449,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
 
     .form-section {
         background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%);
-        backdrop-filter: blur(10px);
         padding: 30px;
         border-radius: 15px;
         box-shadow: 0 8px 25px rgba(0,0,0,0.08);
@@ -522,7 +510,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         color: #6c757d;
     }
 
-    /* ========== MEDICAL QUESTIONS ENHANCEMENT ========== */
+    /* Medical Questions Enhancement */
     .medical-question {
         background: linear-gradient(135deg, rgba(248, 249, 250, 0.8) 0%, rgba(233, 236, 239, 0.9) 100%);
         padding: 25px;
@@ -583,7 +571,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         transform: translateX(5px);
     }
 
-    /* ========== BUTTONS ENHANCEMENT ========== */
+    /* Buttons Enhancement */
     .action-buttons {
         padding: 30px 0;
         border-top: 2px solid rgba(233, 236, 239, 0.8);
@@ -641,13 +629,12 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         color: white;
     }
 
-    /* ========== ALERTS ENHANCEMENT ========== */
+    /* Alerts Enhancement */
     .alert {
         border-radius: 12px;
         border: none;
         margin: 15px 0;
         box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-        backdrop-filter: blur(10px);
         padding: 15px 20px;
     }
 
@@ -661,39 +648,25 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         color: white;
     }
 
-    /* ========== RESPONSIVE BREAKPOINTS ========== */
-    @media (max-width: 1199.98px) {
-        .form-header-with-logo .college-info h3 {
-            font-size: 1.2rem;
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .sidebar {
+            width: 240px;
         }
         
-        .form-header-with-logo .college-info h4 {
-            font-size: 1rem;
+        .main-content {
+            margin-left: 240px;
         }
     }
 
-    @media (max-width: 991.98px) {
-        .sidebar {
-            left: -100%;
-            width: 300px;
-            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    @media (max-width: 992px) {
+        .school-name {
+            font-size: 1rem;
         }
 
-        .sidebar.active {
-            left: 0;
-        }
-
-        .mobile-menu-btn {
-            display: block;
-        }
-
-        .sidebar-overlay.active {
-            display: block;
-        }
-
-        .main-content {
-            margin-left: 0;
-            padding: 20px;
+        .logo-img {
+            width: 50px;
+            height: 50px;
         }
 
         .form-header-with-logo .logo-section {
@@ -707,22 +680,61 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         }
     }
 
-    @media (max-width: 767.98px) {
-        :root {
-            --header-height: 70px;
+    @media (max-width: 768px) {
+        body {
+            padding-top: 70px;
+        }
+        
+        .top-header {
+            height: 70px;
+            padding: 0.5rem 0;
+        }
+        
+        .mobile-menu-toggle {
+            display: block;
+            top: 85px; /* MAS MALAYO SA HEADER */
+            left: 20px; /* MAS MALAYO SA GILID */
         }
 
-        .header {
-            padding: 10px 0;
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 70px;
+            height: calc(100vh - 70px);
+            z-index: 1020;
+            transform: translateX(-100%);
+            overflow-y: auto;
+            width: 280px;
         }
 
-        .header .logo-img {
-            height: 40px;
+        .sidebar.active {
+            transform: translateX(0);
+        }
+
+        .sidebar-overlay {
+            top: 70px;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
         }
 
         .main-content {
-            padding: 15px;
-            margin-top: 70px;
+            padding: 2rem 1.25rem 1.25rem; /* MAS MALAKING PADDING SA ITAAS */
+            width: 100%;
+            margin-left: 0;
+        }
+
+        .header-content {
+            padding: 0 1rem;
+        }
+
+        .school-name {
+            font-size: 0.9rem;
+        }
+
+        .republic, .clinic-title {
+            font-size: 0.65rem;
         }
 
         .health-form-container {
@@ -745,16 +757,22 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
             padding: 10px 25px;
             font-size: 0.9rem;
         }
-
-        .mobile-menu-btn {
-            top: 15px;
-            left: 15px;
-            padding: 10px 14px;
-            font-size: 1.2rem;
-        }
     }
 
-    @media (max-width: 575.98px) {
+    @media (max-width: 576px) {
+        .action-btn {
+            padding: 1rem 1.25rem;
+            font-size: 0.9rem;
+        }
+
+        .health-form-container {
+            padding: 15px;
+        }
+
+        .form-section {
+            padding: 15px;
+        }
+
         .form-header-with-logo {
             padding: 15px;
         }
@@ -765,14 +783,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
 
         .form-header-with-logo .college-info h4 {
             font-size: 0.9rem;
-        }
-
-        .health-form-container {
-            padding: 15px;
-        }
-
-        .form-section {
-            padding: 15px;
         }
 
         .section-title {
@@ -789,9 +799,58 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
             width: 100%;
             margin: 10px 0;
         }
+
+        .main-content {
+            padding: 1.75rem 1rem 1rem; /* ADJUSTED PADDING */
+        }
+        
+        .mobile-menu-toggle {
+            top: 80px;
+            width: 45px;
+            height: 45px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .logo-img {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .school-name {
+            font-size: 0.8rem;
+        }
+        
+        .republic, .clinic-title {
+            font-size: 0.6rem;
+        }
+        
+        .mobile-menu-toggle {
+            width: 45px;
+            height: 45px;
+            top: 80px;
+            left: 15px;
+        }
+        
+        .main-content {
+            padding: 1.5rem 1rem 1rem;
+        }
     }
 
-    /* ========== ANIMATIONS ========== */
+    @media (max-width: 375px) {
+        .mobile-menu-toggle {
+            top: 75px;
+            left: 15px;
+            width: 40px;
+            height: 40px;
+        }
+        
+        .main-content {
+            padding: 1.25rem 0.75rem 0.75rem;
+        }
+    }
+
+    /* Animations */
     @keyframes fadeInUp {
         from {
             opacity: 0;
@@ -806,398 +865,398 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
     .fade-in {
         animation: fadeInUp 0.6s ease-out;
     }
-
-    /* ========== CUSTOM SCROLLBAR ========== */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-        background: rgba(0,0,0,0.1);
-        border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background: linear-gradient(135deg, #3498db, #2980b9);
-        border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(135deg, #2980b9, #21618c);
-    }
   </style>
 </head>
 <body>
-    <!-- MOBILE MENU BUTTON -->
-    <button class="mobile-menu-btn" id="mobileMenuBtn">
+    <!-- Mobile Menu Toggle Button - COMPLETELY FIXED POSITION -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
-    
-    <!-- SIDEBAR OVERLAY -->
+
+    <!-- Sidebar Overlay for Mobile - IMPROVED -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- ENHANCED HEADER SECTION -->
-    <div class="header">
+    <!-- Header - IMPROVED (INALIS NA ANG WELCOME MESSAGE SA RIGHT) -->
+    <header class="top-header">
         <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <img src="img/logo.png" alt="ASCOT Logo" class="logo-img">
+            <div class="header-content">
+                <img src="img/logo.png" alt="ASCOT Logo" class="logo-img">
+                <div class="school-info">
+                    <div class="republic">Republic of the Philippines</div>
+                    <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
+                    <div class="clinic-title">ONLINE SCHOOL CLINIC</div>
                 </div>
-                <div class="col">
-                    <div class="college-info">
-                        <h4>Republic of the Philippines</h4>
-                        <h4>AURORA STATE COLLEGE OF TECHNOLOGY</h4>
-                        <p>ONLINE SCHOOL CLINIC</p>
-                    </div>
-                </div>
+                <!-- INALIS NA ANG WELCOME MESSAGE AT STUDENT NAME SA RIGHT SIDE -->
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- MAIN LAYOUT CONTAINER -->
-    <div class="container-fluid">
-        <div class="row">
-            <!-- ENHANCED SIDEBAR NAVIGATION -->
-            <div class="col-md-3 col-lg-2 sidebar" id="sidebar">
-                <nav class="nav flex-column">
-                    <a class="nav-link" href="student_dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                    <a class="nav-link active" href="update_profile.php"><i class="fas fa-user-edit"></i> Update Profile</a>
-                    <a class="nav-link" href="schedule_consultation.php"><i class="fas fa-calendar-alt"></i> Schedule Consultation</a>
-                    <a class="nav-link" href="student_report.php"><i class="fas fa-chart-bar"></i> Report</a>
-                    <a class="nav-link" href="student_announcement.php"><i class="fas fa-bullhorn"></i> Announcement</a>
-                    <a class="nav-link" href="activity_logs.php"><i class="fas fa-clipboard-list"></i> Activity Logs</a>
-                </nav>
-                <div class="logout-btn mt-3">
-                    <a class="nav-link text-danger" href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    <div class="dashboard-container">
+        <!-- Sidebar - IMPROVED -->
+        <aside class="sidebar" id="sidebar">
+            <nav class="sidebar-nav">
+                <a href="student_dashboard.php" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="update_profile.php" class="nav-item active">
+                    <i class="fas fa-user-edit"></i>
+                    <span>Update Profile</span>
+                </a>
+
+                <a href="schedule_consultation.php" class="nav-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Schedule Consultation</span>
+                </a>
+
+                <a href="student_report.php" class="nav-item">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Report</span>
+                </a>
+
+                <a href="student_announcement.php" class="nav-item">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Announcement</span>
+                </a>
+
+                <a href="activity_logs.php" class="nav-item">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Activity Logs</span>
+                </a>
+                
+                <a href="logout.php" class="nav-item logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- ERROR MESSAGE DISPLAY -->
+            <?php if (isset($update_error)): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i> <?php echo $update_error; ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
+            
+            <!-- SUCCESS MESSAGE DISPLAY -->
+            <?php if ($success): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i> Profile updated successfully!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
+
+            <!-- FORM HEADER WITH LOGO -->
+            <div class="form-header-with-logo fade-in">
+                <div class="container">
+                    <div class="row align-items-center">
+                        <div class="col-12">
+                            <div class="logo-section">
+                                <img src="img/logo.png" alt="ASCOT Logo" class="logo-img">
+                                <div class="college-info">
+                                    <h4>Republic of the Philippines</h4>
+                                    <h3>AURORA STATE COLLEGE OF TECHNOLOGY</h3>
+                                    <p class="mb-0">Zabali, Baler, Aurora - Philippines</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- MAIN CONTENT AREA -->
-            <div class="col-md-9 col-lg-10 main-content">
-                <!-- ERROR MESSAGE DISPLAY -->
-                <?php if (isset($update_error)): ?>
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-circle me-2"></i> <?php echo $update_error; ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                <?php endif; ?>
-                
-                <!-- SUCCESS MESSAGE DISPLAY -->
-                <?php if ($success): ?>
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="fas fa-check-circle me-2"></i> Profile updated successfully!
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                <?php endif; ?>
-
-                <!-- FORM HEADER WITH LOGO -->
-                <div class="form-header-with-logo fade-in">
-                    <div class="container">
-                        <div class="row align-items-center">
-                            <div class="col-12">
-                                <div class="logo-section">
-                                    <img src="img/logo.png" alt="ASCOT Logo" class="logo-img">
-                                    <div class="college-info">
-                                        <h4>Republic of the Philippines</h4>
-                                        <h3>AURORA STATE COLLEGE OF TECHNOLOGY</h3>
-                                        <p class="mb-0">Zabali, Baler, Aurora - Philippines</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- HEALTH INFORMATION FORM -->
+            <div class="health-form-container fade-in">
+                <div class="form-title">
+                    <h3>HEALTH INFORMATION FORM</h3>
+                    <p class="form-subtitle">Do not leave any item unanswered</p>
                 </div>
 
-                <!-- HEALTH INFORMATION FORM -->
-                <div class="health-form-container fade-in">
-                    <div class="form-title">
-                        <h3>HEALTH INFORMATION FORM</h3>
-                        <p class="form-subtitle">Do not leave any item unanswered</p>
+                <!-- MAIN FORM -->
+                <form id="healthForm" action="update_profile.php" method="POST">
+                    <input type="hidden" name="student_number" value="<?php echo htmlspecialchars($student_number); ?>">
+
+                    <!-- PART I: STUDENT INFORMATION SECTION -->
+                    <div class="form-section">
+                        <div class="section-title">PART I: STUDENT INFORMATION</div>
+                        
+                        <!-- Name and Address Row -->
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Name:</label>
+                                <input type="text" name="fullname" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($display_fullname); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="Enter your full name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Address:</label>
+                                <input type="text" name="address" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['address'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="Enter your complete address" required>
+                            </div>
+                        </div>
+
+                        <!-- Personal Details Row -->
+                        <div class="row mb-4">
+                            <div class="col-md-6 col-lg-2 mb-3">
+                                <label class="form-label">Age:</label>
+                                <input type="number" name="age" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['age'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="Age" min="1" max="100" required>
+                            </div>
+                            <div class="col-md-6 col-lg-2 mb-3">
+                                <label class="form-label">Sex:</label>
+                                <select name="sex" class="form-select underlined" <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                    <option value="">Select</option>
+                                    <option value="Male" <?php echo (($student_info['sex'] ?? '') == 'Male') ? 'selected' : ''; ?>>Male</option>
+                                    <option value="Female" <?php echo (($student_info['sex'] ?? '') == 'Female') ? 'selected' : ''; ?>>Female</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <label class="form-label">Civil Status:</label>
+                                <select name="civil_status" class="form-select underlined" <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                    <option value="">Select</option>
+                                    <option value="Single" <?php echo (($student_info['civil_status'] ?? '') == 'Single') ? 'selected' : ''; ?>>Single</option>
+                                    <option value="Married" <?php echo (($student_info['civil_status'] ?? '') == 'Married') ? 'selected' : ''; ?>>Married</option>
+                                    <option value="Widowed" <?php echo (($student_info['civil_status'] ?? '') == 'Widowed') ? 'selected' : ''; ?>>Widowed</option>
+                                    <option value="Separated" <?php echo (($student_info['civil_status'] ?? '') == 'Separated') ? 'selected' : ''; ?>>Separated</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 col-lg-2 mb-3">
+                                <label class="form-label">Blood Type:</label>
+                                <select name="blood_type" class="form-select underlined" <?php echo !$edit_mode ? 'disabled' : ''; ?>>
+                                    <option value="">Select</option>
+                                    <option value="A+" <?php echo (($student_info['blood_type'] ?? '') == 'A+') ? 'selected' : ''; ?>>A+</option>
+                                    <option value="A-" <?php echo (($student_info['blood_type'] ?? '') == 'A-') ? 'selected' : ''; ?>>A-</option>
+                                    <option value="B+" <?php echo (($student_info['blood_type'] ?? '') == 'B+') ? 'selected' : ''; ?>>B+</option>
+                                    <option value="B-" <?php echo (($student_info['blood_type'] ?? '') == 'B-') ? 'selected' : ''; ?>>B-</option>
+                                    <option value="AB+" <?php echo (($student_info['blood_type'] ?? '') == 'AB+') ? 'selected' : ''; ?>>AB+</option>
+                                    <option value="AB-" <?php echo (($student_info['blood_type'] ?? '') == 'AB-') ? 'selected' : ''; ?>>AB-</option>
+                                    <option value="O+" <?php echo (($student_info['blood_type'] ?? '') == 'O+') ? 'selected' : ''; ?>>O+</option>
+                                    <option value="O-" <?php echo (($student_info['blood_type'] ?? '') == 'O-') ? 'selected' : ''; ?>>O-</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <label class="form-label">Student Number:</label>
+                                <input type="text" class="form-control underlined" 
+                                       value="<?php echo htmlspecialchars($student_number); ?>" readonly>
+                            </div>
+                        </div>
+
+                        <!-- Family and School Details Row -->
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Parent's Name/Guardian:</label>
+                                <input type="text" name="father_name" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['father_name'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="Parent/Guardian name" required>
+                            </div>
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <label class="form-label">Date:</label>
+                                <input type="date" name="date" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['date'] ?? date('Y-m-d')); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?> required>
+                            </div>
+                            <div class="col-md-6 col-lg-3 mb-3">
+                                <label class="form-label">School Year:</label>
+                                <input type="text" name="school_year" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['school_year'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="e.g. 2023-2024" required>
+                            </div>
+                        </div>
+
+                        <!-- Course and Contact Details Row -->
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Course/Year:</label>
+                                <input type="text" name="course_year" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['course_year'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="e.g. BSIT-3" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Cellphone Number:</label>
+                                <input type="tel" name="cellphone_number" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['cellphone_number'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="0917 123 4567" 
+                                       pattern="[0-9]{4} [0-9]{3} [0-9]{4}" 
+                                       title="Please enter phone number in 4-3-4 format (e.g., 0917 123 4567)" 
+                                       required>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- MAIN FORM -->
-                    <form id="healthForm" action="update_profile.php" method="POST">
-                        <input type="hidden" name="student_number" value="<?php echo htmlspecialchars($student_number); ?>">
-
-                        <!-- PART I: STUDENT INFORMATION SECTION -->
-                        <div class="form-section">
-                            <div class="section-title">PART I: STUDENT INFORMATION</div>
+                    <!-- PART II: MEDICAL HISTORY SECTION -->
+                    <div class="form-section">
+                        <div class="section-title">PART II: MEDICAL HISTORY</div>
+                        
+                        <!-- Question 1: Medical Attention -->
+                        <div class="medical-question mb-4">
+                            <p class="question-text">1. Do you need medical attention or has known medical illness?</p>
+                            <div class="radio-options">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="medical_attention" id="medical_no" value="No" 
+                                           <?php echo (($medical_info['medical_attention'] ?? '') == 'No') ? 'checked' : ''; ?>
+                                           <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                    <label class="form-check-label" for="medical_no">No</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="medical_attention" id="medical_yes" value="Yes"
+                                           <?php echo (($medical_info['medical_attention'] ?? '') == 'Yes') ? 'checked' : ''; ?>
+                                           <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                    <label class="form-check-label" for="medical_yes">Yes</label>
+                                </div>
+                            </div>
                             
-                            <!-- Name and Address Row -->
-                            <div class="row mb-4">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Name:</label>
-                                    <input type="text" name="fullname" class="form-control underlined"
-                                           value="<?php echo htmlspecialchars($display_fullname); ?>"
-                                           <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                           placeholder="Enter your full name" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Address:</label>
-                                    <input type="text" name="address" class="form-control underlined"
-                                           value="<?php echo htmlspecialchars($student_info['address'] ?? ''); ?>"
-                                           <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                           placeholder="Enter your complete address" required>
-                                </div>
+                            <p class="instruction-text">Please check the following that apply and give more information as needed</p>
+                            
+                            <!-- Medical Conditions Checkboxes -->
+                            <div class="conditions-grid">
+                                <?php
+                                $conditions_saved = explode(',', $medical_info['medical_conditions'] ?? '');
+                                $options = [
+                                    "Asthma", "Fainting", "Diabetes", "Heart Condition", 
+                                    "Seizure Disorder", "Hyperventilation", "Vision Problem", 
+                                    "Kidney Disease", "Migraine"
+                                ];
+                                
+                                foreach ($options as $opt) {
+                                    $checked = in_array($opt, $conditions_saved) ? 'checked' : '';
+                                    $disabled = !$edit_mode ? 'disabled' : '';
+                                    echo "<div class='form-check-custom'>
+                                            <input class='form-check-input' type='checkbox' name='conditions[]' value='$opt' id='condition_$opt' $checked $disabled>
+                                            <label class='form-check-label' for='condition_$opt'>$opt</label>
+                                        </div>";
+                                }
+                                ?>
                             </div>
 
-                            <!-- Personal Details Row -->
-                            <div class="row mb-4">
-                                <div class="col-md-6 col-lg-2 mb-3">
-                                    <label class="form-label">Age:</label>
-                                    <input type="number" name="age" class="form-control underlined"
-                                           value="<?php echo htmlspecialchars($student_info['age'] ?? ''); ?>"
+                            <!-- Other Conditions Field -->
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Others:</label>
+                                    <input type="text" name="other_conditions" class="form-control underlined"
+                                           value="<?php echo htmlspecialchars($medical_info['other_conditions'] ?? ''); ?>"
                                            <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                           placeholder="Age" min="1" max="100" required>
-                                </div>
-                                <div class="col-md-6 col-lg-2 mb-3">
-                                    <label class="form-label">Sex:</label>
-                                    <select name="sex" class="form-select underlined" <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
-                                        <option value="">Select</option>
-                                        <option value="Male" <?php echo (($student_info['sex'] ?? '') == 'Male') ? 'selected' : ''; ?>>Male</option>
-                                        <option value="Female" <?php echo (($student_info['sex'] ?? '') == 'Female') ? 'selected' : ''; ?>>Female</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 col-lg-3 mb-3">
-                                    <label class="form-label">Civil Status:</label>
-                                    <select name="civil_status" class="form-select underlined" <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
-                                        <option value="">Select</option>
-                                        <option value="Single" <?php echo (($student_info['civil_status'] ?? '') == 'Single') ? 'selected' : ''; ?>>Single</option>
-                                        <option value="Married" <?php echo (($student_info['civil_status'] ?? '') == 'Married') ? 'selected' : ''; ?>>Married</option>
-                                        <option value="Widowed" <?php echo (($student_info['civil_status'] ?? '') == 'Widowed') ? 'selected' : ''; ?>>Widowed</option>
-                                        <option value="Separated" <?php echo (($student_info['civil_status'] ?? '') == 'Separated') ? 'selected' : ''; ?>>Separated</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 col-lg-2 mb-3">
-                                    <label class="form-label">Blood Type:</label>
-                                    <select name="blood_type" class="form-select underlined" <?php echo !$edit_mode ? 'disabled' : ''; ?>>
-                                        <option value="">Select</option>
-                                        <option value="A+" <?php echo (($student_info['blood_type'] ?? '') == 'A+') ? 'selected' : ''; ?>>A+</option>
-                                        <option value="A-" <?php echo (($student_info['blood_type'] ?? '') == 'A-') ? 'selected' : ''; ?>>A-</option>
-                                        <option value="B+" <?php echo (($student_info['blood_type'] ?? '') == 'B+') ? 'selected' : ''; ?>>B+</option>
-                                        <option value="B-" <?php echo (($student_info['blood_type'] ?? '') == 'B-') ? 'selected' : ''; ?>>B-</option>
-                                        <option value="AB+" <?php echo (($student_info['blood_type'] ?? '') == 'AB+') ? 'selected' : ''; ?>>AB+</option>
-                                        <option value="AB-" <?php echo (($student_info['blood_type'] ?? '') == 'AB-') ? 'selected' : ''; ?>>AB-</option>
-                                        <option value="O+" <?php echo (($student_info['blood_type'] ?? '') == 'O+') ? 'selected' : ''; ?>>O+</option>
-                                        <option value="O-" <?php echo (($student_info['blood_type'] ?? '') == 'O-') ? 'selected' : ''; ?>>O-</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 col-lg-3 mb-3">
-                                    <label class="form-label">Student Number:</label>
-                                    <input type="text" class="form-control underlined" 
-                                           value="<?php echo htmlspecialchars($student_number); ?>" readonly>
-                                </div>
-                            </div>
-
-                            <!-- Family and School Details Row -->
-                            <div class="row mb-4">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Parent's Name/Guardian:</label>
-                                    <input type="text" name="father_name" class="form-control underlined"
-                                           value="<?php echo htmlspecialchars($student_info['father_name'] ?? ''); ?>"
-                                           <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                           placeholder="Parent/Guardian name" required>
-                                </div>
-                                <div class="col-md-6 col-lg-3 mb-3">
-                                    <label class="form-label">Date:</label>
-                                    <input type="date" name="date" class="form-control underlined"
-                                           value="<?php echo htmlspecialchars($student_info['date'] ?? date('Y-m-d')); ?>"
-                                           <?php echo !$edit_mode ? 'readonly' : ''; ?> required>
-                                </div>
-                                <div class="col-md-6 col-lg-3 mb-3">
-                                    <label class="form-label">School Year:</label>
-                                    <input type="text" name="school_year" class="form-control underlined"
-                                           value="<?php echo htmlspecialchars($student_info['school_year'] ?? ''); ?>"
-                                           <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                           placeholder="e.g. 2023-2024" required>
-                                </div>
-                            </div>
-
-                            <!-- Course and Contact Details Row -->
-                            <div class="row mb-3">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Course/Year:</label>
-                                    <input type="text" name="course_year" class="form-control underlined"
-                                           value="<?php echo htmlspecialchars($student_info['course_year'] ?? ''); ?>"
-                                           <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                           placeholder="e.g. BSIT-3" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Cellphone Number:</label>
-                                    <input type="tel" name="cellphone_number" class="form-control underlined"
-                                           value="<?php echo htmlspecialchars($student_info['cellphone_number'] ?? ''); ?>"
-                                           <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                           placeholder="0917 123 4567" 
-                                           pattern="[0-9]{4} [0-9]{3} [0-9]{4}" 
-                                           title="Please enter phone number in 4-3-4 format (e.g., 0917 123 4567)" 
-                                           required>
+                                           placeholder="Other medical conditions">
                                 </div>
                             </div>
                         </div>
 
-                        <!-- PART II: MEDICAL HISTORY SECTION -->
-                        <div class="form-section">
-                            <div class="section-title">PART II: MEDICAL HISTORY</div>
-                            
-                            <!-- Question 1: Medical Attention -->
-                            <div class="medical-question mb-4">
-                                <p class="question-text">1. Do you need medical attention or has known medical illness?</p>
+                        <!-- Previous Hospitalization Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Previous Hospitalization</label>
                                 <div class="radio-options">
                                     <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="medical_attention" id="medical_no" value="No" 
-                                               <?php echo (($medical_info['medical_attention'] ?? '') == 'No') ? 'checked' : ''; ?>
+                                        <input class="form-check-input" type="radio" name="previous_hospitalization" id="hosp_no" value="No"
+                                               <?php echo (($medical_info['previous_hospitalization'] ?? '') == 'No') ? 'checked' : ''; ?>
                                                <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
-                                        <label class="form-check-label" for="medical_no">No</label>
+                                        <label class="form-check-label" for="hosp_no">No</label>
                                     </div>
                                     <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="medical_attention" id="medical_yes" value="Yes"
-                                               <?php echo (($medical_info['medical_attention'] ?? '') == 'Yes') ? 'checked' : ''; ?>
+                                        <input class="form-check-input" type="radio" name="previous_hospitalization" id="hosp_yes" value="Yes"
+                                               <?php echo (($medical_info['previous_hospitalization'] ?? '') == 'Yes') ? 'checked' : ''; ?>
                                                <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
-                                        <label class="form-check-label" for="medical_yes">Yes</label>
-                                    </div>
-                                </div>
-                                
-                                <p class="instruction-text">Please check the following that apply and give more information as needed</p>
-                                
-                                <!-- Medical Conditions Checkboxes -->
-                                <div class="conditions-grid">
-                                    <?php
-                                    $conditions_saved = explode(',', $medical_info['medical_conditions'] ?? '');
-                                    $options = [
-                                        "Asthma", "Fainting", "Diabetes", "Heart Condition", 
-                                        "Seizure Disorder", "Hyperventilation", "Vision Problem", 
-                                        "Kidney Disease", "Migraine"
-                                    ];
-                                    
-                                    foreach ($options as $opt) {
-                                        $checked = in_array($opt, $conditions_saved) ? 'checked' : '';
-                                        $disabled = !$edit_mode ? 'disabled' : '';
-                                        echo "<div class='form-check-custom'>
-                                                <input class='form-check-input' type='checkbox' name='conditions[]' value='$opt' id='condition_$opt' $checked $disabled>
-                                                <label class='form-check-label' for='condition_$opt'>$opt</label>
-                                            </div>";
-                                    }
-                                    ?>
-                                </div>
-
-                                <!-- Other Conditions Field -->
-                                <div class="row mt-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Others:</label>
-                                        <input type="text" name="other_conditions" class="form-control underlined"
-                                               value="<?php echo htmlspecialchars($medical_info['other_conditions'] ?? ''); ?>"
-                                               <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                               placeholder="Other medical conditions">
+                                        <label class="form-check-label" for="hosp_yes">Yes</label>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Previous Hospitalization Section -->
-                            <div class="row mb-4">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Previous Hospitalization</label>
-                                    <div class="radio-options">
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="previous_hospitalization" id="hosp_no" value="No"
-                                                   <?php echo (($medical_info['previous_hospitalization'] ?? '') == 'No') ? 'checked' : ''; ?>
-                                                   <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
-                                            <label class="form-check-label" for="hosp_no">No</label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="previous_hospitalization" id="hosp_yes" value="Yes"
-                                                   <?php echo (($medical_info['previous_hospitalization'] ?? '') == 'Yes') ? 'checked' : ''; ?>
-                                                   <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
-                                            <label class="form-check-label" for="hosp_yes">Yes</label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">If yes, Year:</label>
-                                    <input type="text" name="hosp_year" class="form-control underlined"
-                                           value="<?php echo htmlspecialchars($medical_info['hosp_year'] ?? ''); ?>"
-                                           <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                           placeholder="Year of hospitalization">
-                                </div>
-                            </div>
-
-                            <!-- Operation/Surgery Section -->
-                            <div class="row mb-4">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Operation/Surgery</label>
-                                    <div class="radio-options">
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="surgery" id="surgery_no" value="No"
-                                                   <?php echo (($medical_info['surgery'] ?? '') == 'No') ? 'checked' : ''; ?>
-                                                   <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
-                                            <label class="form-check-label" for="surgery_no">No</label>
-                                        </div>
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="surgery" id="surgery_yes" value="Yes"
-                                                   <?php echo (($medical_info['surgery'] ?? '') == 'Yes') ? 'checked' : ''; ?>
-                                                   <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
-                                            <label class="form-check-label" for="surgery_yes">Yes</label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">If yes, details:</label>
-                                    <input type="text" name="surgery_details" class="form-control underlined"
-                                           value="<?php echo htmlspecialchars($medical_info['surgery_details'] ?? ''); ?>"
-                                           <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                           placeholder="Surgery details">
-                                </div>
-                            </div>
-
-                            <!-- Question 2: Allergies Information -->
-                            <div class="medical-question">
-                                <p class="question-text">2. Additional Information for Student with medical information</p>
-                                <p class="instruction-text">The history of allergies to the following:</p>
-                                
-                                <!-- Allergies Information -->
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Food:</label>
-                                        <input type="text" name="food_allergies" class="form-control underlined"
-                                               value="<?php echo htmlspecialchars($medical_info['food_allergies'] ?? ''); ?>"
-                                               <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                               placeholder="Food allergies">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Medicine:</label>
-                                        <input type="text" name="medicine_allergies" class="form-control underlined"
-                                               value="<?php echo htmlspecialchars($medical_info['medicine_allergies'] ?? ''); ?>"
-                                               <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                               placeholder="Medicine allergies">
-                                    </div>
-                                </div>
-
-                                <!-- EDIT AND SAVE BUTTONS SECTION -->
-                                <div class="action-buttons mt-5">
-                                    <?php if (!$edit_mode): ?>
-                                        <!-- EDIT BUTTON -->
-                                        <a href="update_profile.php?edit=true" class="btn btn-edit">
-                                            <i class="fas fa-edit"></i> Edit Profile
-                                        </a>
-                                    <?php else: ?>
-                                        <!-- SAVE BUTTON -->
-                                        <button type="submit" class="btn btn-save">
-                                            <i class="fas fa-save"></i> Save Changes
-                                        </button>
-                                        <!-- CANCEL BUTTON -->
-                                        <a href="update_profile.php" class="btn btn-cancel">
-                                            <i class="fas fa-times"></i> Cancel
-                                        </a>
-                                    <?php endif; ?>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">If yes, Year:</label>
+                                <input type="text" name="hosp_year" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($medical_info['hosp_year'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="Year of hospitalization">
                             </div>
                         </div>
-                    </form>
-                </div>
+
+                        <!-- Operation/Surgery Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Operation/Surgery</label>
+                                <div class="radio-options">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="surgery" id="surgery_no" value="No"
+                                               <?php echo (($medical_info['surgery'] ?? '') == 'No') ? 'checked' : ''; ?>
+                                               <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                        <label class="form-check-label" for="surgery_no">No</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="surgery" id="surgery_yes" value="Yes"
+                                               <?php echo (($medical_info['surgery'] ?? '') == 'Yes') ? 'checked' : ''; ?>
+                                               <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                        <label class="form-check-label" for="surgery_yes">Yes</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">If yes, details:</label>
+                                <input type="text" name="surgery_details" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($medical_info['surgery_details'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="Surgery details">
+                            </div>
+                        </div>
+
+                        <!-- Question 2: Allergies Information -->
+                        <div class="medical-question">
+                            <p class="question-text">2. Additional Information for Student with medical information</p>
+                            <p class="instruction-text">The history of allergies to the following:</p>
+                            
+                            <!-- Allergies Information -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Food:</label>
+                                    <input type="text" name="food_allergies" class="form-control underlined"
+                                           value="<?php echo htmlspecialchars($medical_info['food_allergies'] ?? ''); ?>"
+                                           <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                           placeholder="Food allergies">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Medicine:</label>
+                                    <input type="text" name="medicine_allergies" class="form-control underlined"
+                                           value="<?php echo htmlspecialchars($medical_info['medicine_allergies'] ?? ''); ?>"
+                                           <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                           placeholder="Medicine allergies">
+                                </div>
+                            </div>
+
+                            <!-- EDIT AND SAVE BUTTONS SECTION -->
+                            <div class="action-buttons mt-5">
+                                <?php if (!$edit_mode): ?>
+                                    <!-- EDIT BUTTON -->
+                                    <a href="update_profile.php?edit=true" class="btn btn-edit">
+                                        <i class="fas fa-edit"></i> Edit Profile
+                                    </a>
+                                <?php else: ?>
+                                    <!-- SAVE BUTTON -->
+                                    <button type="submit" class="btn btn-save">
+                                        <i class="fas fa-save"></i> Save Changes
+                                    </button>
+                                    <!-- CANCEL BUTTON -->
+                                    <a href="update_profile.php" class="btn btn-cancel">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                </form>
             </div>
-        </div>
+        </main>
     </div>
 
-    <!-- JAVASCRIPT FILES -->
+    <!-- JS -->
     <script src="assets/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -1210,60 +1269,35 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 }, 5000);
             }
 
-            // MOBILE SIDEBAR FUNCTIONALITY
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            // MOBILE MENU FUNCTIONALITY - IMPROVED
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
-            
-            function toggleSidebar() {
+
+            mobileMenuToggle.addEventListener('click', function() {
                 sidebar.classList.toggle('active');
                 sidebarOverlay.classList.toggle('active');
-                document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
-                
-                // UPDATE MENU ICON
-                const icon = mobileMenuBtn.querySelector('i');
-                if (sidebar.classList.contains('active')) {
-                    icon.className = 'fas fa-times';
-                    mobileMenuBtn.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
-                } else {
-                    icon.className = 'fas fa-bars';
-                    mobileMenuBtn.style.background = 'linear-gradient(135deg, #3498db, #2980b9)';
-                }
-            }
-            
-            function closeSidebar() {
+                const icon = this.querySelector('i');
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-times');
+            });
+
+            sidebarOverlay.addEventListener('click', function() {
                 sidebar.classList.remove('active');
                 sidebarOverlay.classList.remove('active');
-                document.body.style.overflow = '';
-                mobileMenuBtn.querySelector('i').className = 'fas fa-bars';
-                mobileMenuBtn.style.background = 'linear-gradient(135deg, #3498db, #2980b9)';
-            }
-            
-            if (mobileMenuBtn && sidebar && sidebarOverlay) {
-                mobileMenuBtn.addEventListener('click', toggleSidebar);
-                sidebarOverlay.addEventListener('click', closeSidebar);
-                
-                const navLinks = sidebar.querySelectorAll('.nav-link');
-                navLinks.forEach(link => {
-                    link.addEventListener('click', function() {
-                        if (window.innerWidth <= 991.98) {
-                            closeSidebar();
-                        }
+                mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+            });
+
+            // Close sidebar when clicking nav items on mobile
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        sidebar.classList.remove('active');
+                        sidebarOverlay.classList.remove('active');
+                        mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
                     });
                 });
-                
-                document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape' && sidebar.classList.contains('active')) {
-                        closeSidebar();
-                    }
-                });
             }
-            
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 991.98) {
-                    closeSidebar();
-                }
-            });
 
             // Enable disabled elements when in edit mode during form submission
             const form = document.getElementById('healthForm');

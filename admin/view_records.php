@@ -89,7 +89,7 @@ try {
 
         /* Header Styles - FIXED */
         .top-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background:linear-gradient(90deg,rgba(50, 37, 168, 1) 4%, rgba(43, 43, 224, 1) 39%, rgba(235, 243, 245, 1) 100%) ;
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -936,8 +936,7 @@ try {
                                                 data-notes="<?php echo htmlspecialchars($record['physician_notes']); ?>">
                                             <i class="fas fa-eye"></i> View
                                         </button>
-                                        <a href="edit_consultation.php?id=<?php echo $record['id']; ?>" class="edit-btn">
-                                            <i class="fas fa-edit"></i> Edit
+                                       
                                         </a>
                                         <button class="certificate-btn" 
                                                 data-bs-toggle="modal" 

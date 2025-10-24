@@ -67,262 +67,255 @@ $totalConsults = array_sum($consultationData);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Report - ASCOT Online School Clinic</title>
+    <title>Student Report - ASCOT Clinic</title>
+    
+    <!-- Bootstrap -->
     <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
     <link href="assets/webfonts/all.min.css" rel="stylesheet">
-    <link href="assets/css/student_report.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
-            --primary-color: #3498db;
-            --secondary-color: #2c3e50;
-            --accent-color: #e74c3c;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --sidebar-width: 280px;
-            --header-height: 80px;
+            --primary: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary: #764ba2;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
         }
 
         * {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            overflow-x: hidden;
+            background: #f5f6fa;
+            padding-top: 80px;
+            line-height: 1.6;
         }
 
-        /* ========== ENHANCED HEADER DESIGN ========== */
-        .header {
-            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            padding: 15px 0;
+        /* Header Styles - IMPROVED */
+        .top-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 0.75rem 0;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
-            height: var(--header-height);
+            z-index: 1030;
+            height: 80px;
         }
 
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            opacity: 0.05;
-            z-index: -1;
-        }
-
-        .header .logo-img {
-             height: 80px;
-             width: 80px;
-             margin-top: -15px;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-            transition: transform 0.3s ease;
-        }
-
-        .header .logo-img:hover {
-            transform: scale(1.05);
-        }
-
-        .header .college-info {
-            text-align: center;
-        }
-
-        .header .college-info h4 {
-            font-size: 1rem;
-            margin-bottom: 0.2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #2c3e50, #3498db);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .header .college-info p {
-            font-size: 0.85rem;
-            margin-bottom: 0;
-            color: #7f8c8d;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-
-        /* ========== ENHANCED SIDEBAR DESIGN ========== */
-        .sidebar {
-            background: linear-gradient(135deg, rgba(44, 62, 80, 0.95) 0%, rgba(52, 73, 94, 0.98) 100%);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 8px 0 32px rgba(0,0,0,0.2);
-            min-height: calc(100vh - var(--header-height));
-            padding: 30px 0;
-            position: fixed;
-            top: var(--header-height);
-            left: 0;
-            width: var(--sidebar-width);
-            z-index: 999;
-            overflow-y: auto;
-            margin-left: -1px;
-            margin-top: -1px;
-        }
-
-        .sidebar .nav {
-            padding: 0 20px;
-        }
-
-        .sidebar .nav-link {
-            color: #ecf0f1 !important;
-            padding: 15px 20px;
-            margin: 8px 0;
-            border-radius: 12px;
-            border-left: 4px solid transparent;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .sidebar .nav-link::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: left 0.5s ease;
         }
 
-        .sidebar .nav-link:hover::before {
-            left: 100%;
+        .logo-img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
         }
 
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            background: linear-gradient(135deg, rgba(52, 152, 219, 0.2) 0%, rgba(41, 128, 185, 0.2) 100%);
-            border-left: 4px solid #3498db;
-            transform: translateX(8px);
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        .school-info {
+            flex: 1;
         }
 
-        .sidebar .nav-link i {
-            width: 25px;
-            text-align: center;
-            margin-right: 15px;
+        .republic {
+            font-size: 0.7rem;
+            opacity: 0.9;
+            letter-spacing: 0.5px;
+        }
+
+        .school-name {
             font-size: 1.1rem;
-            transition: transform 0.3s ease;
+            font-weight: 700;
+            margin: 0.1rem 0;
+            line-height: 1.2;
         }
 
-        .sidebar .nav-link:hover i {
-            transform: scale(1.2);
+        .clinic-title {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            font-weight: 500;
         }
 
-        .sidebar .nav-link.active i {
-            color: #3498db;
-        }
-
-        .logout-btn .nav-link {
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2) 0%, rgba(192, 57, 43, 0.2) 100%);
-            border: 1px solid rgba(231, 76, 60, 0.3);
-            margin-top: 20px;
-        }
-
-        .logout-btn .nav-link:hover {
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.3) 0%, rgba(192, 57, 43, 0.3) 100%);
-            border-left: 4px solid #e74c3c;
-            transform: translateX(8px);
-        }
-
-        /* ========== MOBILE SIDEBAR ENHANCEMENTS ========== */
-        .mobile-menu-btn {
+        /* Mobile Menu Toggle - COMPLETELY FIXED POSITION */
+        .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1100;
-            background: linear-gradient(135deg, #3498db, #2980b9);
+            top: 95px; /* MAS MALAYO SA HEADER */
+            left: 20px; /* MAS MALAYO SA GILID */
+            z-index: 1025;
+            background: var(--primary);
             color: white;
             border: none;
-            border-radius: 12px;
-            padding: 12px 16px;
-            font-size: 1.3rem;
-            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
             transition: all 0.3s ease;
         }
 
-        .mobile-menu-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.6);
+        .mobile-menu-toggle:hover {
+            transform: scale(1.05);
+            background: var(--primary-dark);
         }
 
+        /* Dashboard Container - IMPROVED */
+        .dashboard-container {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Sidebar Styles - IMPROVED */
+        .sidebar {
+            width: 260px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            padding: 1.5rem 0;
+            transition: transform 0.3s ease;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1020;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.9rem 1.25rem;
+            color: #444;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: #f8f9fa;
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
+            color: var(--primary);
+            border-left: 4px solid var(--primary);
+        }
+
+        .nav-item i {
+            width: 22px;
+            margin-right: 0.9rem;
+            font-size: 1.1rem;
+        }
+
+        .nav-item span {
+            flex: 1;
+        }
+
+        .nav-item.logout {
+            color: var(--danger);
+            margin-top: auto;
+        }
+
+        .nav-item.logout:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        /* Main Content - IMPROVED */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-x: hidden;
+            margin-left: 260px;
+            margin-top: 0;
+        }
+
+        /* Sidebar Overlay for Mobile - IMPROVED */
         .sidebar-overlay {
             display: none;
             position: fixed;
-            top: 0;
+            top: 80px;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 998;
-            backdrop-filter: blur(5px);
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1019;
         }
 
-        /* ========== MAIN CONTENT ENHANCEMENTS ========== */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 30px;
-            background: rgba(248, 249, 250, 0.95);
-            backdrop-filter: blur(10px);
-            min-height: calc(100vh - var(--header-height));
-            margin-top: var(--header-height);
+        .sidebar-overlay.active {
+            display: block;
         }
 
-        /* ========== ORIGINAL REPORT STYLES (PRESERVED) ========== */
+        /* Report Page Styles */
         .page-title {
-            background: #ffda6a;
+            background: linear-gradient(135deg, rgba(255, 218, 106, 0.9) 0%, rgba(255, 247, 222, 0.95) 100%);
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 15px;
             margin-bottom: 20px;
             text-align: center;
-            color: #333;
-            font-weight: bold;
+            color: #2c3e50;
+            font-weight: 800;
             font-size: 1.8rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         .page-subtitle {
             text-align: center;
-            color: #666;
+            color: #7f8c8d;
             margin-bottom: 30px;
             font-size: 1.1rem;
+            font-weight: 600;
         }
 
         .stats-card {
-            background: white;
-            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%);
+            border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.1);
             margin-bottom: 30px;
             display: flex;
             align-items: center;
             gap: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         .stats-icon {
-            background: #27ae60;
+            background: linear-gradient(135deg, #27ae60, #219a52);
             width: 70px;
             height: 70px;
             border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
         }
 
         .stats-icon i {
@@ -331,26 +324,28 @@ $totalConsults = array_sum($consultationData);
         }
 
         .stats-info h5 {
-            color: #666;
+            color: #7f8c8d;
             margin-bottom: 10px;
             font-size: 1rem;
+            font-weight: 600;
         }
 
         .stats-info h2 {
-            color: #333;
-            font-weight: bold;
+            color: #2c3e50;
+            font-weight: 800;
             font-size: 2.5rem;
             margin: 0;
         }
 
         .chart-container {
-            background: white;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%);
             border-radius: 15px;
             padding: 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.1);
             width: 700px;
             height: 400px;
             margin: 0 auto;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         .chart-header {
@@ -361,25 +356,46 @@ $totalConsults = array_sum($consultationData);
         }
 
         .chart-title {
-            color: #333;
-            font-weight: bold;
+            color: #2c3e50;
+            font-weight: 700;
             font-size: 1.3rem;
             margin: 0;
         }
 
         .chart-month {
-            background: #3498db;
+            background: linear-gradient(135deg, #3498db, #2980b9);
             color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
         }
 
         .chart-month i {
             margin-right: 5px;
         }
 
-        @media (max-width: 768px) {
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 240px;
+            }
+            
+            .main-content {
+                margin-left: 240px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .school-name {
+                font-size: 1rem;
+            }
+
+            .logo-img {
+                width: 50px;
+                height: 50px;
+            }
+
             .chart-container {
                 width: 100%;
                 height: 350px;
@@ -391,20 +407,39 @@ $totalConsults = array_sum($consultationData);
             }
         }
 
-        /* ========== RESPONSIVE BREAKPOINTS ========== */
-        @media (max-width: 991.98px) {
+        @media (max-width: 768px) {
+            body {
+                padding-top: 70px;
+            }
+            
+            .top-header {
+                height: 70px;
+                padding: 0.5rem 0;
+            }
+            
+            .mobile-menu-toggle {
+                display: block;
+                top: 85px; /* MAS MALAYO SA HEADER */
+                left: 20px; /* MAS MALAYO SA GILID */
+            }
+
             .sidebar {
-                left: -100%;
-                width: 300px;
-                transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                position: fixed;
+                left: 0;
+                top: 70px;
+                height: calc(100vh - 70px);
+                z-index: 1020;
+                transform: translateX(-100%);
+                overflow-y: auto;
+                width: 280px;
             }
 
             .sidebar.active {
-                left: 0;
+                transform: translateX(0);
             }
 
-            .mobile-menu-btn {
-                display: block;
+            .sidebar-overlay {
+                top: 70px;
             }
 
             .sidebar-overlay.active {
@@ -412,193 +447,254 @@ $totalConsults = array_sum($consultationData);
             }
 
             .main-content {
+                padding: 2rem 1.25rem 1.25rem; /* MAS MALAKING PADDING SA ITAAS */
+                width: 100%;
                 margin-left: 0;
+            }
+
+            .header-content {
+                padding: 0 1rem;
+            }
+
+            .school-name {
+                font-size: 0.9rem;
+            }
+
+            .republic, .clinic-title {
+                font-size: 0.65rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+                padding: 15px;
+            }
+
+            .chart-container {
+                padding: 20px;
+                height: 300px;
+            }
+
+            .mobile-menu-toggle {
+                top: 80px;
+                width: 45px;
+                height: 45px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 1.75rem 1rem 1rem; /* ADJUSTED PADDING */
+            }
+            
+            .stats-card {
                 padding: 20px;
             }
+
+            .stats-info h2 {
+                font-size: 2rem;
+            }
+
+            .chart-container {
+                padding: 15px;
+                height: 250px;
+            }
+
+            .chart-header {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
         }
-
-        @media (max-width: 767.98px) {
-            :root {
-                --header-height: 70px;
-            }
-
-            .header {
-                padding: 10px 0;
-            }
-
-            .header .logo-img {
+        
+        @media (max-width: 480px) {
+            .logo-img {
+                width: 40px;
                 height: 40px;
             }
-
-            .main-content {
-                padding: 15px;
-                margin-top: 70px;
+            
+            .school-name {
+                font-size: 0.8rem;
             }
-
-            .mobile-menu-btn {
-                top: 15px;
+            
+            .republic, .clinic-title {
+                font-size: 0.6rem;
+            }
+            
+            .mobile-menu-toggle {
+                width: 45px;
+                height: 45px;
+                top: 80px;
                 left: 15px;
-                padding: 10px 14px;
-                font-size: 1.2rem;
+            }
+            
+            .main-content {
+                padding: 1.5rem 1rem 1rem;
             }
         }
 
-        /* ========== CUSTOM SCROLLBAR ========== */
-        ::-webkit-scrollbar {
-            width: 8px;
+        @media (max-width: 375px) {
+            .mobile-menu-toggle {
+                top: 75px;
+                left: 15px;
+                width: 40px;
+                height: 40px;
+            }
+            
+            .main-content {
+                padding: 1.25rem 0.75rem 0.75rem;
+            }
         }
 
-        ::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.1);
-            border-radius: 4px;
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, #2980b9, #21618c);
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
         }
     </style>
 </head>
 
 <body>
-    <!-- MOBILE MENU BUTTON -->
-    <button class="mobile-menu-btn" id="mobileMenuBtn">
+    <!-- Mobile Menu Toggle Button - COMPLETELY FIXED POSITION -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
-    
-    <!-- SIDEBAR OVERLAY -->
+
+    <!-- Sidebar Overlay for Mobile - IMPROVED -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- ENHANCED HEADER -->
-    <div class="header">
+    <!-- Header - IMPROVED (INALIS NA ANG WELCOME MESSAGE SA RIGHT) -->
+    <header class="top-header">
         <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <img src="img/logo.png" alt="ASCOT Logo" class="logo-img">
+            <div class="header-content">
+                <img src="img/logo.png" alt="ASCOT Logo" class="logo-img">
+                <div class="school-info">
+                    <div class="republic">Republic of the Philippines</div>
+                    <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
+                    <div class="clinic-title">ONLINE SCHOOL CLINIC</div>
                 </div>
-                <div class="col">
-                    <div class="college-info">
-                        <h4>Republic of the Philippines</h4>
-                        <h4>AURORA STATE COLLEGE OF TECHNOLOGY</h4>
-                        <p>ONLINE SCHOOL CLINIC</p>
-                    </div>
-                </div>
+                <!-- INALIS NA ANG WELCOME MESSAGE AT STUDENT NAME SA RIGHT SIDE -->
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- LAYOUT -->
-    <div class="container-fluid">
-        <div class="row">
-            <!-- ENHANCED SIDEBAR -->
-            <div class="col-md-3 col-lg-2 sidebar" id="sidebar">
-                <nav class="nav flex-column">
-                    <a class="nav-link" href="student_dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                    <a class="nav-link" href="update_profile.php"><i class="fas fa-user-edit"></i> Update Profile</a>
-                    <a class="nav-link" href="schedule_consultation.php"><i class="fas fa-calendar-alt"></i> Schedule Consultation</a>
-                    <a class="nav-link active" href="student_report.php"><i class="fas fa-chart-bar"></i> Reports</a>
-                    <a class="nav-link" href="student_announcement.php"><i class="fas fa-bullhorn"></i> Announcement</a>
-                    <a class="nav-link" href="activity_logs.php"><i class="fas fa-clipboard-list"></i> Activity Logs</a>
-                </nav>
+    <div class="dashboard-container">
+        <!-- Sidebar - IMPROVED -->
+        <aside class="sidebar" id="sidebar">
+            <nav class="sidebar-nav">
+                <a href="student_dashboard.php" class="nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
 
-                <div class="logout-btn mt-3">
-                    <a class="nav-link text-danger" href="logout.php">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
+                <a href="update_profile.php" class="nav-item">
+                    <i class="fas fa-user-edit"></i>
+                    <span>Update Profile</span>
+                </a>
+
+                <a href="schedule_consultation.php" class="nav-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Schedule Consultation</span>
+                </a>
+
+                <a href="student_report.php" class="nav-item active">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Reports</span>
+                </a>
+
+                <a href="student_announcement.php" class="nav-item">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Announcement</span>
+                </a>
+
+                <a href="activity_logs.php" class="nav-item">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Activity Logs</span>
+                </a>
+                
+                <a href="logout.php" class="nav-item logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-title fade-in">
+                <i class="fas fa-chart-line"></i> Consultation Reports
+            </div>
+            <p class="page-subtitle">Track your weekly consultation activity this month</p>
+
+            <!-- STATS CARD -->
+            <div class="stats-card fade-in">
+                <div class="stats-icon"><i class="fas fa-calendar-check"></i></div>
+                <div class="stats-info">
+                    <h5>Total Consultations This Month</h5>
+                    <h2><?php echo $totalConsults; ?></h2>
                 </div>
             </div>
 
-            <!-- MAIN CONTENT (ORIGINAL DESIGN PRESERVED) -->
-            <div class="col-md-9 col-lg-10 main-content">
-                <div class="page-title">
-                    <i class="fas fa-chart-line"></i> Consultation Reports
-                </div>
-                <p class="page-subtitle">Track your weekly consultation activity this month</p>
-
-                <!-- STATS CARD -->
-                <div class="stats-card">
-                    <div class="stats-icon"><i class="fas fa-calendar-check"></i></div>
-                    <div class="stats-info">
-                        <h5>Total Consultations This Month</h5>
-                        <h2><?php echo $totalConsults; ?></h2>
+            <!-- CHART CONTAINER -->
+            <div class="chart-container fade-in">
+                <div class="chart-header">
+                    <h3 class="chart-title">Weekly Consultation History</h3>
+                    <div class="chart-month">
+                        <i class="fas fa-calendar-alt"></i>
+                        <strong><?php echo date('F Y'); ?></strong>
                     </div>
                 </div>
-                <br>
-
-                <!-- CHART CONTAINER -->
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <h3 class="chart-title">Weekly Consultation History</h3>
-                        <div class="chart-month">
-                            <i class="fas fa-calendar-alt"></i>
-                            <strong><?php echo date('F Y'); ?></strong>
-                        </div>
-                    </div>
-                    <canvas id="consultChart"></canvas>
-                </div>
+                <canvas id="consultChart"></canvas>
             </div>
-        </div>
+        </main>
     </div>
 
     <script src="assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        // MOBILE SIDEBAR FUNCTIONALITY
         document.addEventListener('DOMContentLoaded', function() {
-            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            // MOBILE MENU FUNCTIONALITY - IMPROVED
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
-            
-            function toggleSidebar() {
+
+            mobileMenuToggle.addEventListener('click', function() {
                 sidebar.classList.toggle('active');
                 sidebarOverlay.classList.toggle('active');
-                document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
-                
-                const icon = mobileMenuBtn.querySelector('i');
-                if (sidebar.classList.contains('active')) {
-                    icon.className = 'fas fa-times';
-                    mobileMenuBtn.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
-                } else {
-                    icon.className = 'fas fa-bars';
-                    mobileMenuBtn.style.background = 'linear-gradient(135deg, #3498db, #2980b9)';
-                }
-            }
-            
-            function closeSidebar() {
+                const icon = this.querySelector('i');
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-times');
+            });
+
+            sidebarOverlay.addEventListener('click', function() {
                 sidebar.classList.remove('active');
                 sidebarOverlay.classList.remove('active');
-                document.body.style.overflow = '';
-                mobileMenuBtn.querySelector('i').className = 'fas fa-bars';
-                mobileMenuBtn.style.background = 'linear-gradient(135deg, #3498db, #2980b9)';
-            }
-            
-            if (mobileMenuBtn && sidebar && sidebarOverlay) {
-                mobileMenuBtn.addEventListener('click', toggleSidebar);
-                sidebarOverlay.addEventListener('click', closeSidebar);
-                
-                const navLinks = sidebar.querySelectorAll('.nav-link');
-                navLinks.forEach(link => {
-                    link.addEventListener('click', function() {
-                        if (window.innerWidth <= 991.98) {
-                            closeSidebar();
-                        }
+                mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+            });
+
+            // Close sidebar when clicking nav items on mobile
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        sidebar.classList.remove('active');
+                        sidebarOverlay.classList.remove('active');
+                        mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
                     });
                 });
-                
-                document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape' && sidebar.classList.contains('active')) {
-                        closeSidebar();
-                    }
-                });
             }
-            
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 991.98) {
-                    closeSidebar();
-                }
+
+            // Add loading animations
+            const fadeElements = document.querySelectorAll('.fade-in');
+            fadeElements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.1}s`;
             });
 
             // ORIGINAL CHART CODE (PRESERVED)

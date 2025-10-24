@@ -55,14 +55,14 @@ if (isset($_GET['delete_id'])) {
 
 // Get filter from URL
 $filter = $_GET['filter'] ?? 'all';
-$department_filter = $_GET['department'] ?? 'all';
+$search = $_GET['search'] ?? '';
 
-// Fetch all students with medical history check - FIXED QUERY TO PREVENT DUPLICATES
+// Fetch all students with medical history check - UPDATED QUERY TO INCLUDE SEARCH
 $students = [];
 $params = [];
 
 try {
-    // NEW QUERY: Get only the LATEST student_information record for each student
+    // UPDATED QUERY: Added search functionality
     $query = "
         SELECT 
             si.id,
@@ -87,7 +87,6 @@ try {
             mh.medicine_allergies
         FROM users u 
         INNER JOIN (
-            -- Get only the LATEST student_information record for each student_number
             SELECT s1.*
             FROM student_information s1
             INNER JOIN (
@@ -116,10 +115,14 @@ try {
         )";
     }
 
-    // Apply department filter
-    if ($department_filter !== 'all') {
-        $query .= " AND si.course_year LIKE ?";
-        $params[] = "%$department_filter%";
+    // Apply search filter
+    if (!empty($search)) {
+        $query .= " AND (si.student_number LIKE ? OR si.fullname LIKE ? OR u.email LIKE ? OR si.course_year LIKE ?)";
+        $searchTerm = "%$search%";
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
+        $params[] = $searchTerm;
     }
 
     $query .= " ORDER BY si.student_number ASC";
@@ -131,20 +134,6 @@ try {
 } catch (PDOException $e) {
     $error = "Failed to fetch students: " . $e->getMessage();
     error_log("Student fetch error: " . $e->getMessage());
-}
-
-// Get unique departments for filter dropdown
-$departments = [];
-try {
-    $dept_stmt = $pdo->query("
-        SELECT DISTINCT course_year 
-        FROM student_information 
-        WHERE course_year IS NOT NULL AND course_year != '' 
-        ORDER BY course_year
-    ");
-    $departments = $dept_stmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (PDOException $e) {
-    error_log("Department fetch error: " . $e->getMessage());
 }
 
 // Calculate statistics - UPDATED TO INCLUDE PART 2
@@ -232,7 +221,7 @@ function getProfileStatus($student) {
 
         /* Header Styles - FIXED */
         .top-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(90deg,rgba(50, 37, 168, 1) 4%, rgba(43, 43, 224, 1) 39%, rgba(235, 243, 245, 1) 100%);
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -479,6 +468,45 @@ function getProfileStatus($student) {
             border-bottom: 1px dotted #6c757d;
         }
 
+        /* Professional Search Bar Styles */
+        .search-container {
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin-bottom: 1.5rem;
+        }
+        .search-input-group {
+            position: relative;
+            max-width: 600px;
+        }
+        .search-input-group .form-control {
+            padding-left: 3rem;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            font-size: 1rem;
+            height: 50px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .search-input-group .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            z-index: 5;
+        }
+        .search-input-group .btn {
+            border-radius: 8px;
+            height: 50px;
+            padding: 0 2rem;
+            margin-left: 0.5rem;
+        }
+        .search-stats {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 0.5rem;
+        }
+
         /* Responsive Design - FIXED */
         @media (max-width: 992px) {
             .school-name {
@@ -541,6 +569,19 @@ function getProfileStatus($student) {
             .btn-group .btn {
                 padding: 0.25rem 0.5rem;
                 font-size: 0.7rem;
+            }
+
+            .search-input-group {
+                max-width: 100%;
+            }
+            
+            .search-input-group .form-control {
+                height: 45px;
+            }
+            
+            .search-input-group .btn {
+                height: 45px;
+                padding: 0 1.5rem;
             }
         }
 
@@ -676,7 +717,7 @@ function getProfileStatus($student) {
                             Users Logs
                         </a>
                         </a>
-                        <a href="#" class="submenu-item">
+                        <a href="backup_restore.php" class="submenu-item">
                             <i class="fas fa-clipboard-list"></i>
                             Backup & Restore
                         </a>
@@ -731,23 +772,52 @@ function getProfileStatus($student) {
                 </div>
             <?php endif; ?>
 
+            <!-- Professional Search Bar -->
+            <div class="search-container">
+                <form method="GET" action="students.php">
+                    <div class="d-flex align-items-center">
+                        <div class="search-input-group flex-grow-1">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" class="form-control" name="search" 
+                                   placeholder="Search students by ID, name, email, or course..." 
+                                   value="<?php echo htmlspecialchars($search); ?>">
+                        </div>
+                        &nbsp;<button class="btn btn-primary" type="submit">
+                           <i class="fas fa-search me-2"></i>Search
+                        </button>
+                    </div>
+                    <?php if (!empty($search)): ?>
+                        <div class="search-stats">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Found <?php echo $total_students; ?> student(s) matching "<?php echo htmlspecialchars($search); ?>"
+                            <a href="students.php" class="text-danger ms-2 text-decoration-none">
+                                <i class="fas fa-times me-1"></i>Clear search
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                </form>
+            </div>
+
             <!-- Filters -->
             <div class="row mb-4">
                 <div class="col-md-8">
                     <div class="btn-group" role="group">
-                        <a href="students.php?filter=all&department=<?php echo $department_filter; ?>" 
+                        <a href="students.php?filter=all<?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" 
                            class="btn btn-outline-primary <?php echo $filter === 'all' ? 'filter-active' : ''; ?>">
                             All Students
                             <span class="badge bg-secondary filter-badge"><?php echo $total_students; ?></span>
                         </a>
-                        <a href="students.php?filter=incomplete&department=<?php echo $department_filter; ?>" 
+                        <a href="students.php?filter=incomplete<?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" 
                            class="btn btn-outline-warning <?php echo $filter === 'incomplete' ? 'filter-active' : ''; ?>">
                             Incomplete Profiles
                             <span class="badge bg-warning filter-badge"><?php echo $incomplete_profiles; ?></span>
                         </a>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 text-end">
+                    <div class="text-muted small">
+                        Showing <?php echo $total_students; ?> student(s)
+                    </div>
                 </div>
             </div>
 
@@ -976,12 +1046,12 @@ function getProfileStatus($student) {
                 });
             });
 
-            // Department filter change
-            const departmentFilter = document.getElementById('departmentFilter');
-            if (departmentFilter) {
-                departmentFilter.addEventListener('change', function () {
+            // Status filter change
+            const statusFilter = document.getElementById('filter');
+            if (statusFilter) {
+                statusFilter.addEventListener('change', function () {
                     const currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set('department', this.value);
+                    currentUrl.searchParams.set('filter', this.value);
                     window.location.href = currentUrl.toString();
                 });
             }
@@ -991,6 +1061,12 @@ function getProfileStatus($student) {
             const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
+
+            // Auto-focus search input
+            const searchInput = document.querySelector('input[name="search"]');
+            if (searchInput && !searchInput.value) {
+                searchInput.focus();
+            }
         });
     </script>
 </body>
