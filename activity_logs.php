@@ -12,8 +12,6 @@ if (!isset($_SESSION['student_id'])) {
 $student_id = $_SESSION['student_id'];
 $student_number = $_SESSION['student_number'] ?? ($_SESSION['student_id'] ?? 'N/A');
 
-// ✅ I-log ang pag-visit sa activity logs page (automatic duplicate prevention na)
-logActivity($pdo, $student_id, "Viewed activity logs");
 
 $stmt = $pdo->prepare("SELECT fullname, student_number, course_year, cellphone_number 
                        FROM student_information 
@@ -40,8 +38,6 @@ try {
         SELECT id, action, log_date 
         FROM activity_logs 
         WHERE student_id = :student_id 
-        AND action NOT LIKE '%viewed%' 
-        AND action NOT LIKE '%accessed%' 
         AND action NOT LIKE '%logged in%' 
         AND action NOT LIKE '%logged out%'
         ORDER BY log_date DESC
@@ -93,10 +89,14 @@ try {
             line-height: 1.6;
         }
 
-        /* Header Styles */
+        /* Header Styles - SAME AS DASHBOARD */
         .top-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
+            background: 
+                linear-gradient(90deg, 
+                    #ffda6a 0%, 
+                    #ffda6a 30%, 
+                    #FFF5CC 70%, 
+                    #ffffff 100%);
             padding: 0.75rem 0;
             box-shadow: 0 2px 15px rgba(0,0,0,0.1);
             position: fixed;
@@ -118,7 +118,6 @@ try {
             width: 60px;
             height: 60px;
             object-fit: contain;
-            filter: brightness(0) invert(1);
         }
 
         .school-info {
@@ -129,6 +128,7 @@ try {
             font-size: 0.7rem;
             opacity: 0.9;
             letter-spacing: 0.5px;
+            color: #555;
         }
 
         .school-name {
@@ -136,15 +136,17 @@ try {
             font-weight: 700;
             margin: 0.1rem 0;
             line-height: 1.2;
+            color: #555;
         }
 
         .clinic-title {
             font-size: 0.8rem;
             opacity: 0.9;
             font-weight: 500;
+            color: #555;
         }
 
-        /* Mobile Menu Toggle */
+        /* Mobile Menu Toggle - SAME AS DASHBOARD */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
@@ -167,13 +169,13 @@ try {
             background: var(--primary-dark);
         }
 
-        /* Dashboard Container */
+        /* Dashboard Container - SAME AS DASHBOARD */
         .dashboard-container {
             display: flex;
             min-height: calc(100vh - 80px);
         }
 
-        /* Sidebar Styles */
+        /* Sidebar Styles - SAME AS DASHBOARD */
         .sidebar {
             width: 260px;
             background: white;
@@ -216,18 +218,20 @@ try {
 
         .nav-item.active {
             background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-            color: var(--primary);
-            border-left: 4px solid var(--primary);
+            color: #555;
+            border-left: 8px solid #ffda6a;
         }
 
         .nav-item i {
             width: 22px;
             margin-right: 0.9rem;
             font-size: 1.1rem;
+            color: #555;
         }
 
         .nav-item span {
             flex: 1;
+            color: #555;
         }
 
         .nav-item.logout {
@@ -239,7 +243,7 @@ try {
             background: rgba(220, 53, 69, 0.1);
         }
 
-        /* Main Content */
+        /* Main Content - SAME AS DASHBOARD */
         .main-content {
             flex: 1;
             padding: 1.5rem;
@@ -248,7 +252,7 @@ try {
             margin-top: 0;
         }
 
-        /* Sidebar Overlay for Mobile */
+        /* Sidebar Overlay for Mobile - SAME AS DASHBOARD */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -264,19 +268,19 @@ try {
             display: block;
         }
 
-        /* Welcome Section */
+        /* Welcome Section - SAME AS DASHBOARD */
         .welcome-section {
-            background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+            background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
             border-radius: 15px;
             padding: 2rem;
             margin-bottom: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            border: 1px solid rgba(102,126,234,0.2);
-            border-left: 5px solid var(--primary);
+            border: 1px solid rgba(206, 224, 144, 0.2);
+            border-left: 10px solid #ffda6a;
         }
 
         .welcome-content h1 {
-            color: var(--primary);
+            color: #555;
             font-weight: 700;
             font-size: 2rem;
             margin-bottom: 0.5rem;
@@ -288,7 +292,7 @@ try {
             margin-bottom: 0;
         }
 
-        /* Activity Logs Card */
+        /* Activity Logs Card - UPDATED TO MATCH DASHBOARD STYLE */
         .activity-card {
             background: white;
             border-radius: 15px;
@@ -308,7 +312,7 @@ try {
         }
 
         .card-title {
-            color: var(--primary);
+            color: #555;
             font-size: 1.3rem;
             font-weight: 700;
             margin: 0;
@@ -322,8 +326,8 @@ try {
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
-            color: white;
-            background: var(--primary);
+            color: #555;
+            background: #fff7da;
             transition: all 0.3s ease;
         }
 
@@ -331,7 +335,7 @@ try {
             transform: scale(1.1);
         }
 
-        /* Table Styles */
+        /* Table Styles - KEPT FROM ORIGINAL BUT UPDATED COLORS */
         .activity-table {
             width: 100%;
             border-collapse: collapse;
@@ -339,12 +343,12 @@ try {
         }
 
         .activity-table th {
-            background: rgba(102,126,234,0.1);
-            color: var(--primary);
+            background: rgba(255, 218, 106, 0.2);
+            color: #555;
             font-weight: 600;
             padding: 1rem;
             text-align: left;
-            border-bottom: 2px solid rgba(102,126,234,0.2);
+            border-bottom: 2px solid rgba(255, 218, 106, 0.3);
         }
 
         .activity-table td {
@@ -358,7 +362,7 @@ try {
         }
 
         .activity-table tr:hover {
-            background: rgba(102,126,234,0.02);
+            background: rgba(255, 218, 106, 0.05);
         }
 
         .action-cell {
@@ -413,7 +417,7 @@ try {
             margin-bottom: 1.5rem;
         }
 
-        /* Responsive Design */
+        /* Responsive Design - SAME AS DASHBOARD */
         @media (max-width: 1200px) {
             .sidebar {
                 width: 240px;
@@ -590,7 +594,7 @@ try {
             }
         }
 
-        /* ANIMATIONS */
+        /* ANIMATIONS - SAME AS DASHBOARD */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -618,19 +622,19 @@ try {
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button -->
+    <!-- Mobile Menu Toggle Button - SAME AS DASHBOARD -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile -->
+    <!-- Sidebar Overlay for Mobile - SAME AS DASHBOARD -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header -->
+    <!-- Header - SAME AS DASHBOARD -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
-                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img">
+                <img src="img/logo.png" alt="ASCOT Logo" class="logo-img">
                 <div class="school-info">
                     <div class="republic">Republic of the Philippines</div>
                     <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
@@ -641,7 +645,7 @@ try {
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar -->
+        <!-- Sidebar - SAME AS DASHBOARD -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="student_dashboard.php" class="nav-item">
@@ -683,7 +687,7 @@ try {
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- WELCOME SECTION -->
+            <!-- WELCOME SECTION - UPDATED TO MATCH DASHBOARD STYLE -->
             <div class="welcome-section fade-in">
                 <div class="welcome-content">
                     <h1>Activity Logs <i class="fas fa-clipboard-list"></i></h1>
@@ -691,7 +695,7 @@ try {
                 </div>
             </div>
 
-            <!-- ACTIVITY LOGS CARD -->
+            <!-- ACTIVITY LOGS CARD - UPDATED TO MATCH DASHBOARD STYLE -->
             <div class="activity-card fade-in">
                 <div class="card-header">
                     <h3 class="card-title">Activity History</h3>
@@ -779,12 +783,12 @@ try {
         </main>
     </div>
 
-    <!-- JS -->
+    <!-- JS - SAME AS DASHBOARD -->
     <script src="assets/js/bootstrap.bundle.min.js"></script>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // MOBILE MENU FUNCTIONALITY
+            // MOBILE MENU FUNCTIONALITY - SAME AS DASHBOARD
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -814,7 +818,7 @@ try {
                 });
             }
 
-            // LOADING ANIMATIONS
+            // LOADING ANIMATIONS - SAME AS DASHBOARD
             const staggerElements = document.querySelectorAll('.stagger-animation > *');
             staggerElements.forEach((element, index) => {
                 element.style.animationDelay = `${index * 0.1}s`;

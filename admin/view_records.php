@@ -71,10 +71,26 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Records - ASCOT Clinic</title>
+    
+    <!-- Bootstrap -->
     <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
     <link href="../assets/webfonts/all.min.css" rel="stylesheet">
     
     <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary: #764ba2;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -84,32 +100,39 @@ try {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
-            padding-top: 100px; /* Added for fixed header */
+            padding-top: 80px;
+            line-height: 1.6;
         }
 
-        /* Header Styles - FIXED */
+        /* Header Styles - SAME AS ADMIN DASHBOARD */
         .top-header {
-            background:linear-gradient(90deg,rgba(50, 37, 168, 1) 4%, rgba(43, 43, 224, 1) 39%, rgba(235, 243, 245, 1) 100%) ;
+            background: 
+                linear-gradient(90deg, 
+                    #ffda6a 0%, 
+                    #ffda6a 30%, 
+                    #FFF5CC 70%, 
+                    #ffffff 100%);
             color: white;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: fixed; /* Added */
-            top: 0; /* Added */
-            left: 0; /* Added */
-            right: 0; /* Added */
-            z-index: 1000; /* Added */
-            height: 100px; /* Added */
+            padding: 0.75rem 0;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+            height: 80px;
         }
 
         .header-content {
             display: flex;
             align-items: center;
             gap: 1rem;
+            height: 100%;
         }
 
         .logo-img {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             object-fit: contain;
         }
 
@@ -118,29 +141,35 @@ try {
         }
 
         .republic {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             opacity: 0.9;
+            letter-spacing: 0.5px;
+            color: #555;
         }
 
         .school-name {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin: 0.2rem 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0.1rem 0;
+            line-height: 1.2;
+            color: #555;
         }
 
         .clinic-title {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             opacity: 0.9;
+            font-weight: 500;
+            color: #555;
         }
 
-        /* Mobile Menu Toggle - FIXED */
+        /* Mobile Menu Toggle - SAME AS ADMIN DASHBOARD */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 100px; /* Adjusted for fixed header */
+            top: 95px;
             left: 20px;
-            z-index: 1001;
-            background: #667eea;
+            z-index: 1025;
+            background: var(--primary);
             color: white;
             border: none;
             width: 50px;
@@ -152,42 +181,42 @@ try {
         }
 
         .mobile-menu-toggle:hover {
-            transform: scale(1.1);
-            background: #764ba2;
+            transform: scale(1.05);
+            background: var(--primary-dark);
         }
 
-        /* Dashboard Container - FIXED */
+        /* Dashboard Container - SAME AS ADMIN DASHBOARD */
         .dashboard-container {
             display: flex;
-            min-height: calc(100vh - 100px);
+            min-height: calc(100vh - 80px);
         }
 
-        /* Sidebar Styles - FIXED */
+        /* Sidebar Styles - SAME AS ADMIN DASHBOARD */
         .sidebar {
-            width: 280px;
+            width: 260px;
             background: white;
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-            padding: 2rem 0;
+            padding: 1.5rem 0;
             transition: transform 0.3s ease;
-            position: fixed; /* Added */
-            top: 100px; /* Added */
-            left: 0; /* Added */
-            bottom: 0; /* Added */
-            overflow-y: auto; /* Added */
-            z-index: 999; /* Added */
+            position: fixed;
+            top: 80px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1020;
         }
 
         .sidebar-nav {
             display: flex;
             flex-direction: column;
-            height: 100%; /* Added */
+            height: 100%;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 1rem 1.5rem;
-            color: #444;
+            padding: 0.9rem 1.25rem;
+            color: #555;
             text-decoration: none;
             transition: all 0.3s ease;
             border: none;
@@ -195,31 +224,36 @@ try {
             width: 100%;
             text-align: left;
             cursor: pointer;
+            font-weight: 500;
         }
 
         .nav-item:hover {
             background: #f8f9fa;
-            color: #667eea;
+            color: var(--primary);
         }
 
         .nav-item.active {
             background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-            color: #667eea;
-            border-left: 4px solid #667eea;
+            color: #555;
+            border-left: 8px solid #ffda6a;
         }
 
         .nav-item i {
-            width: 25px;
-            margin-right: 1rem;
+            width: 22px;
+            margin-right: 0.9rem;
+            font-size: 1.1rem;
+            color: #555;
         }
 
         .nav-item span {
             flex: 1;
+            color: #555;
         }
 
         .nav-item .arrow {
             margin-left: auto;
             transition: transform 0.3s ease;
+            font-size: 0.8rem;
         }
 
         .nav-item .arrow.rotate {
@@ -240,25 +274,33 @@ try {
         .submenu-item {
             display: flex;
             align-items: center;
-            padding: 0.75rem 1.5rem 0.75rem 3.5rem;
+            padding: 0.7rem 1.25rem 0.7rem 3.25rem;
             color: #666;
             text-decoration: none;
             transition: all 0.3s ease;
             font-size: 0.9rem;
+            font-weight: 400;
         }
 
         .submenu-item:hover {
             background: #e9ecef;
-            color: #667eea;
+            color: var(--primary);
+        }
+
+        .submenu-item.active {
+            background: #e9ecef;
+            color: var(--primary);
+            font-weight: 500;
         }
 
         .submenu-item i {
-            width: 20px;
-            margin-right: 0.75rem;
+            width: 18px;
+            margin-right: 0.7rem;
+            font-size: 0.9rem;
         }
 
         .nav-item.logout {
-            color: #dc3545;
+            color: var(--danger);
             margin-top: auto;
         }
 
@@ -266,43 +308,101 @@ try {
             background: rgba(220, 53, 69, 0.1);
         }
 
-        /* Main Content - FIXED */
+        /* Main Content - SAME AS ADMIN DASHBOARD */
         .main-content {
             flex: 1;
-            padding: 2rem;
+            padding: 1.5rem;
             overflow-x: hidden;
-            margin-left: 280px; /* Added for sidebar space */
-            margin-top: 0; /* Added */
+            margin-left: 260px;
+            margin-top: 0;
         }
 
-        /* Sidebar Overlay for Mobile - FIXED */
+        /* Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD */
         .sidebar-overlay {
             display: none;
             position: fixed;
-            top: 100px; /* Adjusted for fixed header */
+            top: 80px;
             left: 0;
             right: 0;
             bottom: 0;
             background: rgba(0,0,0,0.5);
-            z-index: 999;
+            z-index: 1019;
         }
 
         .sidebar-overlay.active {
             display: block;
         }
 
-        /* View Records Specific Styles */
-        .card {
+        /* Page Header - SIMILAR TO ADMIN DASHBOARD */
+        .page-header {
+            background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(206, 224, 144, 0.2);
+            border-left: 10px solid #ffda6a;
+        }
+
+        .page-header h1 {
+            color: #555;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        /* Dashboard Card - SAME AS ADMIN DASHBOARD */
+        .dashboard-card {
             background: white;
             border-radius: 15px;
             padding: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
             margin-bottom: 2rem;
-            border: none;
         }
 
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .card-title {
+            color: #555;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .card-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #555;
+            background: #fff7da;
+            transition: all 0.3s ease;
+        }
+
+        .card-icon:hover {
+            transform: scale(1.1);
+        }
+
+        /* Search Section */
         .search-section {
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
 
         .search-box {
@@ -327,6 +427,9 @@ try {
             font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .search-btn {
@@ -347,6 +450,7 @@ try {
             background: #5a6268;
         }
 
+        /* Records Count */
         .records-count {
             background: #f8f9fa;
             padding: 15px;
@@ -355,8 +459,10 @@ try {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-left: 4px solid #ffda6a;
         }
 
+        /* Records Table */
         .records-table-container {
             background: white;
             border-radius: 15px;
@@ -402,6 +508,7 @@ try {
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 4px;
         }
 
         .view-btn {
@@ -600,7 +707,17 @@ try {
             margin-bottom: 5px;
         }
 
-        /* Responsive Design - FIXED */
+        /* Responsive Design - SAME AS ADMIN DASHBOARD */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 240px;
+            }
+            
+            .main-content {
+                margin-left: 240px;
+            }
+        }
+
         @media (max-width: 992px) {
             .school-name {
                 font-size: 1rem;
@@ -613,23 +730,38 @@ try {
         }
 
         @media (max-width: 768px) {
+            body {
+                padding-top: 70px;
+            }
+            
+            .top-header {
+                height: 70px;
+                padding: 0.5rem 0;
+            }
+            
             .mobile-menu-toggle {
                 display: block;
+                top: 85px;
+                left: 20px;
             }
 
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 100px; /* Adjusted for fixed header */
-                height: calc(100vh - 100px); /* Adjusted for fixed header */
-                z-index: 1000;
+                top: 70px;
+                height: calc(100vh - 70px);
+                z-index: 1020;
                 transform: translateX(-100%);
                 overflow-y: auto;
-                width: 280px; /* Added */
+                width: 280px;
             }
 
             .sidebar.active {
                 transform: translateX(0);
+            }
+
+            .sidebar-overlay {
+                top: 70px;
             }
 
             .sidebar-overlay.active {
@@ -637,9 +769,9 @@ try {
             }
 
             .main-content {
-                padding: 1rem;
+                padding: 1.5rem;
                 width: 100%;
-                margin-left: 0; /* Reset margin for mobile */
+                margin-left: 0;
             }
 
             .header-content {
@@ -647,15 +779,15 @@ try {
             }
 
             .school-name {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
             }
 
             .republic, .clinic-title {
                 font-size: 0.65rem;
             }
 
-            .card, .records-table-container {
-                padding: 1rem;
+            .dashboard-card, .records-table-container {
+                padding: 1.5rem;
             }
 
             .search-box {
@@ -679,25 +811,102 @@ try {
             }
         }
 
+        @media (max-width: 576px) {
+            .dashboard-card {
+                padding: 1.25rem;
+            }
+
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .main-content {
+                padding: 1.25rem;
+            }
+            
+            .mobile-menu-toggle {
+                top: 80px;
+                width: 45px;
+                height: 45px;
+            }
+        }
+        
         @media (max-width: 480px) {
+            .logo-img {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .school-name {
+                font-size: 0.8rem;
+            }
+            
+            .republic, .clinic-title {
+                font-size: 0.6rem;
+            }
+            
+            .mobile-menu-toggle {
+                width: 45px;
+                height: 45px;
+                top: 80px;
+                left: 15px;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+
             .records-count {
                 flex-direction: column;
                 gap: 10px;
                 text-align: center;
             }
         }
+
+        @media (max-width: 375px) {
+            .mobile-menu-toggle {
+                top: 75px;
+                left: 15px;
+                width: 40px;
+                height: 40px;
+            }
+            
+            .main-content {
+                padding: 0.75rem;
+            }
+        }
+
+        /* ANIMATIONS - SAME AS ADMIN DASHBOARD */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - FIXED -->
+    <!-- Mobile Menu Toggle Button - SAME AS ADMIN DASHBOARD -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - FIXED -->
+    <!-- Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - FIXED -->
+    <!-- Header - SAME AS ADMIN DASHBOARD -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -712,7 +921,7 @@ try {
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar - FIXED -->
+        <!-- Sidebar - ADMIN MENU ITEMS WITH ADMIN DASHBOARD STYLING -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">
@@ -781,10 +990,6 @@ try {
                             <i class="fas fa-file-invoice"></i>
                             Monthly Summary
                         </a>
-                        <a href="health_trends.php" class="submenu-item">
-                            <i class="fas fa-chart-line"></i>
-                            Health Trends
-                        </a>
                     </div>
                 </div>
 
@@ -795,16 +1000,17 @@ try {
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="adminMenu">
-                        <a href="user_management.php" class="submenu-item">
+                        <a href="users_logs.php" class="submenu-item">
                             <i class="fas fa-users-cog"></i>
-                            User Management
+                            Users Logs
                         </a>
-                        <a href="access_logs.php" class="submenu-item">
+                        <a href="backup_restore.php" class="submenu-item">
                             <i class="fas fa-clipboard-list"></i>
-                            Access Logs
+                            Back up & Restore
                         </a>
                     </div>
                 </div>
+
                 <div class="nav-group">
                     <button class="nav-item dropdown-btn" data-target="announcementMenu">
                         <i class="fas fa-bullhorn"></i>
@@ -822,7 +1028,7 @@ try {
                         </a>
                     </div>
                 </div>
-
+                
                 <a href="../logout.php" class="nav-item logout">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
@@ -830,12 +1036,12 @@ try {
             </nav>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Main Content - FOLLOWING ADMIN DASHBOARD STRUCTURE -->
         <main class="main-content">
             <!-- Page Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-folder-open"></i> Consultation Records</h2>
-                <p class="text-muted mb-0">Manage and view all consultation records</p>
+            <div class="page-header fade-in">
+                <h1><i class="fas fa-folder-open me-2"></i>Consultation Records</h1>
+                <p>Manage and view all consultation records</p>
             </div>
 
             <?php if (isset($_GET['success'])): ?>
@@ -853,27 +1059,31 @@ try {
             <?php endif; ?>
 
             <!-- Search Section -->
-            <div class="card">
-                <div class="card-body">
-                    <form method="GET" class="search-section" id="searchForm">
-                        <div class="search-box">
-                            <input type="text" name="search" id="searchInput" placeholder="Search by student name, diagnosis, or student ID..." 
-                                   value="<?php echo htmlspecialchars($search); ?>">
-                            <button type="submit" class="search-btn">
-                                <i class="fas fa-search"></i> Search
-                            </button>
-                            <?php if (!empty($search)): ?>
-                                <a href="view_records.php" class="clear-btn">
-                                    <i class="fas fa-times"></i> Clear Search
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                    </form>
+            <div class="dashboard-card fade-in">
+                <div class="card-header">
+                    <h3 class="card-title">Search Records</h3>
+                    <div class="card-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
                 </div>
+                <form method="GET" class="search-section" id="searchForm">
+                    <div class="search-box">
+                        <input type="text" name="search" id="searchInput" placeholder="Search by student name, diagnosis, or student ID..." 
+                               value="<?php echo htmlspecialchars($search); ?>">
+                        <button type="submit" class="search-btn">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                        <?php if (!empty($search)): ?>
+                            <a href="view_records.php" class="clear-btn">
+                                <i class="fas fa-times"></i> Clear Search
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </form>
             </div>
 
             <!-- Records Count -->
-            <div class="records-count">
+            <div class="records-count fade-in">
                 <span>Total Records: <strong><?php echo count($records); ?></strong></span>
                 <?php if (!empty($search)): ?>
                     <span class="search-results">Search results for: "<strong><?php echo htmlspecialchars($search); ?></strong>"</span>
@@ -881,80 +1091,88 @@ try {
             </div>
 
             <!-- Records Table -->
-            <div class="records-table-container">
-                <table class="records-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Date</th>
-                            <th>Student Name</th>
-                            <th>Student ID</th>
-                            <th>Diagnosis</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($records)): ?>
+            <div class="dashboard-card fade-in">
+                <div class="card-header">
+                    <h3 class="card-title">Consultation Records</h3>
+                    <div class="card-icon">
+                        <i class="fas fa-list"></i>
+                    </div>
+                </div>
+                <div class="records-table-container">
+                    <table class="records-table">
+                        <thead>
                             <tr>
-                                <td colspan="6" class="text-center py-4">
-                                    <i class="fas fa-folder-open fa-2x text-muted mb-2"></i>
-                                    <p class="text-muted">
+                                <th>ID</th>
+                                <th>Date</th>
+                                <th>Student Name</th>
+                                <th>Student ID</th>
+                                <th>Diagnosis</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($records)): ?>
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <i class="fas fa-folder-open fa-2x text-muted mb-2"></i>
+                                        <p class="text-muted">
+                                            <?php if (!empty($search)): ?>
+                                                No consultation records found for "<?php echo htmlspecialchars($search); ?>"
+                                            <?php else: ?>
+                                                No consultation records found.
+                                            <?php endif; ?>
+                                        </p>
                                         <?php if (!empty($search)): ?>
-                                            No consultation records found for "<?php echo htmlspecialchars($search); ?>"
-                                        <?php else: ?>
-                                            No consultation records found.
+                                            <a href="view_records.php" class="btn btn-primary btn-sm mt-2">
+                                                <i class="fas fa-list"></i> Show All Records
+                                            </a>
                                         <?php endif; ?>
-                                    </p>
-                                    <?php if (!empty($search)): ?>
-                                        <a href="view_records.php" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-list"></i> Show All Records
-                                        </a>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach($records as $record): ?>
-                            <tr>
-                                <td><?php echo $record['id']; ?></td>
-                                <td><?php echo date('m-d-Y', strtotime($record['consultation_date'])); ?></td>
-                                <td><?php echo htmlspecialchars($record['student_name']); ?></td>
-                                <td><?php echo htmlspecialchars($record['student_number']); ?></td>
-                                <td><?php echo htmlspecialchars($record['diagnosis']); ?></td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="view-btn" data-id="<?php echo $record['id']; ?>" 
-                                                data-bs-toggle="modal" data-bs-target="#recordModal"
-                                                data-student="<?php echo htmlspecialchars($record['student_name']); ?>"
-                                                data-date="<?php echo date('F j, Y', strtotime($record['consultation_date'])); ?>"
-                                                data-diagnosis="<?php echo htmlspecialchars($record['diagnosis']); ?>"
-                                                data-symptoms="<?php echo htmlspecialchars($record['symptoms']); ?>"
-                                                data-temperature="<?php echo htmlspecialchars($record['temperature']); ?>"
-                                                data-blood-pressure="<?php echo htmlspecialchars($record['blood_pressure']); ?>"
-                                                data-treatment="<?php echo htmlspecialchars($record['treatment']); ?>"
-                                                data-heart-rate="<?php echo htmlspecialchars($record['heart_rate']); ?>"
-                                                data-staff="<?php echo htmlspecialchars($record['attending_staff']); ?>"
-                                                data-notes="<?php echo htmlspecialchars($record['physician_notes']); ?>">
-                                            <i class="fas fa-eye"></i> View
-                                        </button>
-                                       
-                                        </a>
-                                        <button class="certificate-btn" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#certificateModal"
-                                                data-id="<?php echo $record['id']; ?>"
-                                                data-student="<?php echo htmlspecialchars($record['student_name']); ?>"
-                                                data-address="<?php echo htmlspecialchars($record['address'] ?? 'Not specified'); ?>"
-                                                data-diagnosis="<?php echo htmlspecialchars($record['diagnosis']); ?>"
-                                                data-recommendation="<?php echo htmlspecialchars($record['physician_notes']); ?>">
-                                            <i class="fas fa-certificate"></i> Issue Certificate
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach($records as $record): ?>
+                                <tr>
+                                    <td><?php echo $record['id']; ?></td>
+                                    <td><?php echo date('m-d-Y', strtotime($record['consultation_date'])); ?></td>
+                                    <td><?php echo htmlspecialchars($record['student_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($record['student_number']); ?></td>
+                                    <td><?php echo htmlspecialchars($record['diagnosis']); ?></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="view-btn" data-id="<?php echo $record['id']; ?>" 
+                                                    data-bs-toggle="modal" data-bs-target="#recordModal"
+                                                    data-student="<?php echo htmlspecialchars($record['student_name']); ?>"
+                                                    data-date="<?php echo date('F j, Y', strtotime($record['consultation_date'])); ?>"
+                                                    data-diagnosis="<?php echo htmlspecialchars($record['diagnosis']); ?>"
+                                                    data-symptoms="<?php echo htmlspecialchars($record['symptoms']); ?>"
+                                                    data-temperature="<?php echo htmlspecialchars($record['temperature']); ?>"
+                                                    data-blood-pressure="<?php echo htmlspecialchars($record['blood_pressure']); ?>"
+                                                    data-treatment="<?php echo htmlspecialchars($record['treatment']); ?>"
+                                                    data-heart-rate="<?php echo htmlspecialchars($record['heart_rate']); ?>"
+                                                    data-staff="<?php echo htmlspecialchars($record['attending_staff']); ?>"
+                                                    data-notes="<?php echo htmlspecialchars($record['physician_notes']); ?>">
+                                                <i class="fas fa-eye"></i> View
+                                            </button>
+                                           
+                                            </a>
+                                            <button class="certificate-btn" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#certificateModal"
+                                                    data-id="<?php echo $record['id']; ?>"
+                                                    data-student="<?php echo htmlspecialchars($record['student_name']); ?>"
+                                                    data-address="<?php echo htmlspecialchars($record['address'] ?? 'Not specified'); ?>"
+                                                    data-diagnosis="<?php echo htmlspecialchars($record['diagnosis']); ?>"
+                                                    data-recommendation="<?php echo htmlspecialchars($record['physician_notes']); ?>">
+                                                <i class="fas fa-certificate"></i> Issue Certificate
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </main>
     </div>
@@ -1226,7 +1444,7 @@ try {
     <!-- Bootstrap Bundle -->
     <script src="../assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - FIXED
+        // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - SAME AS ADMIN DASHBOARD
         document.querySelectorAll('.dropdown-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const targetId = this.getAttribute('data-target');
@@ -1248,7 +1466,7 @@ try {
             });
         });
 
-        // MOBILE MENU FUNCTIONALITY - FIXED
+        // MOBILE MENU FUNCTIONALITY - SAME AS ADMIN DASHBOARD
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');

@@ -102,10 +102,14 @@ $totalConsults = array_sum($consultationData);
             line-height: 1.6;
         }
 
-        /* Header Styles - IMPROVED */
+        /* Header Styles - SAME AS DASHBOARD */
         .top-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
+            background: 
+            linear-gradient(90deg, 
+                #ffda6a 0%, 
+                #ffda6a 30%, 
+                #FFF5CC 70%, 
+                #ffffff 100%);
             padding: 0.75rem 0;
             box-shadow: 0 2px 15px rgba(0,0,0,0.1);
             position: fixed;
@@ -127,7 +131,6 @@ $totalConsults = array_sum($consultationData);
             width: 60px;
             height: 60px;
             object-fit: contain;
-            filter: brightness(0) invert(1);
         }
 
         .school-info {
@@ -138,6 +141,7 @@ $totalConsults = array_sum($consultationData);
             font-size: 0.7rem;
             opacity: 0.9;
             letter-spacing: 0.5px;
+            color: #555;
         }
 
         .school-name {
@@ -145,20 +149,22 @@ $totalConsults = array_sum($consultationData);
             font-weight: 700;
             margin: 0.1rem 0;
             line-height: 1.2;
+            color: #555;
         }
 
         .clinic-title {
             font-size: 0.8rem;
             opacity: 0.9;
             font-weight: 500;
+            color: #555;
         }
 
-        /* Mobile Menu Toggle - COMPLETELY FIXED POSITION */
+        /* Mobile Menu Toggle - SAME AS DASHBOARD */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 95px; /* MAS MALAYO SA HEADER */
-            left: 20px; /* MAS MALAYO SA GILID */
+            top: 95px;
+            left: 20px;
             z-index: 1025;
             background: var(--primary);
             color: white;
@@ -176,13 +182,13 @@ $totalConsults = array_sum($consultationData);
             background: var(--primary-dark);
         }
 
-        /* Dashboard Container - IMPROVED */
+        /* Dashboard Container - SAME AS DASHBOARD */
         .dashboard-container {
             display: flex;
             min-height: calc(100vh - 80px);
         }
 
-        /* Sidebar Styles - IMPROVED */
+        /* Sidebar Styles - SAME AS DASHBOARD */
         .sidebar {
             width: 260px;
             background: white;
@@ -225,18 +231,20 @@ $totalConsults = array_sum($consultationData);
 
         .nav-item.active {
             background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-            color: var(--primary);
-            border-left: 4px solid var(--primary);
+            color: #555;
+            border-left: 8px solid #ffda6a;
         }
 
         .nav-item i {
             width: 22px;
             margin-right: 0.9rem;
             font-size: 1.1rem;
+            color: #555;
         }
 
         .nav-item span {
             flex: 1;
+            color: #555;
         }
 
         .nav-item.logout {
@@ -248,7 +256,7 @@ $totalConsults = array_sum($consultationData);
             background: rgba(220, 53, 69, 0.1);
         }
 
-        /* Main Content - IMPROVED */
+        /* Main Content - SAME AS DASHBOARD */
         .main-content {
             flex: 1;
             padding: 1.5rem;
@@ -257,7 +265,7 @@ $totalConsults = array_sum($consultationData);
             margin-top: 0;
         }
 
-        /* Sidebar Overlay for Mobile - IMPROVED */
+        /* Sidebar Overlay for Mobile - SAME AS DASHBOARD */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -273,14 +281,38 @@ $totalConsults = array_sum($consultationData);
             display: block;
         }
 
-        /* Report Page Styles */
+        /* WELCOME SECTION - SAME AS DASHBOARD */
+        .welcome-section {
+            background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(206, 224, 144, 0.2);
+            border-left: 10px solid #ffda6a;
+        }
+
+        .welcome-content h1 {
+            color: #555;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-content p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        /* KEEPING YOUR ORIGINAL REPORT STYLES */
         .page-title {
             background: linear-gradient(135deg, rgba(255, 218, 106, 0.9) 0%, rgba(255, 247, 222, 0.95) 100%);
             padding: 20px;
             border-radius: 15px;
             margin-bottom: 20px;
             text-align: center;
-            color: #2c3e50;
+            color: #555;
             font-weight: 800;
             font-size: 1.8rem;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
@@ -308,19 +340,19 @@ $totalConsults = array_sum($consultationData);
         }
 
         .stats-icon {
-            background: linear-gradient(135deg, #27ae60, #219a52);
+            background: linear-gradient(135deg, #ffda6a, #ffda6a);
             width: 70px;
             height: 70px;
             border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+            box-shadow: #555;
         }
 
         .stats-icon i {
             font-size: 2rem;
-            color: white;
+            color: #555;
         }
 
         .stats-info h5 {
@@ -331,7 +363,7 @@ $totalConsults = array_sum($consultationData);
         }
 
         .stats-info h2 {
-            color: #2c3e50;
+            color: #555;
             font-weight: 800;
             font-size: 2.5rem;
             margin: 0;
@@ -346,6 +378,7 @@ $totalConsults = array_sum($consultationData);
             height: 400px;
             margin: 0 auto;
             border: 1px solid rgba(255,255,255,0.2);
+            color: #555;
         }
 
         .chart-header {
@@ -356,15 +389,15 @@ $totalConsults = array_sum($consultationData);
         }
 
         .chart-title {
-            color: #2c3e50;
+            color: #555;
             font-weight: 700;
             font-size: 1.3rem;
             margin: 0;
         }
 
         .chart-month {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
+            background: linear-gradient(135deg, #ffda6a, #ffda6a);
+            color: #555;
             padding: 8px 15px;
             border-radius: 20px;
             font-weight: 700;
@@ -375,7 +408,7 @@ $totalConsults = array_sum($consultationData);
             margin-right: 5px;
         }
 
-        /* Responsive Design */
+        /* Responsive Design - COMBINED FROM BOTH */
         @media (max-width: 1200px) {
             .sidebar {
                 width: 240px;
@@ -399,6 +432,7 @@ $totalConsults = array_sum($consultationData);
             .chart-container {
                 width: 100%;
                 height: 350px;
+                color: #555;
             }
             
             .stats-card {
@@ -419,8 +453,8 @@ $totalConsults = array_sum($consultationData);
             
             .mobile-menu-toggle {
                 display: block;
-                top: 85px; /* MAS MALAYO SA HEADER */
-                left: 20px; /* MAS MALAYO SA GILID */
+                top: 85px;
+                left: 20px;
             }
 
             .sidebar {
@@ -447,7 +481,7 @@ $totalConsults = array_sum($consultationData);
             }
 
             .main-content {
-                padding: 2rem 1.25rem 1.25rem; /* MAS MALAKING PADDING SA ITAAS */
+                padding: 2rem 1.25rem 1.25rem;
                 width: 100%;
                 margin-left: 0;
             }
@@ -483,7 +517,7 @@ $totalConsults = array_sum($consultationData);
 
         @media (max-width: 576px) {
             .main-content {
-                padding: 1.75rem 1rem 1rem; /* ADJUSTED PADDING */
+                padding: 1.75rem 1rem 1rem;
             }
             
             .stats-card {
@@ -564,15 +598,15 @@ $totalConsults = array_sum($consultationData);
 </head>
 
 <body>
-    <!-- Mobile Menu Toggle Button - COMPLETELY FIXED POSITION -->
+    <!-- Mobile Menu Toggle Button - SAME AS DASHBOARD -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - IMPROVED -->
+    <!-- Sidebar Overlay for Mobile - SAME AS DASHBOARD -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - IMPROVED (INALIS NA ANG WELCOME MESSAGE SA RIGHT) -->
+    <!-- Header - SAME AS DASHBOARD -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -582,13 +616,12 @@ $totalConsults = array_sum($consultationData);
                     <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
                     <div class="clinic-title">ONLINE SCHOOL CLINIC</div>
                 </div>
-                <!-- INALIS NA ANG WELCOME MESSAGE AT STUDENT NAME SA RIGHT SIDE -->
             </div>
         </div>
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar - IMPROVED -->
+        <!-- Sidebar - SAME AS DASHBOARD -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="student_dashboard.php" class="nav-item">
@@ -630,6 +663,14 @@ $totalConsults = array_sum($consultationData);
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- WELCOME SECTION - SAME AS DASHBOARD -->
+            <div class="welcome-section fade-in">
+                <div class="welcome-content">
+                    <h1>Your Consultation Reports 📊</h1>
+                    <p>Track your monthly consultation activity and statistics</p>
+                </div>
+            </div>
+
             <div class="page-title fade-in">
                 <i class="fas fa-chart-line"></i> Consultation Reports
             </div>
@@ -661,7 +702,7 @@ $totalConsults = array_sum($consultationData);
     <script src="assets/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // MOBILE MENU FUNCTIONALITY - IMPROVED
+            // MOBILE MENU FUNCTIONALITY - SAME AS DASHBOARD
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');

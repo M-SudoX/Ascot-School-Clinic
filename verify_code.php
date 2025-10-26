@@ -8,6 +8,7 @@ require 'PHPMailer/src/SMTP.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\SMTP;
 
 // ✅ Handle RESEND code
 if (isset($_POST['resend']) && isset($_SESSION['pending_reset_user'])) {
@@ -15,7 +16,7 @@ if (isset($_POST['resend']) && isset($_SESSION['pending_reset_user'])) {
     $new_code = sprintf("%06d", rand(0, 999999));
     $expires = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
-    $checkStmt = $pdo->prepare("SELECT id, email FROM users WHERE id = ?");
+    $checkStmt = $pdo->prepare("SELECT id, email, fullname FROM users WHERE id = ?");
     $checkStmt->execute([$user_id]);
     $user = $checkStmt->fetch();
 
@@ -25,23 +26,65 @@ if (isset($_POST['resend']) && isset($_SESSION['pending_reset_user'])) {
 
         $mail = new PHPMailer(true);
         try {
+            // Server settings - USE CONSISTENT EMAIL
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'cachemeifucan05@gmail.com';
-            $mail->Password = 'zusittxqokhgzotm';
-            $mail->SMTPSecure = 'tls';
+            $mail->Username = 'zayantomara@gmail.com'; // ✅ SAME AS OTHER FILES
+            $mail->Password = 'zjaoodlqbdtknyno'; // ✅ SAME AS OTHER FILES
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
-            $mail->setFrom('cachemeifucan05@gmail.com', 'ASCOT Online School Clinic');
-            $mail->addAddress($user['email']);
-            $mail->isHTML(true);
-            $mail->Subject = 'Your New Password Reset Code';
-            $mail->Body = "<p>Your new password reset code is: <b>{$new_code}</b></p><p>This code will expire in 10 minutes.</p>";
-            $mail->send();
-        } catch (Exception $e) {}
+            
+            // Timeout settings
+            $mail->Timeout = 30;
 
-        $_SESSION['flash'] = "✅ A new verification code has been sent to your email!";
-        $_SESSION['flash_type'] = "success";
+            // Recipients
+            $mail->setFrom('zayantomara@gmail.com', 'ASCOT Online School Clinic');
+            $mail->addAddress($user['email'], $user['fullname']);
+            $mail->addReplyTo('zayantomara@gmail.com', 'ASCOT Online School Clinic');
+
+            // Content
+            $mail->isHTML(true);
+            $mail->Subject = 'Password Reset Code - ASCOT Online School Clinic';
+            
+            $mail->Body = "
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+                    <h2 style='color: #2c3e50;'>Password Reset Request</h2>
+                    <p>Hello <b>{$user['fullname']}</b>,</p>
+                    <p>You requested a password reset for your ASCOT Online School Clinic account.</p>
+                    <p>Your verification code is:</p>
+                    <div style='text-align: center; margin: 30px 0;'>
+                        <span style='background: #ffc107; color: #000; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 24px; letter-spacing: 4px; display: inline-block;'>
+                            {$new_code}
+                        </span>
+                    </div>
+                    <p style='color: #dc3545; font-weight: bold;'>
+                        ⚠️ This code will expire in 10 minutes!
+                    </p>
+                    <p>If you didn't request this reset, please ignore this email.</p>
+                    <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;'>
+                    <small style='color: #6c757d;'>ASCOT Online School Clinic</small>
+                </div>
+            ";
+            
+            // Plain text version
+            $mail->AltBody = "Password Reset Code: {$new_code}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this reset, please ignore this email.";
+
+            if ($mail->send()) {
+                error_log("✅ Password reset code sent to: {$user['email']}");
+                $_SESSION['flash'] = "✅ A new verification code has been sent to your email!";
+                $_SESSION['flash_type'] = "success";
+            } else {
+                error_log("❌ Failed to send reset code to: {$user['email']}");
+                $_SESSION['flash'] = "❌ Failed to send email. Please try again.";
+                $_SESSION['flash_type'] = "danger";
+            }
+            
+        } catch (Exception $e) {
+            error_log("❌ Email exception for {$user['email']}: " . $e->getMessage());
+            $_SESSION['flash'] = "❌ Email service temporarily unavailable. Please try again later.";
+            $_SESSION['flash_type'] = "danger";
+        }
     } else {
         $_SESSION['flash'] = "❌ User not found.";
         $_SESSION['flash_type'] = "danger";
@@ -61,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['resend'])) {
         exit;
     }
 
-    $stmt = $pdo->prepare("SELECT id, email FROM users WHERE reset_token = ? AND reset_expires > NOW()");
+    $stmt = $pdo->prepare("SELECT id, email, fullname FROM users WHERE reset_token = ? AND reset_expires > NOW()");
     $stmt->execute([$code]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -185,6 +228,10 @@ p {
   text-decoration: underline;
   color: #e0ac07;
 }
+.resend-btn:disabled {
+  color: #6c757d;
+  cursor: not-allowed;
+}
 .countdown {
   text-align: center;
   color: #6c757d;
@@ -199,7 +246,7 @@ p {
 </head>
 <body>
   <div class="card">
-    <img src="img/logo.png" alt="ASCOT Logo" class="logo">
+    <img src="../img/logo.png" alt="ASCOT Logo" class="logo">
     <h5>Verification Code</h5>
     <p>Enter the 6-digit code sent to your email.</p>
 
@@ -237,21 +284,30 @@ p {
     const countdownTimer = document.getElementById('countdownTimer');
     const countdownDisplay = document.getElementById('countdown');
     let countdown = 0;
+    
     function startCountdown() {
       countdown = 60;
       resendBtn.disabled = true;
+      resendBtn.style.color = '#6c757d';
       countdownTimer.style.display = 'block';
+      
       const interval = setInterval(() => {
         countdown--;
         countdownDisplay.textContent = countdown;
+        
         if (countdown <= 0) {
           clearInterval(interval);
           resendBtn.disabled = false;
+          resendBtn.style.color = '#ffc107';
           countdownTimer.style.display = 'none';
         }
       }, 1000);
     }
+    
     resendBtn.addEventListener('click', () => startCountdown());
+    
+    // Auto-focus on code input
+    document.querySelector('input[name="code"]').focus();
   </script>
 </body>
 </html>

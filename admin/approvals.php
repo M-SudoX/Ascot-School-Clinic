@@ -69,11 +69,25 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Approvals - ASCOT Clinic</title>
 
-    <!-- BOOTSTRAP / FONT AWESOME -->
+    <!-- Bootstrap -->
     <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
     <link href="../assets/webfonts/all.min.css" rel="stylesheet">
     
     <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary: #764ba2;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -83,32 +97,39 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
-            padding-top: 100px; /* Added for fixed header */
+            padding-top: 80px;
+            line-height: 1.6;
         }
 
-        /* Header Styles - FIXED */
+        /* Header Styles - SAME AS ADMIN DASHBOARD */
         .top-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: 
+                linear-gradient(90deg, 
+                    #ffda6a 0%, 
+                    #ffda6a 30%, 
+                    #FFF5CC 70%, 
+                    #ffffff 100%);
             color: white;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: fixed; /* Added */
-            top: 0; /* Added */
-            left: 0; /* Added */
-            right: 0; /* Added */
-            z-index: 1000; /* Added */
-            height: 100px; /* Added */
+            padding: 0.75rem 0;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+            height: 80px;
         }
 
         .header-content {
             display: flex;
             align-items: center;
             gap: 1rem;
+            height: 100%;
         }
 
         .logo-img {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             object-fit: contain;
         }
 
@@ -117,29 +138,35 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         }
 
         .republic {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             opacity: 0.9;
+            letter-spacing: 0.5px;
+            color: #555;
         }
 
         .school-name {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin: 0.2rem 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0.1rem 0;
+            line-height: 1.2;
+            color: #555;
         }
 
         .clinic-title {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             opacity: 0.9;
+            font-weight: 500;
+            color: #555;
         }
 
-        /* Mobile Menu Toggle - FIXED */
+        /* Mobile Menu Toggle - SAME AS ADMIN DASHBOARD */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 100px; /* Adjusted for fixed header */
+            top: 95px;
             left: 20px;
-            z-index: 1001;
-            background: #667eea;
+            z-index: 1025;
+            background: var(--primary);
             color: white;
             border: none;
             width: 50px;
@@ -151,42 +178,42 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         }
 
         .mobile-menu-toggle:hover {
-            transform: scale(1.1);
-            background: #764ba2;
+            transform: scale(1.05);
+            background: var(--primary-dark);
         }
 
-        /* Dashboard Container - FIXED */
+        /* Dashboard Container - SAME AS ADMIN DASHBOARD */
         .dashboard-container {
             display: flex;
-            min-height: calc(100vh - 100px);
+            min-height: calc(100vh - 80px);
         }
 
-        /* Sidebar Styles - FIXED */
+        /* Sidebar Styles - SAME AS ADMIN DASHBOARD */
         .sidebar {
-            width: 280px;
+            width: 260px;
             background: white;
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-            padding: 2rem 0;
+            padding: 1.5rem 0;
             transition: transform 0.3s ease;
-            position: fixed; /* Added */
-            top: 100px; /* Added */
-            left: 0; /* Added */
-            bottom: 0; /* Added */
-            overflow-y: auto; /* Added */
-            z-index: 999; /* Added */
+            position: fixed;
+            top: 80px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1020;
         }
 
         .sidebar-nav {
             display: flex;
             flex-direction: column;
-            height: 100%; /* Added */
+            height: 100%;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 1rem 1.5rem;
-            color: #444;
+            padding: 0.9rem 1.25rem;
+            color: #555;
             text-decoration: none;
             transition: all 0.3s ease;
             border: none;
@@ -194,31 +221,36 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             width: 100%;
             text-align: left;
             cursor: pointer;
+            font-weight: 500;
         }
 
         .nav-item:hover {
             background: #f8f9fa;
-            color: #667eea;
+            color: var(--primary);
         }
 
         .nav-item.active {
             background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-            color: #667eea;
-            border-left: 4px solid #667eea;
+            color: #555;
+            border-left: 8px solid #ffda6a;
         }
 
         .nav-item i {
-            width: 25px;
-            margin-right: 1rem;
+            width: 22px;
+            margin-right: 0.9rem;
+            font-size: 1.1rem;
+            color: #555;
         }
 
         .nav-item span {
             flex: 1;
+            color: #555;
         }
 
         .nav-item .arrow {
             margin-left: auto;
             transition: transform 0.3s ease;
+            font-size: 0.8rem;
         }
 
         .nav-item .arrow.rotate {
@@ -239,25 +271,33 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         .submenu-item {
             display: flex;
             align-items: center;
-            padding: 0.75rem 1.5rem 0.75rem 3.5rem;
+            padding: 0.7rem 1.25rem 0.7rem 3.25rem;
             color: #666;
             text-decoration: none;
             transition: all 0.3s ease;
             font-size: 0.9rem;
+            font-weight: 400;
         }
 
         .submenu-item:hover {
             background: #e9ecef;
-            color: #667eea;
+            color: var(--primary);
+        }
+
+        .submenu-item.active {
+            background: #e9ecef;
+            color: var(--primary);
+            font-weight: 500;
         }
 
         .submenu-item i {
-            width: 20px;
-            margin-right: 0.75rem;
+            width: 18px;
+            margin-right: 0.7rem;
+            font-size: 0.9rem;
         }
 
         .nav-item.logout {
-            color: #dc3545;
+            color: var(--danger);
             margin-top: auto;
         }
 
@@ -265,62 +305,99 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             background: rgba(220, 53, 69, 0.1);
         }
 
-        /* Main Content - FIXED */
+        /* Main Content - SAME AS ADMIN DASHBOARD */
         .main-content {
             flex: 1;
-            padding: 2rem;
+            padding: 1.5rem;
             overflow-x: hidden;
-            background: #f8f9fa;
-            margin-left: 280px; /* Added for sidebar space */
-            margin-top: 0; /* Added */
+            margin-left: 260px;
+            margin-top: 0;
         }
 
-        /* Sidebar Overlay for Mobile - FIXED */
+        /* Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD */
         .sidebar-overlay {
             display: none;
             position: fixed;
-            top: 100px; /* Adjusted for fixed header */
+            top: 80px;
             left: 0;
             right: 0;
             bottom: 0;
             background: rgba(0,0,0,0.5);
-            z-index: 999;
+            z-index: 1019;
         }
 
         .sidebar-overlay.active {
             display: block;
         }
 
-        /* Approvals Specific Styles */
-        .approvals-container {
+        /* Page Header - SAME AS ADMIN DASHBOARD */
+        .page-header {
+            background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(206, 224, 144, 0.2);
+            border-left: 10px solid #ffda6a;
+        }
+
+        .page-header h1 {
+            color: #555;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        /* Dashboard Card - SAME AS ADMIN DASHBOARD */
+        .dashboard-card {
             background: white;
             border-radius: 15px;
             padding: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-        }
-
-        .approvals-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            border: 1px solid #f0f0f0;
             margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #e9ecef;
         }
 
-        .approvals-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #2c3e50;
+        .card-header {
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
         }
 
-        .approvals-title i {
-            color: #667eea;
+        .card-title {
+            color: #555;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0;
         }
 
+        .card-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #555;
+            background: #fff7da;
+            transition: all 0.3s ease;
+        }
+
+        .card-icon:hover {
+            transform: scale(1.1);
+        }
+
+        /* Approvals Specific Styles */
         .pending-badge {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -429,6 +506,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
 
         .modal-header .modal-title {
             font-weight: 600;
+            color: white;
         }
 
         .modal-body {
@@ -455,7 +533,17 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             margin-bottom: 2rem;
         }
 
-        /* Responsive Design - FIXED */
+        /* Responsive Design - SAME AS ADMIN DASHBOARD */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 240px;
+            }
+            
+            .main-content {
+                margin-left: 240px;
+            }
+        }
+
         @media (max-width: 992px) {
             .school-name {
                 font-size: 1rem;
@@ -468,23 +556,38 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         }
 
         @media (max-width: 768px) {
+            body {
+                padding-top: 70px;
+            }
+            
+            .top-header {
+                height: 70px;
+                padding: 0.5rem 0;
+            }
+            
             .mobile-menu-toggle {
                 display: block;
+                top: 85px;
+                left: 20px;
             }
 
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 100px; /* Adjusted for fixed header */
-                height: calc(100vh - 100px); /* Adjusted for fixed header */
-                z-index: 1000;
+                top: 70px;
+                height: calc(100vh - 70px);
+                z-index: 1020;
                 transform: translateX(-100%);
                 overflow-y: auto;
-                width: 280px; /* Added */
+                width: 280px;
             }
 
             .sidebar.active {
                 transform: translateX(0);
+            }
+
+            .sidebar-overlay {
+                top: 70px;
             }
 
             .sidebar-overlay.active {
@@ -492,9 +595,9 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             }
 
             .main-content {
-                padding: 1rem;
+                padding: 1.5rem;
                 width: 100%;
-                margin-left: 0; /* Reset margin for mobile */
+                margin-left: 0;
             }
 
             .header-content {
@@ -502,15 +605,15 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             }
 
             .school-name {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
             }
 
             .republic, .clinic-title {
                 font-size: 0.65rem;
             }
 
-            .approvals-container {
-                padding: 1rem;
+            .dashboard-card {
+                padding: 1.5rem;
             }
 
             .approvals-table {
@@ -534,15 +637,68 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             }
         }
 
-        @media (max-width: 480px) {
-            .approvals-header {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
+        @media (max-width: 576px) {
+            .dashboard-card {
+                padding: 1.25rem;
             }
 
-            .approvals-title {
-                font-size: 1.2rem;
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .main-content {
+                padding: 1.25rem;
+            }
+            
+            .mobile-menu-toggle {
+                top: 80px;
+                width: 45px;
+                height: 45px;
+            }
+
+            .action-buttons {
+                flex-direction: row;
+                gap: 5px;
+            }
+
+            .btn-approve, .btn-decline, .btn-reschedule, .btn-delete {
+                width: 32px;
+                height: 32px;
+                font-size: 0.8rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .logo-img {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .school-name {
+                font-size: 0.8rem;
+            }
+            
+            .republic, .clinic-title {
+                font-size: 0.6rem;
+            }
+            
+            .mobile-menu-toggle {
+                width: 45px;
+                height: 45px;
+                top: 80px;
+                left: 15px;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+
+            .dashboard-card {
+                padding: 1rem;
             }
 
             .approvals-table {
@@ -550,18 +706,47 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 overflow-x: auto;
             }
         }
+
+        @media (max-width: 375px) {
+            .mobile-menu-toggle {
+                top: 75px;
+                left: 15px;
+                width: 40px;
+                height: 40px;
+            }
+            
+            .main-content {
+                padding: 0.75rem;
+            }
+        }
+
+        /* ANIMATIONS - SAME AS ADMIN DASHBOARD */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - FIXED -->
+    <!-- Mobile Menu Toggle Button - SAME AS ADMIN DASHBOARD -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - FIXED -->
+    <!-- Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- HEADER - FIXED -->
+    <!-- Header - SAME AS ADMIN DASHBOARD -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -575,9 +760,8 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         </div>
     </header>
 
-    <!-- DASHBOARD CONTAINER - FIXED -->
     <div class="dashboard-container">
-        <!-- SIDEBAR - FIXED -->
+        <!-- Sidebar - ADMIN MENU ITEMS WITH ADMIN DASHBOARD STYLING -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">
@@ -660,12 +844,13 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                             <i class="fas fa-users-cog"></i>
                             Users Logs
                         </a>
-                        <a href="#" class="submenu-item">
+                        <a href="backup_restore.php" class="submenu-item">
                             <i class="fas fa-clipboard-list"></i>
                             Back up & Restore
                         </a>
                     </div>
                 </div>
+
                 <div class="nav-group">
                     <button class="nav-item dropdown-btn" data-target="announcementMenu">
                         <i class="fas fa-bullhorn"></i>
@@ -683,7 +868,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                         </a>
                     </div>
                 </div>
-
+                
                 <a href="../logout.php" class="nav-item logout">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
@@ -691,8 +876,14 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             </nav>
         </aside>
 
-        <!-- MAIN CONTENT -->
+        <!-- Main Content - FOLLOWING ADMIN DASHBOARD STRUCTURE -->
         <main class="main-content">
+            <!-- Page Header -->
+            <div class="page-header fade-in">
+                <h1><i class="fas fa-check-circle me-2"></i>Consultation Requests</h1>
+                <p>Manage and approve consultation requests from students</p>
+            </div>
+
             <?php if ($success_message): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="fas fa-check-circle"></i> <?= htmlspecialchars($success_message); ?>
@@ -705,14 +896,15 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 </div>
             <?php endif; ?>
 
-            <div class="approvals-container">
-                <div class="approvals-header">
-                    <h2 class="approvals-title">
-                        <i class="fas fa-check-circle"></i> Consultation Requests
-                        <span class="pending-badge"><?= count($consultations); ?></span>
-                    </h2>
+            <!-- Approvals Container -->
+            <div class="dashboard-card fade-in">
+                <div class="card-header">
+                    <h3 class="card-title">Pending Requests</h3>
+                    <div class="card-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
                 </div>
-
+                
                 <div class="table-responsive">
                     <table class="approvals-table">
                         <thead>
@@ -804,7 +996,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                     <h5 class="modal-title">
                         <i class="fas fa-calendar-alt me-2"></i>Reschedule Consultation
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -827,7 +1019,29 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
     <!-- BOOTSTRAP JS -->
     <script src="../assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        // MOBILE MENU FUNCTIONALITY - FIXED
+        // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - SAME AS ADMIN DASHBOARD
+        document.querySelectorAll('.dropdown-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const submenu = document.getElementById(targetId);
+                const arrow = this.querySelector('.arrow');
+
+                document.querySelectorAll('.submenu').forEach(menu => {
+                    if (menu.id !== targetId && menu.classList.contains('show')) {
+                        menu.classList.remove('show');
+                        const otherBtn = document.querySelector(`[data-target="${menu.id}"]`);
+                        if (otherBtn) {
+                            otherBtn.querySelector('.arrow').classList.remove('rotate');
+                        }
+                    }
+                });
+
+                submenu.classList.toggle('show');
+                arrow.classList.toggle('rotate');
+            });
+        });
+
+        // MOBILE MENU FUNCTIONALITY - SAME AS ADMIN DASHBOARD
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -856,28 +1070,6 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 });
             });
         }
-
-        // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - FIXED
-        document.querySelectorAll('.dropdown-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const targetId = this.getAttribute('data-target');
-                const submenu = document.getElementById(targetId);
-                const arrow = this.querySelector('.arrow');
-
-                document.querySelectorAll('.submenu').forEach(menu => {
-                    if (menu.id !== targetId && menu.classList.contains('show')) {
-                        menu.classList.remove('show');
-                        const otherBtn = document.querySelector(`[data-target="${menu.id}"]`);
-                        if (otherBtn) {
-                            otherBtn.querySelector('.arrow').classList.remove('rotate');
-                        }
-                    }
-                });
-
-                submenu.classList.toggle('show');
-                arrow.classList.toggle('rotate');
-            });
-        });
 
         // Reschedule Modal functionality
         const rescheduleModal = document.getElementById('rescheduleModal');

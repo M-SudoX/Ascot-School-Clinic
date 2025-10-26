@@ -20,19 +20,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     if ($user && $user['is_verified'] == 0) {
         $fullname = $user['fullname'];
         $activation_code = $user['activation_code'];
-        $activation_link = "http://192.168.8.38:8080/ascot-school-clinic/activate.php?code=$activation_code";
+        $activation_link = "http://192.168.1.77:8080/ascot-school-clinic/activate.php?code=$activation_code";
 
         $mail = new PHPMailer(true);
         try {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'cachemeifucan05@gmail.com';
-            $mail->Password = 'zusittxqokhgzotm';
+            $mail->Username = 'zayantomara@gmail.com';
+            $mail->Password = 'zjaoodlqbdtknyno';
             $mail->SMTPSecure = 'tls';
             $mail->Port = 587;
 
-            $mail->setFrom('cachemeifucan05@gmail.com', 'ASCOT Online Clinic');
+            $mail->setFrom('zayantomara@gmail.com', 'ASCOT Online Clinic');
             $mail->addAddress($email, $fullname);
             $mail->isHTML(true);
             $mail->Subject = 'Resend: Activate Your ASCOT Online Clinic Account';

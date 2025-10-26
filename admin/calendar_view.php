@@ -38,11 +38,25 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendar View - ASCOT Clinic</title>
 
-    <!-- BOOTSTRAP / FONT AWESOME -->
+    <!-- Bootstrap -->
     <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
     <link href="../assets/webfonts/all.min.css" rel="stylesheet">
     
     <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary: #764ba2;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -52,32 +66,39 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
-            padding-top: 100px;
+            padding-top: 80px;
+            line-height: 1.6;
         }
 
-        /* Header Styles - FIXED */
+        /* Header Styles - SAME AS ADMIN DASHBOARD */
         .top-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: 
+                linear-gradient(90deg, 
+                    #ffda6a 0%, 
+                    #ffda6a 30%, 
+                    #FFF5CC 70%, 
+                    #ffffff 100%);
             color: white;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 0.75rem 0;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
-            height: 100px;
+            z-index: 1030;
+            height: 80px;
         }
 
         .header-content {
             display: flex;
             align-items: center;
             gap: 1rem;
+            height: 100%;
         }
 
         .logo-img {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             object-fit: contain;
         }
 
@@ -86,29 +107,35 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .republic {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             opacity: 0.9;
+            letter-spacing: 0.5px;
+            color: #555;
         }
 
         .school-name {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin: 0.2rem 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0.1rem 0;
+            line-height: 1.2;
+            color: #555;
         }
 
         .clinic-title {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             opacity: 0.9;
+            font-weight: 500;
+            color: #555;
         }
 
-        /* Mobile Menu Toggle - FIXED */
+        /* Mobile Menu Toggle - SAME AS ADMIN DASHBOARD */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 100px;
+            top: 95px;
             left: 20px;
-            z-index: 1001;
-            background: #667eea;
+            z-index: 1025;
+            background: var(--primary);
             color: white;
             border: none;
             width: 50px;
@@ -116,27 +143,33 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border-radius: 50%;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        /* Dashboard Container - FIXED */
+        .mobile-menu-toggle:hover {
+            transform: scale(1.05);
+            background: var(--primary-dark);
+        }
+
+        /* Dashboard Container - SAME AS ADMIN DASHBOARD */
         .dashboard-container {
             display: flex;
-            min-height: calc(100vh - 100px);
+            min-height: calc(100vh - 80px);
         }
 
-        /* Sidebar Styles - FIXED */
+        /* Sidebar Styles - SAME AS ADMIN DASHBOARD */
         .sidebar {
-            width: 280px;
+            width: 260px;
             background: white;
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-            padding: 2rem 0;
+            padding: 1.5rem 0;
             transition: transform 0.3s ease;
             position: fixed;
-            top: 100px;
+            top: 80px;
             left: 0;
             bottom: 0;
             overflow-y: auto;
-            z-index: 999;
+            z-index: 1020;
         }
 
         .sidebar-nav {
@@ -148,34 +181,45 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 1rem 1.5rem;
-            color: #444;
+            padding: 0.9rem 1.25rem;
+            color: #555;
             text-decoration: none;
+            transition: all 0.3s ease;
             border: none;
             background: none;
             width: 100%;
             text-align: left;
             cursor: pointer;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: #f8f9fa;
+            color: var(--primary);
         }
 
         .nav-item.active {
             background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-            color: #667eea;
-            border-left: 4px solid #667eea;
+            color: #555;
+            border-left: 8px solid #ffda6a;
         }
 
         .nav-item i {
-            width: 25px;
-            margin-right: 1rem;
+            width: 22px;
+            margin-right: 0.9rem;
+            font-size: 1.1rem;
+            color: #555;
         }
 
         .nav-item span {
             flex: 1;
+            color: #555;
         }
 
         .nav-item .arrow {
             margin-left: auto;
             transition: transform 0.3s ease;
+            font-size: 0.8rem;
         }
 
         .nav-item .arrow.rotate {
@@ -196,55 +240,133 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .submenu-item {
             display: flex;
             align-items: center;
-            padding: 0.75rem 1.5rem 0.75rem 3.5rem;
+            padding: 0.7rem 1.25rem 0.7rem 3.25rem;
             color: #666;
             text-decoration: none;
+            transition: all 0.3s ease;
             font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        .submenu-item:hover {
+            background: #e9ecef;
+            color: var(--primary);
         }
 
         .submenu-item.active {
-            color: #667eea;
+            background: #e9ecef;
+            color: var(--primary);
             font-weight: 500;
         }
 
         .submenu-item i {
-            width: 20px;
-            margin-right: 0.75rem;
+            width: 18px;
+            margin-right: 0.7rem;
+            font-size: 0.9rem;
         }
 
         .nav-item.logout {
-            color: #dc3545;
+            color: var(--danger);
             margin-top: auto;
         }
 
-        /* Main Content - FIXED */
+        .nav-item.logout:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        /* Main Content - SAME AS ADMIN DASHBOARD */
         .main-content {
             flex: 1;
-            padding: 2rem;
+            padding: 1.5rem;
             overflow-x: hidden;
-            background: linear-gradient(135deg, #ffda6a 0%, #764ba2 100%);
-            min-height: calc(100vh - 100px);
-            margin-left: 280px;
+            margin-left: 260px;
             margin-top: 0;
         }
 
-        /* Sidebar Overlay for Mobile - FIXED */
+        /* Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD */
         .sidebar-overlay {
             display: none;
             position: fixed;
-            top: 100px;
+            top: 80px;
             left: 0;
             right: 0;
             bottom: 0;
             background: rgba(0,0,0,0.5);
-            z-index: 999;
+            z-index: 1019;
         }
 
         .sidebar-overlay.active {
             display: block;
         }
 
-        /* SIMPLIFIED CALENDAR CONTAINER */
+        /* Page Header - SAME AS ADMIN DASHBOARD */
+        .page-header {
+            background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(206, 224, 144, 0.2);
+            border-left: 10px solid #ffda6a;
+        }
+
+        .page-header h1 {
+            color: #555;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        /* Dashboard Card - SAME AS ADMIN DASHBOARD */
+        .dashboard-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .card-title {
+            color: #555;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .card-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #555;
+            background: #fff7da;
+            transition: all 0.3s ease;
+        }
+
+        .card-icon:hover {
+            transform: scale(1.1);
+        }
+
+        /* CALENDAR CONTAINER */
         .calendar-container {
             background: white;
             border-radius: 20px;
@@ -255,7 +377,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             width: 95%;
         }
         
-        /* SIMPLIFIED CALENDAR HEADER */
+        /* CALENDAR HEADER */
         .calendar-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -280,7 +402,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             font-size: 1.7rem;
         }
         
-        /* SIMPLIFIED CALENDAR CONTROLS */
+        /* CALENDAR CONTROLS */
         .calendar-controls {
             display: flex;
             align-items: center;
@@ -299,6 +421,12 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             justify-content: center;
             cursor: pointer;
             font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .calendar-controls button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
         }
         
         #monthDisplay {
@@ -309,7 +437,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: white;
         }
 
-        /* SIMPLIFIED CALENDAR GRID */
+        /* CALENDAR GRID */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -317,7 +445,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin-top: 15px;
         }
         
-        /* SIMPLIFIED DAY HEADERS */
+        /* DAY HEADERS */
         .calendar-day-header {
             text-align: center;
             font-weight: 600;
@@ -331,7 +459,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             border: 1px solid #e9ecef;
         }
 
-        /* SIMPLIFIED DAY CELLS - NO HOVER */
+        /* DAY CELLS */
         .calendar-day {
             background: white;
             border: 1px solid #e9ecef;
@@ -343,9 +471,16 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             display: flex;
             flex-direction: column;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
         }
         
-        /* TODAY INDICATOR - SIMPLE */
+        .calendar-day:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-color: #667eea;
+        }
+        
+        /* TODAY INDICATOR */
         .calendar-day.today {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -360,6 +495,12 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             background: #f8f9fa;
         }
         
+        .calendar-day.text-muted:hover {
+            transform: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            border-color: #e9ecef;
+        }
+        
         /* DAY NUMBER */
         .calendar-day > div:first-child {
             font-size: 1.2rem;
@@ -368,7 +509,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: inherit;
         }
 
-        /* SIMPLIFIED APPOINTMENT BADGE */
+        /* APPOINTMENT BADGE */
         .appointment-count {
             position: absolute;
             top: 10px;
@@ -406,6 +547,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             display: flex;
             align-items: center;
             gap: 10px;
+            color: white;
         }
         
         .modal-body {
@@ -418,6 +560,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding-bottom: 15px;
             border-bottom: 2px solid #667eea;
             font-size: 1.2rem;
+            color: #555;
         }
 
         /* Table Styles */
@@ -473,8 +616,22 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             display: block;
         }
 
-        /* RESPONSIVE DESIGN */
+        /* Badge Styles */
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.4em 0.6em;
+        }
+
+        /* Responsive Design - SAME AS ADMIN DASHBOARD */
         @media (max-width: 1200px) {
+            .sidebar {
+                width: 240px;
+            }
+            
+            .main-content {
+                margin-left: 240px;
+            }
+            
             .calendar-container {
                 padding: 25px;
             }
@@ -500,8 +657,17 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 padding: 10px;
             }
         }
-        
+
         @media (max-width: 992px) {
+            .school-name {
+                font-size: 1rem;
+            }
+
+            .logo-img {
+                width: 50px;
+                height: 50px;
+            }
+            
             .calendar-container {
                 padding: 20px;
                 width: 98%;
@@ -547,18 +713,29 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 font-size: 0.75rem;
             }
         }
-        
+
         @media (max-width: 768px) {
+            body {
+                padding-top: 70px;
+            }
+            
+            .top-header {
+                height: 70px;
+                padding: 0.5rem 0;
+            }
+            
             .mobile-menu-toggle {
                 display: block;
+                top: 85px;
+                left: 20px;
             }
 
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 100px;
-                height: calc(100vh - 100px);
-                z-index: 1000;
+                top: 70px;
+                height: calc(100vh - 70px);
+                z-index: 1020;
                 transform: translateX(-100%);
                 overflow-y: auto;
                 width: 280px;
@@ -568,12 +745,16 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 transform: translateX(0);
             }
 
+            .sidebar-overlay {
+                top: 70px;
+            }
+
             .sidebar-overlay.active {
                 display: block;
             }
 
             .main-content {
-                padding: 1rem;
+                padding: 1.5rem;
                 width: 100%;
                 margin-left: 0;
             }
@@ -583,7 +764,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
 
             .school-name {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
             }
 
             .republic, .clinic-title {
@@ -654,8 +835,30 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 min-width: 600px;
             }
         }
-        
+
         @media (max-width: 576px) {
+            .dashboard-card {
+                padding: 1.25rem;
+            }
+
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .main-content {
+                padding: 1.25rem;
+            }
+            
+            .mobile-menu-toggle {
+                top: 80px;
+                width: 45px;
+                height: 45px;
+            }
+            
             .calendar-container {
                 padding: 12px;
             }
@@ -704,50 +907,72 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         }
         
-        @media (max-width: 400px) {
-            .calendar-container {
-                padding: 10px;
+        @media (max-width: 480px) {
+            .logo-img {
+                width: 40px;
+                height: 40px;
             }
             
-            .calendar-header {
-                padding: 8px 10px;
+            .school-name {
+                font-size: 0.8rem;
             }
             
-            .calendar-header h3 {
-                font-size: 0.9rem;
+            .republic, .clinic-title {
+                font-size: 0.6rem;
             }
             
-            .calendar-controls button {
-                width: 30px;
-                height: 30px;
+            .mobile-menu-toggle {
+                width: 45px;
+                height: 45px;
+                top: 80px;
+                left: 15px;
             }
             
-            #monthDisplay {
-                font-size: 0.85rem;
-                min-width: 100px;
+            .main-content {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 375px) {
+            .mobile-menu-toggle {
+                top: 75px;
+                left: 15px;
+                width: 40px;
+                height: 40px;
             }
             
-            .calendar-day {
-                min-height: 55px;
-                padding: 4px;
+            .main-content {
+                padding: 0.75rem;
             }
-            
-            .calendar-day > div:first-child {
-                font-size: 0.85rem;
+        }
+
+        /* ANIMATIONS - SAME AS ADMIN DASHBOARD */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
             }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
         }
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - FIXED -->
+    <!-- Mobile Menu Toggle Button - SAME AS ADMIN DASHBOARD -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - FIXED -->
+    <!-- Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- HEADER - FIXED -->
+    <!-- Header - SAME AS ADMIN DASHBOARD -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -761,9 +986,8 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </header>
 
-    <!-- DASHBOARD CONTAINER - FIXED -->
     <div class="dashboard-container">
-        <!-- SIDEBAR - FIXED -->
+        <!-- Sidebar - ADMIN MENU ITEMS WITH ADMIN DASHBOARD STYLING -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">
@@ -842,17 +1066,17 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <i class="fas fa-chevron-down arrow"></i>
                     </button>
                     <div class="submenu" id="adminMenu">
-                         <a href="users_logs.php" class="submenu-item">
+                        <a href="users_logs.php" class="submenu-item">
                             <i class="fas fa-users-cog"></i>
                             Users Logs
                         </a>
-                        </a>
-                        <a href="#" class="submenu-item">
+                        <a href="backup_restore.php" class="submenu-item">
                             <i class="fas fa-clipboard-list"></i>
-                            Backup & Restore
+                            Back up & Restore
                         </a>
                     </div>
                 </div>
+
                 <div class="nav-group">
                     <button class="nav-item dropdown-btn" data-target="announcementMenu">
                         <i class="fas fa-bullhorn"></i>
@@ -870,7 +1094,7 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </a>
                     </div>
                 </div>
-
+                
                 <a href="../logout.php" class="nav-item logout">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
@@ -878,26 +1102,42 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </nav>
         </aside>
 
-        <!-- MAIN CONTENT -->
+        <!-- Main Content - FOLLOWING ADMIN DASHBOARD STRUCTURE -->
         <main class="main-content">
-            <div class="calendar-container">
-                <div class="calendar-header">
-                    <h3><i class="fas fa-calendar-alt"></i> Appointment Calendar</h3>
-                    <div class="calendar-controls">
-                        <button id="prevMonth"><i class="fas fa-chevron-left"></i></button>
-                        <span id="monthDisplay"></span>
-                        <button id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+            <!-- Page Header -->
+            <div class="page-header fade-in">
+                <h1><i class="fas fa-calendar-alt me-2"></i>Appointment Calendar</h1>
+                <p>View and manage all approved appointments</p>
+            </div>
+
+            <!-- Calendar Container -->
+            <div class="dashboard-card fade-in">
+                <div class="card-header">
+                    <h3 class="card-title">Monthly Calendar</h3>
+                    <div class="card-icon">
+                        <i class="fas fa-calendar"></i>
                     </div>
                 </div>
+                
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <h3><i class="fas fa-calendar-alt"></i> Appointment Calendar</h3>
+                        <div class="calendar-controls">
+                            <button id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                            <span id="monthDisplay"></span>
+                            <button id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
 
-                <div class="calendar-grid">
-                    <div class="calendar-day-header">Mon</div>
-                    <div class="calendar-day-header">Tue</div>
-                    <div class="calendar-day-header">Wed</div>
-                    <div class="calendar-day-header">Thu</div>
-                    <div class="calendar-day-header">Fri</div>
-                    <div class="calendar-day-header">Sat</div>
-                    <div class="calendar-day-header">Sun</div>
+                    <div class="calendar-grid">
+                        <div class="calendar-day-header">Mon</div>
+                        <div class="calendar-day-header">Tue</div>
+                        <div class="calendar-day-header">Wed</div>
+                        <div class="calendar-day-header">Thu</div>
+                        <div class="calendar-day-header">Fri</div>
+                        <div class="calendar-day-header">Sat</div>
+                        <div class="calendar-day-header">Sun</div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -921,7 +1161,29 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- JS -->
     <script src="../assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        // MOBILE MENU FUNCTIONALITY - FIXED
+        // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - SAME AS ADMIN DASHBOARD
+        document.querySelectorAll('.dropdown-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const submenu = document.getElementById(targetId);
+                const arrow = this.querySelector('.arrow');
+
+                document.querySelectorAll('.submenu').forEach(menu => {
+                    if (menu.id !== targetId && menu.classList.contains('show')) {
+                        menu.classList.remove('show');
+                        const otherBtn = document.querySelector(`[data-target="${menu.id}"]`);
+                        if (otherBtn) {
+                            otherBtn.querySelector('.arrow').classList.remove('rotate');
+                        }
+                    }
+                });
+
+                submenu.classList.toggle('show');
+                arrow.classList.toggle('rotate');
+            });
+        });
+
+        // MOBILE MENU FUNCTIONALITY - SAME AS ADMIN DASHBOARD
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -950,28 +1212,6 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 });
             });
         }
-
-        // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - FIXED
-        document.querySelectorAll('.dropdown-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const targetId = this.getAttribute('data-target');
-                const submenu = document.getElementById(targetId);
-                const arrow = this.querySelector('.arrow');
-
-                document.querySelectorAll('.submenu').forEach(menu => {
-                    if (menu.id !== targetId && menu.classList.contains('show')) {
-                        menu.classList.remove('show');
-                        const otherBtn = document.querySelector(`[data-target="${menu.id}"]`);
-                        if (otherBtn) {
-                            otherBtn.querySelector('.arrow').classList.remove('rotate');
-                        }
-                    }
-                });
-
-                submenu.classList.toggle('show');
-                arrow.classList.toggle('rotate');
-            });
-        });
 
         // CALENDAR FUNCTIONALITY
         const appointments = <?php echo json_encode($appointments); ?>;

@@ -13,9 +13,6 @@ if (!isset($_SESSION['student_id'])) {
 $student_id = $_SESSION['student_id'];
 $student_number = $_SESSION['student_number'] ?? ($_SESSION['student_id'] ?? 'N/A');
 
-// ✅ I-LOG ANG PAG-ACCESS SA ANNOUNCEMENTS
-logActivity($pdo, $student_id, "Accessed announcements");
-
 $stmt = $pdo->prepare("SELECT fullname, student_number, course_year, cellphone_number 
                        FROM student_information 
                        WHERE student_number = :student_number LIMIT 1");
@@ -104,9 +101,9 @@ try {
     
     <style>
         :root {
-            --primary: #667eea;
-            --primary-dark: #5a6fd8;
-            --secondary: #764ba2;
+            --primary: #ffda6a;
+            --primary-dark: #e6c45f;
+            --secondary: #ffda6a;
             --success: #28a745;
             --info: #17a2b8;
             --warning: #ffc107;
@@ -129,10 +126,14 @@ try {
             line-height: 1.6;
         }
 
-        /* Header Styles */
+        /* Header Styles - SAME AS DASHBOARD */
         .top-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
+            background: 
+            linear-gradient(90deg, 
+                #ffda6a 0%, 
+                #ffda6a 30%, 
+                #FFF5CC 70%, 
+                #ffffff 100%);
             padding: 0.75rem 0;
             box-shadow: 0 2px 15px rgba(0,0,0,0.1);
             position: fixed;
@@ -154,7 +155,6 @@ try {
             width: 60px;
             height: 60px;
             object-fit: contain;
-            filter: brightness(0) invert(1);
         }
 
         .school-info {
@@ -165,6 +165,7 @@ try {
             font-size: 0.7rem;
             opacity: 0.9;
             letter-spacing: 0.5px;
+            color: #555;
         }
 
         .school-name {
@@ -172,15 +173,17 @@ try {
             font-weight: 700;
             margin: 0.1rem 0;
             line-height: 1.2;
+            color: #555;
         }
 
         .clinic-title {
             font-size: 0.8rem;
             opacity: 0.9;
             font-weight: 500;
+            color: #555;
         }
 
-        /* Mobile Menu Toggle */
+        /* Mobile Menu Toggle - SAME AS DASHBOARD */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
@@ -203,13 +206,13 @@ try {
             background: var(--primary-dark);
         }
 
-        /* Dashboard Container */
+        /* Dashboard Container - SAME AS DASHBOARD */
         .dashboard-container {
             display: flex;
             min-height: calc(100vh - 80px);
         }
 
-        /* Sidebar Styles */
+        /* Sidebar Styles - SAME AS DASHBOARD */
         .sidebar {
             width: 260px;
             background: white;
@@ -251,31 +254,36 @@ try {
         }
 
         .nav-item.active {
-            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-            color: var(--primary);
-            border-left: 4px solid var(--primary);
+            background: linear-gradient(90deg, rgba(255,218,106,0.1) 0%, transparent 100%);
+            color: #555;
+            border-left: 8px solid #ffda6a;
         }
 
         .nav-item i {
             width: 22px;
             margin-right: 0.9rem;
             font-size: 1.1rem;
+            color: #555;
         }
 
         .nav-item span {
             flex: 1;
+            
         }
 
         .nav-item.logout {
             color: var(--danger);
             margin-top: auto;
         }
+        .bg-primary {
+            background-color: rgba(var(--bs-primary-rgb), var(--bs-bg-opacity)) !important;
+        }
 
         .nav-item.logout:hover {
             background: rgba(220, 53, 69, 0.1);
         }
 
-        /* Main Content */
+        /* Main Content - SAME AS DASHBOARD */
         .main-content {
             flex: 1;
             padding: 1.5rem;
@@ -284,7 +292,7 @@ try {
             margin-top: 0;
         }
 
-        /* Sidebar Overlay for Mobile */
+        /* Sidebar Overlay for Mobile - SAME AS DASHBOARD */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -300,19 +308,19 @@ try {
             display: block;
         }
 
-        /* Welcome Section */
+        /* WELCOME SECTION - SAME AS DASHBOARD */
         .welcome-section {
-            background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+            background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
             border-radius: 15px;
             padding: 2rem;
             margin-bottom: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            border: 1px solid rgba(102,126,234,0.2);
-            border-left: 5px solid var(--primary);
+            border: 1px solid rgba(206, 224, 144, 0.2);
+            border-left: 10px solid #ffda6a;
         }
 
         .welcome-content h1 {
-            color: var(--primary);
+            color: #555;
             font-weight: 700;
             font-size: 2rem;
             margin-bottom: 0.5rem;
@@ -324,7 +332,7 @@ try {
             margin-bottom: 0;
         }
 
-        /* Announcements Tabs */
+        /* KEEPING YOUR ORIGINAL ANNOUNCEMENT STYLES */
         .announcement-tabs {
             background: white;
             border-radius: 15px;
@@ -348,15 +356,16 @@ try {
         }
 
         .nav-tabs .nav-link.active {
-            color: var(--primary);
+            color: #555;
             background: transparent;
-            border-bottom: 3px solid var(--primary);
+            border-bottom: 3px solid #ffda6a;
+
         }
 
         .nav-tabs .nav-link:hover {
             border: none;
-            color: var(--primary);
-            background: rgba(102,126,234,0.05);
+            color: #555;
+            background: rgba(255,218,106,0.05);
         }
 
         .tab-content {
@@ -393,7 +402,7 @@ try {
         }
 
         .announcement-icon {
-            background: var(--primary);
+            background: #ffda6a;
             color: white;
             width: 50px;
             height: 50px;
@@ -404,6 +413,7 @@ try {
             font-size: 1.2rem;
             flex-shrink: 0;
         }
+        
 
         .announcement-icon.archived {
             background: var(--gray);
@@ -437,11 +447,13 @@ try {
             border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 600;
+            
+            background: #ffda6a;
         }
 
         .badge-success {
             background: rgba(40, 167, 69, 0.1);
-            color: #28a745;
+            color: #555;
         }
 
         .badge-warning {
@@ -546,9 +558,12 @@ try {
             background: #000;
             border-radius: 8px;
         }
+        .badge bg-primary ms-1{
+            color: #ffda6a;
+        }
 
         .announcement-pdf-preview {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            background: linear-gradient(135deg, #ffda6a 0%, #ffda6a 100%);
             color: white;
             padding: 2rem;
             border-radius: 10px;
@@ -588,7 +603,7 @@ try {
         }
 
         .modal-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            background: linear-gradient(135deg, #ffda6a 0%, #ffda6a 100%);
             color: white;
             border-bottom: none;
             border-radius: 15px 15px 0 0;
@@ -603,7 +618,7 @@ try {
             opacity: 1;
         }
 
-        /* Responsive Design */
+        /* Responsive Design - COMBINED FROM BOTH */
         @media (max-width: 1200px) {
             .sidebar {
                 width: 240px;
@@ -803,15 +818,15 @@ try {
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button -->
+    <!-- Mobile Menu Toggle Button - SAME AS DASHBOARD -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile -->
+    <!-- Sidebar Overlay for Mobile - SAME AS DASHBOARD -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header -->
+    <!-- Header - SAME AS DASHBOARD -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -841,7 +856,7 @@ try {
     </div>
 
     <div class="dashboard-container">
-        <!-- Sidebar -->
+        <!-- Sidebar - SAME AS DASHBOARD -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="student_dashboard.php" class="nav-item">
@@ -883,10 +898,10 @@ try {
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- WELCOME SECTION -->
+            <!-- WELCOME SECTION - SAME AS DASHBOARD -->
             <div class="welcome-section fade-in">
                 <div class="welcome-content">
-                    <h1>Announcements <i class="fas fa-bullhorn"></i></h1>
+                    <h1>Announcements 📢</h1>
                     <p>Stay updated with the latest clinic announcements and notices</p>
                 </div>
             </div>
@@ -975,7 +990,7 @@ try {
                                                     </div>
                                                     
                                                 <?php else: ?>
-                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, #27ae60, #219a52);">
+                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, #ffda6a, #ffda6a);">
                                                         <i class="fas fa-file"></i>
                                                         <h5>Document File</h5>
                                                         <p>Click to view the file</p>
@@ -1063,14 +1078,14 @@ try {
                                                     </div>
                                                     
                                                 <?php elseif (in_array($fileExtension, $pdfExtensions)): ?>
-                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, #6c757d, #5a6268); opacity: 0.8;">
+                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, #ffda6a, #ffda6a); opacity: 0.8;">
                                                         <i class="fas fa-file-pdf"></i>
                                                         <h5>PDF Document</h5>
                                                         <p>Click to view the document</p>
                                                     </div>
                                                     
                                                 <?php else: ?>
-                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, #6c757d, #5a6268); opacity: 0.8;">
+                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, #ffda6a, #ffda6a); opacity: 0.8;">
                                                         <i class="fas fa-file"></i>
                                                         <h5>Document File</h5>
                                                         <p>Click to view the file</p>
@@ -1103,7 +1118,7 @@ try {
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // MOBILE MENU FUNCTIONALITY
+            // MOBILE MENU FUNCTIONALITY - SAME AS DASHBOARD
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');

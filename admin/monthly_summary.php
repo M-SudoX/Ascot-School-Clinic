@@ -163,9 +163,26 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monthly Summary - ASCOT Clinic</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Bootstrap -->
+    <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="../assets/webfonts/all.min.css" rel="stylesheet">
+    
     <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary: #764ba2;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -175,32 +192,39 @@ try {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
-            padding-top: 100px;
+            padding-top: 80px;
+            line-height: 1.6;
         }
 
-        /* Header Styles */
+        /* Header Styles - SAME AS ADMIN DASHBOARD */
         .top-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: 
+                linear-gradient(90deg, 
+                    #ffda6a 0%, 
+                    #ffda6a 30%, 
+                    #FFF5CC 70%, 
+                    #ffffff 100%);
             color: white;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 0.75rem 0;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
-            height: 100px;
+            z-index: 1030;
+            height: 80px;
         }
 
         .header-content {
             display: flex;
             align-items: center;
             gap: 1rem;
+            height: 100%;
         }
 
         .logo-img {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             object-fit: contain;
         }
 
@@ -209,29 +233,35 @@ try {
         }
 
         .republic {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             opacity: 0.9;
+            letter-spacing: 0.5px;
+            color: #555;
         }
 
         .school-name {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin: 0.2rem 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0.1rem 0;
+            line-height: 1.2;
+            color: #555;
         }
 
         .clinic-title {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             opacity: 0.9;
+            font-weight: 500;
+            color: #555;
         }
 
-        /* Mobile Menu Toggle */
+        /* Mobile Menu Toggle - SAME AS ADMIN DASHBOARD */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 100px;
+            top: 95px;
             left: 20px;
-            z-index: 1001;
-            background: #667eea;
+            z-index: 1025;
+            background: var(--primary);
             color: white;
             border: none;
             width: 50px;
@@ -243,29 +273,29 @@ try {
         }
 
         .mobile-menu-toggle:hover {
-            transform: scale(1.1);
-            background: #764ba2;
+            transform: scale(1.05);
+            background: var(--primary-dark);
         }
 
-        /* Dashboard Container */
+        /* Dashboard Container - SAME AS ADMIN DASHBOARD */
         .dashboard-container {
             display: flex;
-            min-height: calc(100vh - 100px);
+            min-height: calc(100vh - 80px);
         }
 
-        /* Sidebar Styles */
+        /* Sidebar Styles - SAME AS ADMIN DASHBOARD */
         .sidebar {
-            width: 280px;
+            width: 260px;
             background: white;
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-            padding: 2rem 0;
+            padding: 1.5rem 0;
             transition: transform 0.3s ease;
             position: fixed;
-            top: 100px;
+            top: 80px;
             left: 0;
             bottom: 0;
             overflow-y: auto;
-            z-index: 999;
+            z-index: 1020;
         }
 
         .sidebar-nav {
@@ -277,8 +307,8 @@ try {
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 1rem 1.5rem;
-            color: #444;
+            padding: 0.9rem 1.25rem;
+            color: #555;
             text-decoration: none;
             transition: all 0.3s ease;
             border: none;
@@ -286,31 +316,36 @@ try {
             width: 100%;
             text-align: left;
             cursor: pointer;
+            font-weight: 500;
         }
 
         .nav-item:hover {
             background: #f8f9fa;
-            color: #667eea;
+            color: var(--primary);
         }
 
         .nav-item.active {
             background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-            color: #667eea;
-            border-left: 4px solid #667eea;
+            color: #555;
+            border-left: 8px solid #ffda6a;
         }
 
         .nav-item i {
-            width: 25px;
-            margin-right: 1rem;
+            width: 22px;
+            margin-right: 0.9rem;
+            font-size: 1.1rem;
+            color: #555;
         }
 
         .nav-item span {
             flex: 1;
+            color: #555;
         }
 
         .nav-item .arrow {
             margin-left: auto;
             transition: transform 0.3s ease;
+            font-size: 0.8rem;
         }
 
         .nav-item .arrow.rotate {
@@ -331,30 +366,33 @@ try {
         .submenu-item {
             display: flex;
             align-items: center;
-            padding: 0.75rem 1.5rem 0.75rem 3.5rem;
+            padding: 0.7rem 1.25rem 0.7rem 3.25rem;
             color: #666;
             text-decoration: none;
             transition: all 0.3s ease;
             font-size: 0.9rem;
+            font-weight: 400;
         }
 
         .submenu-item:hover {
             background: #e9ecef;
-            color: #667eea;
+            color: var(--primary);
         }
 
         .submenu-item.active {
-            color: #667eea;
-            font-weight: 600;
+            background: #e9ecef;
+            color: var(--primary);
+            font-weight: 500;
         }
 
         .submenu-item i {
-            width: 20px;
-            margin-right: 0.75rem;
+            width: 18px;
+            margin-right: 0.7rem;
+            font-size: 0.9rem;
         }
 
         .nav-item.logout {
-            color: #dc3545;
+            color: var(--danger);
             margin-top: auto;
         }
 
@@ -362,150 +400,99 @@ try {
             background: rgba(220, 53, 69, 0.1);
         }
 
-        /* Main Content */
+        /* Main Content - SAME AS ADMIN DASHBOARD */
         .main-content {
             flex: 1;
-            padding: 2rem;
+            padding: 1.5rem;
             overflow-x: hidden;
-            margin-left: 280px;
+            margin-left: 260px;
             margin-top: 0;
         }
 
-        /* Notification Styles */
-        .notification-dropdown {
-            position: relative;
-        }
-
-        .notification-btn {
-            background: white;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #444;
-            padding: 0.5rem 1rem;
-            border-radius: 50%;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-
-        .notification-btn:hover {
-            color: #667eea;
-            transform: scale(1.1);
-        }
-
-        .notification-btn .badge {
-            position: absolute;
-            top: 0;
-            right: 0;
-            background-color: #dc3545;
-            color: white;
-            font-size: 0.7rem;
-            border-radius: 50%;
-            padding: 3px 6px;
-            min-width: 20px;
-        }
-
-        .notification-menu {
+        /* Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD */
+        .sidebar-overlay {
             display: none;
-            position: absolute;
-            top: 60px;
+            position: fixed;
+            top: 80px;
+            left: 0;
             right: 0;
-            background: white;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            border-radius: 10px;
-            width: 300px;
-            z-index: 999;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1019;
         }
 
-        .notification-menu.show {
+        .sidebar-overlay.active {
             display: block;
-            animation: slideDown 0.3s ease;
         }
 
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* Page Header - SAME AS ADMIN DASHBOARD */
+        .page-header {
+            background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(206, 224, 144, 0.2);
+            border-left: 10px solid #ffda6a;
         }
 
-        .notification-menu .notif-title {
-            font-weight: bold;
-            padding: 1rem;
-            border-bottom: 1px solid #e9ecef;
+        .page-header h1 {
+            color: #555;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
         }
 
-        .notification-menu .notif-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            max-height: 250px;
-            overflow-y: auto;
+        .page-header p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 0;
         }
 
-        .notification-menu .notif-list li {
-            padding: 1rem;
-            border-bottom: 1px solid #f8f9fa;
-            font-size: 0.9rem;
-            color: #333;
-            transition: background 0.3s ease;
-        }
-
-        .notification-menu .notif-list li:hover {
-            background: #f8f9fa;
-        }
-
-        .notification-menu .notif-list li i {
-            color: #667eea;
-            margin-right: 0.5rem;
-        }
-
-        .notification-menu .view-all {
-            display: block;
-            text-align: center;
-            padding: 1rem;
-            font-size: 0.9rem;
-            color: #667eea;
-            text-decoration: none;
-            border-top: 1px solid #e9ecef;
-            font-weight: 500;
-        }
-
-        .notification-menu .view-all:hover {
-            background: #f8f9fa;
-        }
-
-        /* Content Section */
-        .content {
+        /* Dashboard Card - SAME AS ADMIN DASHBOARD */
+        .dashboard-card {
             background: white;
             border-radius: 15px;
             padding: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            margin-top: 1rem;
+            border: 1px solid #f0f0f0;
+            margin-bottom: 2rem;
         }
 
-        .content-header {
+        .card-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
         }
 
-        .content-header h2 {
-            color: #1a3a5f;
-            font-size: 24px;
+        .card-title {
+            color: #555;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0;
         }
 
-        /* Monthly Summary Styles */
-        .monthly-summary {
-            max-width: 1200px;
-            margin: 0 auto;
+        .card-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #555;
+            background: #fff7da;
+            transition: all 0.3s ease;
         }
 
+        .card-icon:hover {
+            transform: scale(1.1);
+        }
+
+        /* Monthly Summary Specific Styles */
         .month-selector {
             display: flex;
             justify-content: center;
@@ -606,14 +593,6 @@ try {
             box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
         }
 
-        .btn-report.secondary {
-            background: #6c757d;
-        }
-
-        .btn-report.secondary:hover {
-            background: #5a6268;
-        }
-
         /* Statistics Cards */
         .stats-grid {
             display: grid;
@@ -710,7 +689,17 @@ try {
             gap: 0.5rem;
         }
 
-        /* Responsive Design */
+        /* Responsive Design - SAME AS ADMIN DASHBOARD */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 240px;
+            }
+            
+            .main-content {
+                margin-left: 240px;
+            }
+        }
+
         @media (max-width: 992px) {
             .school-name {
                 font-size: 1rem;
@@ -723,16 +712,27 @@ try {
         }
 
         @media (max-width: 768px) {
+            body {
+                padding-top: 70px;
+            }
+            
+            .top-header {
+                height: 70px;
+                padding: 0.5rem 0;
+            }
+            
             .mobile-menu-toggle {
                 display: block;
+                top: 85px;
+                left: 20px;
             }
 
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 100px;
-                height: calc(100vh - 100px);
-                z-index: 1000;
+                top: 70px;
+                height: calc(100vh - 70px);
+                z-index: 1020;
                 transform: translateX(-100%);
                 overflow-y: auto;
                 width: 280px;
@@ -743,14 +743,7 @@ try {
             }
 
             .sidebar-overlay {
-                display: none;
-                position: fixed;
-                top: 100px;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0,0,0,0.5);
-                z-index: 999;
+                top: 70px;
             }
 
             .sidebar-overlay.active {
@@ -758,14 +751,9 @@ try {
             }
 
             .main-content {
-                padding: 1rem;
+                padding: 1.5rem;
                 width: 100%;
                 margin-left: 0;
-            }
-
-            .notification-menu {
-                width: 280px;
-                right: -40px;
             }
 
             .header-content {
@@ -773,11 +761,15 @@ try {
             }
 
             .school-name {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
             }
 
             .republic, .clinic-title {
                 font-size: 0.65rem;
+            }
+
+            .dashboard-card {
+                padding: 1.5rem;
             }
 
             .report-actions {
@@ -805,18 +797,27 @@ try {
             }
         }
 
-        @media (max-width: 480px) {
-            .content {
-                padding: 1rem;
+        @media (max-width: 576px) {
+            .dashboard-card {
+                padding: 1.25rem;
             }
 
-            .notification-menu {
-                width: 250px;
-                right: -20px;
+            .page-header {
+                padding: 1.5rem;
             }
 
-            .summary-title {
-                font-size: 1.25rem;
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .main-content {
+                padding: 1.25rem;
+            }
+            
+            .mobile-menu-toggle {
+                top: 80px;
+                width: 45px;
+                height: 45px;
             }
 
             .month-selector {
@@ -828,18 +829,77 @@ try {
                 font-size: 0.8rem;
             }
         }
+        
+        @media (max-width: 480px) {
+            .logo-img {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .school-name {
+                font-size: 0.8rem;
+            }
+            
+            .republic, .clinic-title {
+                font-size: 0.6rem;
+            }
+            
+            .mobile-menu-toggle {
+                width: 45px;
+                height: 45px;
+                top: 80px;
+                left: 15px;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+
+            .dashboard-card {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 375px) {
+            .mobile-menu-toggle {
+                top: 75px;
+                left: 15px;
+                width: 40px;
+                height: 40px;
+            }
+            
+            .main-content {
+                padding: 0.75rem;
+            }
+        }
+
+        /* ANIMATIONS - SAME AS ADMIN DASHBOARD */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button -->
+    <!-- Mobile Menu Toggle Button - SAME AS ADMIN DASHBOARD -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile -->
+    <!-- Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header -->
+    <!-- Header - SAME AS ADMIN DASHBOARD -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -854,7 +914,7 @@ try {
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar -->
+        <!-- Sidebar - ADMIN MENU ITEMS WITH ADMIN DASHBOARD STYLING -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">
@@ -937,7 +997,7 @@ try {
                             <i class="fas fa-users-cog"></i>
                             Users Logs
                         </a>
-                        <a href="#" class="submenu-item">
+                        <a href="backup_restore.php" class="submenu-item">
                             <i class="fas fa-clipboard-list"></i>
                             Back up & Restore
                         </a>
@@ -962,38 +1022,30 @@ try {
                     </div>
                 </div>
                 
-                <a href="admin_login.php" class="nav-item logout">
+                <a href="../logout.php" class="nav-item logout">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
             </nav>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Main Content - FOLLOWING ADMIN DASHBOARD STRUCTURE -->
         <main class="main-content">
-            <div style="display:flex; justify-content:flex-end; margin-bottom: 1.5rem;">
-                <div class="notification-dropdown">
-                    <button class="notification-btn" id="notifBtn">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge" id="notifCount">3</span>
-                    </button>
-                    <div class="notification-menu" id="notifMenu">
-                        <p class="notif-title">Notifications</p>
-                        <ul class="notif-list">
-                            <li><i class="fas fa-user-plus"></i> New student registered</li>
-                            <li><i class="fas fa-calendar-check"></i> Appointment pending approval</li>
-                            <li><i class="fas fa-stethoscope"></i> Consultation completed</li>
-                        </ul>
-                        <a href="#" class="view-all">View all</a>
-                    </div>
-                </div>
+            <!-- Page Header -->
+            <div class="page-header fade-in">
+                <h1><i class="fas fa-file-invoice me-2"></i>Monthly Summary Report</h1>
+                <p>Comprehensive overview of clinic consultations and statistics</p>
             </div>
 
-            <div class="content">
-                <div class="content-header">
-                    <h2><i class="fas fa-file-invoice me-2"></i>Monthly Summary Report</h2>
+            <!-- Monthly Summary Container -->
+            <div class="dashboard-card fade-in">
+                <div class="card-header">
+                    <h3 class="card-title">Monthly Statistics</h3>
+                    <div class="card-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
                 </div>
-
+                
                 <div class="monthly-summary">
                     <!-- Year Selector -->
                     <div class="year-selector">
@@ -1226,7 +1278,7 @@ try {
     </div>
 
     <script>
-        // Dropdown functionality
+        // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - SAME AS ADMIN DASHBOARD
         document.querySelectorAll('.dropdown-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const targetId = this.getAttribute('data-target');
@@ -1248,7 +1300,7 @@ try {
             });
         });
 
-        // Mobile menu functionality
+        // MOBILE MENU FUNCTIONALITY - SAME AS ADMIN DASHBOARD
         const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -1277,21 +1329,6 @@ try {
                 });
             });
         }
-
-        // Notification dropdown
-        const notifBtn = document.getElementById('notifBtn');
-        const notifMenu = document.getElementById('notifMenu');
-
-        notifBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            notifMenu.classList.toggle('show');
-        });
-
-        document.addEventListener('click', function(e) {
-            if (!notifMenu.contains(e.target) && !notifBtn.contains(e.target)) {
-                notifMenu.classList.remove('show');
-            }
-        });
 
         // Month and Year selection functions
         function selectMonth(month, year) {
@@ -1343,10 +1380,6 @@ try {
             a.download = 'monthly_summary_<?php echo strtolower(str_replace(" ", "_", $month)); ?>.csv';
             a.click();
             window.URL.revokeObjectURL(url);
-        }
-
-        function goBack() {
-            window.location.href = 'admin_dashboard.php';
         }
     </script>
 </body>

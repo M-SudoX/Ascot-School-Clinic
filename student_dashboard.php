@@ -14,7 +14,7 @@ $student_id = $_SESSION['student_id'];
 $student_number = $_SESSION['student_number'] ?? ($_SESSION['student_id'] ?? 'N/A');
 
 // ✅ I-LOG ANG PAG-ACCESS SA DASHBOARD (automatic duplicate prevention na)
-logActivity($pdo, $student_id, "Accessed dashboard");
+
 
 $stmt = $pdo->prepare("SELECT fullname, student_number, course_year, cellphone_number 
                        FROM student_information 
@@ -74,8 +74,6 @@ try {
         SELECT action, log_date 
         FROM activity_logs 
         WHERE student_id = ?
-        AND action NOT LIKE '%viewed%' 
-        AND action NOT LIKE '%accessed%' 
         AND action NOT LIKE '%logged in%' 
         AND action NOT LIKE '%logged out%'
         ORDER BY log_date DESC 
@@ -132,8 +130,12 @@ try {
 
         /* Header Styles - IMPROVED */
         .top-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
+ background: 
+        linear-gradient(90deg, 
+            #ffda6a 0%, 
+            #ffda6a 30%, 
+            #FFF5CC 70%, 
+            #ffffff 100%);
             padding: 0.75rem 0;
             box-shadow: 0 2px 15px rgba(0,0,0,0.1);
             position: fixed;
@@ -155,7 +157,6 @@ try {
             width: 60px;
             height: 60px;
             object-fit: contain;
-            filter: brightness(0) invert(1);
         }
 
         .school-info {
@@ -166,6 +167,7 @@ try {
             font-size: 0.7rem;
             opacity: 0.9;
             letter-spacing: 0.5px;
+            color: #555;
         }
 
         .school-name {
@@ -173,12 +175,14 @@ try {
             font-weight: 700;
             margin: 0.1rem 0;
             line-height: 1.2;
+            color: #555;
         }
 
         .clinic-title {
             font-size: 0.8rem;
             opacity: 0.9;
             font-weight: 500;
+            color: #555;
         }
 
         /* Mobile Menu Toggle - COMPLETELY FIXED POSITION */
@@ -235,7 +239,7 @@ try {
             display: flex;
             align-items: center;
             padding: 0.9rem 1.25rem;
-            color: #444;
+            color: #555;
             text-decoration: none;
             transition: all 0.3s ease;
             border: none;
@@ -253,18 +257,20 @@ try {
 
         .nav-item.active {
             background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-            color: var(--primary);
-            border-left: 4px solid var(--primary);
+            color: #555;
+            border-left: 8px solid #ffda6a;
         }
 
         .nav-item i {
             width: 22px;
             margin-right: 0.9rem;
             font-size: 1.1rem;
+            color: #555;
         }
 
         .nav-item span {
             flex: 1;
+            color: #555;
         }
 
         .nav-item .arrow {
@@ -346,17 +352,17 @@ try {
 
         /* Welcome Section - IMPROVED */
         .welcome-section {
-            background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+           background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
             border-radius: 15px;
             padding: 2rem;
             margin-bottom: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            border: 1px solid rgba(102,126,234,0.2);
-            border-left: 5px solid var(--primary);
+            border: 1px solid rgba(206, 224, 144, 0.2);
+            border-left: 10px solid #ffda6a;
         }
 
         .welcome-content h1 {
-            color: var(--primary);
+            color: #555;
             font-weight: 700;
             font-size: 2rem;
             margin-bottom: 0.5rem;
@@ -394,7 +400,7 @@ try {
         }
 
         .card-title {
-            color: var(--primary);
+            color: #555;
             font-size: 1.3rem;
             font-weight: 700;
             margin: 0;
@@ -408,8 +414,8 @@ try {
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
-            color: white;
-            background: var(--primary);
+            color: #555;
+            background: #fff7da;
             transition: all 0.3s ease;
         }
 
@@ -464,8 +470,8 @@ try {
         }
 
         .appointment-date {
-            background: var(--primary);
-            color: white;
+            background: #fff7da;
+            color: #555;
             padding: 0.75rem;
             border-radius: 8px;
             text-align: center;
@@ -552,8 +558,8 @@ try {
             align-items: center;
             justify-content: center;
             font-size: 1rem;
-            color: white;
-            background: var(--primary);
+            color: #555;
+            background: #fff7da;
             flex-shrink: 0;
         }
 
@@ -581,8 +587,8 @@ try {
         }
 
         .action-btn {
-            background: var(--primary);
-            color: white;
+            background: #fff59d;
+            color: #555;
             border: none;
             border-radius: 8px;
             padding: 0.75rem 1rem;
@@ -597,8 +603,6 @@ try {
         }
 
         .action-btn:hover {
-            background: var(--primary-dark);
-            color: white;
             transform: translateY(-2px);
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
@@ -804,7 +808,7 @@ try {
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
-                <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img">
+                <img src="img/logo.png" alt="ASCOT Logo" class="logo-img">
                 <div class="school-info">
                     <div class="republic">Republic of the Philippines</div>
                     <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>

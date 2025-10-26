@@ -4,9 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Logs - ASCOT Clinic</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Bootstrap -->
+    <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="../assets/webfonts/all.min.css" rel="stylesheet">
+    
     <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary: #764ba2;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -16,35 +33,40 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f6fa;
-            padding-top: 100px; /* Added for fixed header */
+            padding-top: 80px;
+            line-height: 1.6;
         }
 
-        /* Fixed Header Styles */
+        /* Header Styles - SAME AS ADMIN DASHBOARD */
         .top-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: 
+                linear-gradient(90deg, 
+                    #ffda6a 0%, 
+                    #ffda6a 30%, 
+                    #FFF5CC 70%, 
+                    #ffffff 100%);
             color: white;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: fixed; /* Made fixed */
+            padding: 0.75rem 0;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            z-index: 1002; /* Higher z-index */
+            right: 0;
+            z-index: 1030;
+            height: 80px;
         }
 
         .header-content {
             display: flex;
             align-items: center;
             gap: 1rem;
+            height: 100%;
         }
 
         .logo-img {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             object-fit: contain;
-            background-color: white;
-            border-radius: 50%;
-            padding: 5px;
         }
 
         .school-info {
@@ -52,29 +74,35 @@
         }
 
         .republic {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             opacity: 0.9;
+            letter-spacing: 0.5px;
+            color: #555;
         }
 
         .school-name {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin: 0.2rem 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0.1rem 0;
+            line-height: 1.2;
+            color: #555;
         }
 
         .clinic-title {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             opacity: 0.9;
+            font-weight: 500;
+            color: #555;
         }
 
-        /* Mobile Menu Toggle */
+        /* Mobile Menu Toggle - SAME AS ADMIN DASHBOARD */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 110px; /* Adjusted for fixed header */
+            top: 95px;
             left: 20px;
-            z-index: 1001;
-            background: #667eea;
+            z-index: 1025;
+            background: var(--primary);
             color: white;
             border: none;
             width: 50px;
@@ -86,29 +114,29 @@
         }
 
         .mobile-menu-toggle:hover {
-            transform: scale(1.1);
-            background: #764ba2;
+            transform: scale(1.05);
+            background: var(--primary-dark);
         }
 
-        /* Dashboard Container */
+        /* Dashboard Container - SAME AS ADMIN DASHBOARD */
         .dashboard-container {
             display: flex;
-            min-height: calc(100vh - 100px);
+            min-height: calc(100vh - 80px);
         }
 
-        /* Fixed Sidebar Styles */
+        /* Sidebar Styles - SAME AS ADMIN DASHBOARD */
         .sidebar {
-            width: 280px;
+            width: 260px;
             background: white;
             box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-            padding: 2rem 0;
+            padding: 1.5rem 0;
             transition: transform 0.3s ease;
-            position: fixed; /* Made fixed */
-            top: 100px; /* Below the fixed header */
+            position: fixed;
+            top: 80px;
             left: 0;
-            height: calc(100vh - 100px); /* Full height minus header */
-            overflow-y: auto; /* Scrollable if content is long */
-            z-index: 1000;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1020;
         }
 
         .sidebar-nav {
@@ -120,8 +148,8 @@
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 1rem 1.5rem;
-            color: #444;
+            padding: 0.9rem 1.25rem;
+            color: #555;
             text-decoration: none;
             transition: all 0.3s ease;
             border: none;
@@ -129,31 +157,36 @@
             width: 100%;
             text-align: left;
             cursor: pointer;
+            font-weight: 500;
         }
 
         .nav-item:hover {
             background: #f8f9fa;
-            color: #667eea;
+            color: var(--primary);
         }
 
         .nav-item.active {
             background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-            color: #667eea;
-            border-left: 4px solid #667eea;
+            color: #555;
+            border-left: 8px solid #ffda6a;
         }
 
         .nav-item i {
-            width: 25px;
-            margin-right: 1rem;
+            width: 22px;
+            margin-right: 0.9rem;
+            font-size: 1.1rem;
+            color: #555;
         }
 
         .nav-item span {
             flex: 1;
+            color: #555;
         }
 
         .nav-item .arrow {
             margin-left: auto;
             transition: transform 0.3s ease;
+            font-size: 0.8rem;
         }
 
         .nav-item .arrow.rotate {
@@ -174,30 +207,33 @@
         .submenu-item {
             display: flex;
             align-items: center;
-            padding: 0.75rem 1.5rem 0.75rem 3.5rem;
+            padding: 0.7rem 1.25rem 0.7rem 3.25rem;
             color: #666;
             text-decoration: none;
             transition: all 0.3s ease;
             font-size: 0.9rem;
+            font-weight: 400;
         }
 
         .submenu-item:hover {
             background: #e9ecef;
-            color: #667eea;
+            color: var(--primary);
         }
 
         .submenu-item.active {
-            color: #667eea;
+            background: #e9ecef;
+            color: var(--primary);
             font-weight: 500;
         }
 
         .submenu-item i {
-            width: 20px;
-            margin-right: 0.75rem;
+            width: 18px;
+            margin-right: 0.7rem;
+            font-size: 0.9rem;
         }
 
         .nav-item.logout {
-            color: #dc3545;
+            color: var(--danger);
             margin-top: auto;
         }
 
@@ -205,142 +241,96 @@
             background: rgba(220, 53, 69, 0.1);
         }
 
-        /* Main Content - Adjusted for fixed sidebar */
+        /* Main Content - SAME AS ADMIN DASHBOARD */
         .main-content {
             flex: 1;
-            padding: 2rem;
+            padding: 1.5rem;
             overflow-x: hidden;
-            margin-left: 280px; /* Space for fixed sidebar */
-            width: calc(100% - 280px); /* Adjusted width */
+            margin-left: 260px;
+            margin-top: 0;
         }
 
-        /* Notification Styles */
-        .notification-dropdown {
-            position: relative;
-        }
-
-        .notification-btn {
-            background: white;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #444;
-            padding: 0.5rem 1rem;
-            border-radius: 50%;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-
-        .notification-btn:hover {
-            color: #667eea;
-            transform: scale(1.1);
-        }
-
-        .notification-btn .badge {
-            position: absolute;
-            top: 0;
-            right: 0;
-            background-color: #dc3545;
-            color: white;
-            font-size: 0.7rem;
-            border-radius: 50%;
-            padding: 3px 6px;
-            min-width: 20px;
-        }
-
-        .notification-menu {
+        /* Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD */
+        .sidebar-overlay {
             display: none;
-            position: absolute;
-            top: 60px;
+            position: fixed;
+            top: 80px;
+            left: 0;
             right: 0;
-            background: white;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            border-radius: 10px;
-            width: 300px;
-            z-index: 999;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1019;
         }
 
-        .notification-menu.show {
+        .sidebar-overlay.active {
             display: block;
-            animation: slideDown 0.3s ease;
         }
 
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* Page Header - SAME AS ADMIN DASHBOARD */
+        .page-header {
+            background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(206, 224, 144, 0.2);
+            border-left: 10px solid #ffda6a;
         }
 
-        .notification-menu .notif-title {
-            font-weight: bold;
-            padding: 1rem;
-            border-bottom: 1px solid #e9ecef;
+        .page-header h1 {
+            color: #555;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
         }
 
-        .notification-menu .notif-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            max-height: 250px;
-            overflow-y: auto;
+        .page-header p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 0;
         }
 
-        .notification-menu .notif-list li {
-            padding: 1rem;
-            border-bottom: 1px solid #f8f9fa;
-            font-size: 0.9rem;
-            color: #333;
-            transition: background 0.3s ease;
-        }
-
-        .notification-menu .notif-list li:hover {
-            background: #f8f9fa;
-        }
-
-        .notification-menu .notif-list li i {
-            color: #667eea;
-            margin-right: 0.5rem;
-        }
-
-        .notification-menu .view-all {
-            display: block;
-            text-align: center;
-            padding: 1rem;
-            font-size: 0.9rem;
-            color: #667eea;
-            text-decoration: none;
-            border-top: 1px solid #e9ecef;
-            font-weight: 500;
-        }
-
-        .notification-menu .view-all:hover {
-            background: #f8f9fa;
-        }
-
-        /* Content Section */
-        .content {
+        /* Dashboard Card - SAME AS ADMIN DASHBOARD */
+        .dashboard-card {
             background: white;
             border-radius: 15px;
             padding: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            margin-top: 1rem;
+            border: 1px solid #f0f0f0;
+            margin-bottom: 2rem;
         }
 
-        .content-header {
+        .card-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
         }
 
-        .content-header h2 {
-            color: #1a3a5f;
-            font-size: 24px;
+        .card-title {
+            color: #555;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .card-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #555;
+            background: #fff7da;
+            transition: all 0.3s ease;
+        }
+
+        .card-icon:hover {
+            transform: scale(1.1);
         }
 
         /* Search Bar Styles */
@@ -355,7 +345,7 @@
             flex: 1;
             padding: 10px 15px;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 8px;
             font-size: 14px;
             min-width: 250px;
             transition: all 0.3s ease;
@@ -367,15 +357,18 @@
             box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
         }
 
-        .search-btn {
+        .search-btn, .clear-btn {
             background-color: #667eea;
             color: white;
             border: none;
             padding: 10px 20px;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             white-space: nowrap;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .search-btn:hover {
@@ -385,13 +378,6 @@
 
         .clear-btn {
             background-color: #6c757d;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.3s ease;
         }
 
         .clear-btn:hover {
@@ -430,7 +416,7 @@
             color: white;
             border: none;
             padding: 8px 16px;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
             transition: all 0.3s ease;
@@ -454,6 +440,8 @@
         .table-container {
             overflow-x: auto;
             margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
         table {
@@ -465,12 +453,12 @@
         th, td {
             padding: 12px 15px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #e9ecef;
         }
 
         th {
-            background-color: #f8f9fa;
-            color: #1a3a5f;
+            background-color: #2c3e50;
+            color: white;
             font-weight: 600;
         }
 
@@ -480,15 +468,15 @@
 
         .no-results {
             text-align: center;
-            padding: 20px;
+            padding: 40px;
             color: #6c757d;
             font-style: italic;
         }
 
         .user-type {
             display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 4px 12px;
+            border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 600;
         }
@@ -508,10 +496,13 @@
             color: white;
             border: none;
             padding: 6px 12px;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 0.8rem;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .delete-btn:hover {
@@ -546,10 +537,10 @@
         }
 
         .pagination-btn {
-            padding: 5px 10px;
+            padding: 8px 12px;
             border: 1px solid #ddd;
             background-color: white;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.3s ease;
         }
@@ -564,7 +555,17 @@
             border-color: #667eea;
         }
 
-        /* Responsive Design */
+        /* Responsive Design - SAME AS ADMIN DASHBOARD */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 240px;
+            }
+            
+            .main-content {
+                margin-left: 240px;
+            }
+        }
+
         @media (max-width: 992px) {
             .school-name {
                 font-size: 1rem;
@@ -578,27 +579,29 @@
 
         @media (max-width: 768px) {
             body {
-                padding-top: 80px; /* Adjusted for smaller header on mobile */
+                padding-top: 70px;
             }
-
+            
             .top-header {
-                padding: 0.5rem 0; /* Reduced padding on mobile */
+                height: 70px;
+                padding: 0.5rem 0;
             }
-
+            
             .mobile-menu-toggle {
                 display: block;
-                top: 85px; /* Adjusted for smaller header */
+                top: 85px;
+                left: 20px;
             }
 
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 80px; /* Adjusted for smaller header */
-                height: calc(100vh - 80px); /* Adjusted height */
-                z-index: 1000;
+                top: 70px;
+                height: calc(100vh - 70px);
+                z-index: 1020;
                 transform: translateX(-100%);
                 overflow-y: auto;
-                width: 280px; /* Fixed width */
+                width: 280px;
             }
 
             .sidebar.active {
@@ -606,14 +609,7 @@
             }
 
             .sidebar-overlay {
-                display: none;
-                position: fixed;
-                top: 80px; /* Start below header */
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0,0,0,0.5);
-                z-index: 999;
+                top: 70px;
             }
 
             .sidebar-overlay.active {
@@ -621,14 +617,9 @@
             }
 
             .main-content {
-                padding: 1rem;
+                padding: 1.5rem;
                 width: 100%;
-                margin-left: 0; /* Remove sidebar margin on mobile */
-            }
-
-            .notification-menu {
-                width: 280px;
-                right: -40px;
+                margin-left: 0;
             }
 
             .header-content {
@@ -636,11 +627,15 @@
             }
 
             .school-name {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
             }
 
             .republic, .clinic-title {
                 font-size: 0.65rem;
+            }
+
+            .dashboard-card {
+                padding: 1.5rem;
             }
 
             .search-container {
@@ -662,32 +657,105 @@
             }
         }
 
-        @media (max-width: 480px) {
-            .notification-menu {
-                width: 250px;
-                right: -20px;
+        @media (max-width: 576px) {
+            .dashboard-card {
+                padding: 1.25rem;
             }
 
-            .content {
-                padding: 1rem;
+            .page-header {
+                padding: 1.5rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .main-content {
+                padding: 1.25rem;
+            }
+            
+            .mobile-menu-toggle {
+                top: 80px;
+                width: 45px;
+                height: 45px;
             }
 
             th, td {
                 padding: 8px 10px;
+                font-size: 0.8rem;
             }
+        }
+        
+        @media (max-width: 480px) {
+            .logo-img {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .school-name {
+                font-size: 0.8rem;
+            }
+            
+            .republic, .clinic-title {
+                font-size: 0.6rem;
+            }
+            
+            .mobile-menu-toggle {
+                width: 45px;
+                height: 45px;
+                top: 80px;
+                left: 15px;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+
+            .dashboard-card {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 375px) {
+            .mobile-menu-toggle {
+                top: 75px;
+                left: 15px;
+                width: 40px;
+                height: 40px;
+            }
+            
+            .main-content {
+                padding: 0.75rem;
+            }
+        }
+
+        /* ANIMATIONS - SAME AS ADMIN DASHBOARD */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
         }
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button -->
+    <!-- Mobile Menu Toggle Button - SAME AS ADMIN DASHBOARD -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile -->
+    <!-- Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Fixed Header -->
+    <!-- Header - SAME AS ADMIN DASHBOARD -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -702,7 +770,7 @@
     </header>
 
     <div class="dashboard-container">
-        <!-- Fixed Sidebar -->
+        <!-- Sidebar - ADMIN MENU ITEMS WITH ADMIN DASHBOARD STYLING -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">
@@ -775,7 +843,7 @@
                 </div>
 
                 <div class="nav-group">
-                    <button class="nav-item dropdown-btn" data-target="adminMenu">
+                    <button class="nav-item dropdown-btn active" data-target="adminMenu">
                         <i class="fas fa-cog"></i>
                         <span>Admin Tools</span>
                         <i class="fas fa-chevron-down arrow"></i>
@@ -810,36 +878,28 @@
                     </div>
                 </div>
                 
-                <a href="logout.php" class="nav-item logout">
+                <a href="../logout.php" class="nav-item logout">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
             </nav>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Main Content - FOLLOWING ADMIN DASHBOARD STRUCTURE -->
         <main class="main-content">
-            <div style="display:flex; justify-content:flex-end; margin-bottom: 1.5rem;">
-                <div class="notification-dropdown">
-                    <button class="notification-btn" id="notifBtn">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge" id="notifCount">3</span>
-                    </button>
-                    <div class="notification-menu" id="notifMenu">
-                        <p class="notif-title">Notifications</p>
-                        <ul class="notif-list">
-                            <li><i class="fas fa-user-plus"></i> New student registered</li>
-                            <li><i class="fas fa-calendar-check"></i> Appointment pending approval</li>
-                            <li><i class="fas fa-stethoscope"></i> Consultation completed</li>
-                        </ul>
-                        <a href="#" class="view-all">View all</a>
-                    </div>
-                </div>
+            <!-- Page Header -->
+            <div class="page-header fade-in">
+                <h1><i class="fas fa-users-cog me-2"></i>User Activity Logs</h1>
+                <p>Monitor and manage user activities and system access</p>
             </div>
 
-            <div class="content">
-                <div class="content-header">
-                    <h2>User Activity Logs</h2>
+            <!-- User Logs Container -->
+            <div class="dashboard-card fade-in">
+                <div class="card-header">
+                    <h3 class="card-title">Activity Logs</h3>
+                    <div class="card-icon">
+                        <i class="fas fa-list"></i>
+                    </div>
                 </div>
                 
                 <!-- Search Bar -->
@@ -1126,6 +1186,58 @@
             const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
             const rowCheckboxes = document.querySelectorAll('.row-checkbox');
             
+            // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - SAME AS ADMIN DASHBOARD
+            document.querySelectorAll('.dropdown-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const submenu = document.getElementById(targetId);
+                    const arrow = this.querySelector('.arrow');
+
+                    document.querySelectorAll('.submenu').forEach(menu => {
+                        if (menu.id !== targetId && menu.classList.contains('show')) {
+                            menu.classList.remove('show');
+                            const otherBtn = document.querySelector(`[data-target="${menu.id}"]`);
+                            if (otherBtn) {
+                                otherBtn.querySelector('.arrow').classList.remove('rotate');
+                            }
+                        }
+                    });
+
+                    submenu.classList.toggle('show');
+                    arrow.classList.toggle('rotate');
+                });
+            });
+
+            // MOBILE MENU FUNCTIONALITY - SAME AS ADMIN DASHBOARD
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+            mobileMenuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+                const icon = this.querySelector('i');
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-times');
+            });
+
+            sidebarOverlay.addEventListener('click', function() {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+                mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+            });
+
+            // Close sidebar when clicking submenu items on mobile
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('.submenu-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        sidebar.classList.remove('active');
+                        sidebarOverlay.classList.remove('active');
+                        mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+                    });
+                });
+            }
+
             // Select All functionality
             selectAllCheckbox.addEventListener('change', function() {
                 const isChecked = this.checked;
@@ -1218,73 +1330,6 @@
             searchInput.addEventListener('keyup', function(event) {
                 if (event.key === 'Enter') {
                     searchLogs();
-                }
-            });
-
-            // Dropdown functionality
-            document.querySelectorAll('.dropdown-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const targetId = this.getAttribute('data-target');
-                    const submenu = document.getElementById(targetId);
-                    const arrow = this.querySelector('.arrow');
-
-                    document.querySelectorAll('.submenu').forEach(menu => {
-                        if (menu.id !== targetId && menu.classList.contains('show')) {
-                            menu.classList.remove('show');
-                            const otherBtn = document.querySelector(`[data-target="${menu.id}"]`);
-                            if (otherBtn) {
-                                otherBtn.querySelector('.arrow').classList.remove('rotate');
-                            }
-                        }
-                    });
-
-                    submenu.classList.toggle('show');
-                    arrow.classList.toggle('rotate');
-                });
-            });
-
-            // Mobile menu functionality
-            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-            const sidebar = document.getElementById('sidebar');
-            const sidebarOverlay = document.getElementById('sidebarOverlay');
-
-            mobileMenuToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('active');
-                sidebarOverlay.classList.toggle('active');
-                const icon = this.querySelector('i');
-                icon.classList.toggle('fa-bars');
-                icon.classList.toggle('fa-times');
-            });
-
-            sidebarOverlay.addEventListener('click', function() {
-                sidebar.classList.remove('active');
-                sidebarOverlay.classList.remove('active');
-                mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
-            });
-
-            // Close sidebar when clicking submenu items on mobile
-            if (window.innerWidth <= 768) {
-                document.querySelectorAll('.submenu-item').forEach(item => {
-                    item.addEventListener('click', function() {
-                        sidebar.classList.remove('active');
-                        sidebarOverlay.classList.remove('active');
-                        mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
-                    });
-                });
-            }
-
-            // Notification dropdown
-            const notifBtn = document.getElementById('notifBtn');
-            const notifMenu = document.getElementById('notifMenu');
-
-            notifBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                notifMenu.classList.toggle('show');
-            });
-
-            document.addEventListener('click', function(e) {
-                if (!notifMenu.contains(e.target) && !notifBtn.contains(e.target)) {
-                    notifMenu.classList.remove('show');
                 }
             });
 

@@ -171,10 +171,14 @@ function formatDate($date) {
         line-height: 1.6;
     }
 
-    /* Header Styles - IMPROVED */
+    /* Header Styles - SAME AS DASHBOARD */
     .top-header {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-        color: white;
+        background: 
+        linear-gradient(90deg, 
+            #ffda6a 0%, 
+            #ffda6a 30%, 
+            #FFF5CC 70%, 
+            #ffffff 100%);
         padding: 0.75rem 0;
         box-shadow: 0 2px 15px rgba(0,0,0,0.1);
         position: fixed;
@@ -196,7 +200,6 @@ function formatDate($date) {
         width: 60px;
         height: 60px;
         object-fit: contain;
-        filter: brightness(0) invert(1);
     }
 
     .school-info {
@@ -207,6 +210,7 @@ function formatDate($date) {
         font-size: 0.7rem;
         opacity: 0.9;
         letter-spacing: 0.5px;
+        color: #555;
     }
 
     .school-name {
@@ -214,20 +218,22 @@ function formatDate($date) {
         font-weight: 700;
         margin: 0.1rem 0;
         line-height: 1.2;
+        color: #555;
     }
 
     .clinic-title {
         font-size: 0.8rem;
         opacity: 0.9;
         font-weight: 500;
+        color: #555;
     }
 
-    /* Mobile Menu Toggle - COMPLETELY FIXED POSITION */
+    /* Mobile Menu Toggle - SAME AS DASHBOARD */
     .mobile-menu-toggle {
         display: none;
         position: fixed;
-        top: 95px; /* MAS MALAYO SA HEADER */
-        left: 20px; /* MAS MALAYO SA GILID */
+        top: 95px;
+        left: 20px;
         z-index: 1025;
         background: var(--primary);
         color: white;
@@ -245,13 +251,13 @@ function formatDate($date) {
         background: var(--primary-dark);
     }
 
-    /* Dashboard Container - IMPROVED */
+    /* Dashboard Container - SAME AS DASHBOARD */
     .dashboard-container {
         display: flex;
         min-height: calc(100vh - 80px);
     }
 
-    /* Sidebar Styles - IMPROVED */
+    /* Sidebar Styles - SAME AS DASHBOARD */
     .sidebar {
         width: 260px;
         background: white;
@@ -294,18 +300,20 @@ function formatDate($date) {
 
     .nav-item.active {
         background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-        color: var(--primary);
-        border-left: 4px solid var(--primary);
+        color: #555;
+        border-left: 8px solid #ffda6a;
     }
 
     .nav-item i {
         width: 22px;
         margin-right: 0.9rem;
         font-size: 1.1rem;
+        color: #555;
     }
 
     .nav-item span {
         flex: 1;
+        color: #555;
     }
 
     .nav-item.logout {
@@ -317,7 +325,7 @@ function formatDate($date) {
         background: rgba(220, 53, 69, 0.1);
     }
 
-    /* Main Content - IMPROVED */
+    /* Main Content - SAME AS DASHBOARD */
     .main-content {
         flex: 1;
         padding: 1.5rem;
@@ -326,7 +334,7 @@ function formatDate($date) {
         margin-top: 0;
     }
 
-    /* Sidebar Overlay for Mobile - IMPROVED */
+    /* Sidebar Overlay for Mobile - SAME AS DASHBOARD */
     .sidebar-overlay {
         display: none;
         position: fixed;
@@ -342,7 +350,31 @@ function formatDate($date) {
         display: block;
     }
 
-    /* Header Info Section */
+    /* WELCOME SECTION - SAME AS DASHBOARD */
+    .welcome-section {
+        background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        border: 1px solid rgba(206, 224, 144, 0.2);
+        border-left: 10px solid #ffda6a;
+    }
+
+    .welcome-content h1 {
+        color: #555;
+        font-weight: 700;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .welcome-content p {
+        color: var(--gray);
+        font-size: 1.1rem;
+        margin-bottom: 0;
+    }
+
+    /* KEEPING YOUR ORIGINAL CONSULTATION STYLES */
     .header-info-section {
         background: linear-gradient(135deg, rgba(255, 218, 106, 0.9) 0%, rgba(255, 247, 222, 0.95) 100%);
         padding: 25px;
@@ -389,22 +421,22 @@ function formatDate($date) {
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(135deg, #3498db, #2980b9);
+        background: linear-gradient(135deg, #ffda6a, #ffda6a);
     }
 
     .consultation-form-container h4 {
-        color: #2c3e50;
+        color: #555;
         font-weight: 700;
         margin-bottom: 25px;
         font-size: 1.5rem;
-        border-bottom: 3px solid #3498db;
+        border-bottom: 3px solid #ffda6a;
         padding-bottom: 10px;
     }
 
     /* Form Styles */
     .form-label {
         font-weight: 700;
-        color: #2c3e50;
+        color: #555;
         margin-bottom: 8px;
         font-size: 0.95rem;
     }
@@ -431,23 +463,22 @@ function formatDate($date) {
 
     /* Button Styles */
     .btn-primary {
-        background: linear-gradient(135deg, #3498db, #2980b9);
+        background: linear-gradient(135deg, #ffda6a, #ffda6a);
         border: none;
         border-radius: 25px;
         padding: 12px 30px;
         font-weight: 700;
         font-size: 1.1rem;
-        box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
         transition: all 0.3s ease;
         display: inline-flex;
         align-items: center;
         gap: 8px;
+        color: #555;
     }
 
     .btn-primary:hover {
         transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(52, 152, 219, 0.6);
-        background: linear-gradient(135deg, #2980b9, #21618c);
+       
     }
 
     /* Consultation Schedule Section */
@@ -468,14 +499,14 @@ function formatDate($date) {
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        background: linear-gradient(135deg, #ffda6a, #ffda6a);
     }
 
     .schedule-title {
-        color: #2c3e50;
+        color: #555;
         font-weight: 800;
         font-size: 1.5rem;
-        border-bottom: 3px solid #e74c3c;
+        border-bottom: 3px solid #ffda6a;
         padding-bottom: 15px;
         margin-bottom: 25px;
     }
@@ -621,7 +652,7 @@ function formatDate($date) {
         color: white;
     }
 
-    /* Responsive Design */
+    /* Responsive Design - COMBINED FROM BOTH */
     @media (max-width: 1200px) {
         .sidebar {
             width: 240px;
@@ -660,8 +691,8 @@ function formatDate($date) {
         
         .mobile-menu-toggle {
             display: block;
-            top: 85px; /* MAS MALAYO SA HEADER */
-            left: 20px; /* MAS MALAYO SA GILID */
+            top: 85px;
+            left: 20px;
         }
 
         .sidebar {
@@ -688,7 +719,7 @@ function formatDate($date) {
         }
 
         .main-content {
-            padding: 2rem 1.25rem 1.25rem; /* MAS MALAKING PADDING SA ITAAS */
+            padding: 2rem 1.25rem 1.25rem;
             width: 100%;
             margin-left: 0;
         }
@@ -754,7 +785,7 @@ function formatDate($date) {
         }
 
         .main-content {
-            padding: 1.75rem 1rem 1rem; /* ADJUSTED PADDING */
+            padding: 1.75rem 1rem 1rem;
         }
         
         .mobile-menu-toggle {
@@ -821,15 +852,15 @@ function formatDate($date) {
   </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - COMPLETELY FIXED POSITION -->
+    <!-- Mobile Menu Toggle Button - SAME AS DASHBOARD -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - IMPROVED -->
+    <!-- Sidebar Overlay for Mobile - SAME AS DASHBOARD -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - IMPROVED (INALIS NA ANG WELCOME MESSAGE SA RIGHT) -->
+    <!-- Header - SAME AS DASHBOARD -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -839,13 +870,12 @@ function formatDate($date) {
                     <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
                     <div class="clinic-title">ONLINE SCHOOL CLINIC</div>
                 </div>
-                <!-- INALIS NA ANG WELCOME MESSAGE AT STUDENT NAME SA RIGHT SIDE -->
             </div>
         </div>
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar - IMPROVED -->
+        <!-- Sidebar - SAME AS DASHBOARD -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="student_dashboard.php" class="nav-item">
@@ -887,9 +917,11 @@ function formatDate($date) {
 
         <!-- Main Content -->
         <main class="main-content">
-            <div class="header-info-section fade-in">
-                <h3>Schedule Consultation</h3>
-                <p>Book your medical consultation with the school clinic</p>
+            <!-- WELCOME SECTION - SAME AS DASHBOARD -->
+            <div>
+                <div>
+                    
+                </div>
             </div>
 
             <!-- Alerts - FIXED: Using properly initialized variables -->
@@ -1144,7 +1176,7 @@ function formatDate($date) {
                 }
             });
 
-            // MOBILE MENU FUNCTIONALITY - IMPROVED
+            // MOBILE MENU FUNCTIONALITY - SAME AS DASHBOARD
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');

@@ -13,9 +13,9 @@ if (!isset($_SESSION['dashboard_accessed'])) {
     $_SESSION['dashboard_accessed'] = true;
 }
 
-// Fetch recent activities (excluding viewed/accessed actions)
+// Fetch recent activities (admin activities only, excluding viewed/accessed actions)
 $activity_sql = "
-    (SELECT 
+    SELECT 
         log_date, 
         admin_name AS user_name, 
         action, 
@@ -23,22 +23,7 @@ $activity_sql = "
     FROM admin_logs 
     WHERE action NOT LIKE '%viewed%' AND action NOT LIKE '%accessed%'
     ORDER BY log_date DESC 
-    LIMIT 10)
-    
-    UNION ALL
-    
-    (SELECT 
-        log_date, 
-        user_name, 
-        action, 
-        user_type
-    FROM activity_logs 
-    WHERE action NOT LIKE '%viewed%' AND action NOT LIKE '%accessed%'
-    ORDER BY log_date DESC 
-    LIMIT 10)
-    
-    ORDER BY log_date DESC 
-    LIMIT 10
+    LIMIT 5
 ";
 
 $activity_stmt = $pdo->prepare($activity_sql);
@@ -157,9 +142,14 @@ function getActivityStyle($action) {
             line-height: 1.6;
         }
 
-        /* Header Styles - IMPROVED */
+        /* Header Styles - SAME AS STUDENT */
         .top-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            background: 
+                linear-gradient(90deg, 
+                    #ffda6a 0%, 
+                    #ffda6a 30%, 
+                    #FFF5CC 70%, 
+                    #ffffff 100%);
             color: white;
             padding: 0.75rem 0;
             box-shadow: 0 2px 15px rgba(0,0,0,0.1);
@@ -182,7 +172,6 @@ function getActivityStyle($action) {
             width: 60px;
             height: 60px;
             object-fit: contain;
-            filter: brightness(0) invert(1);
         }
 
         .school-info {
@@ -193,6 +182,7 @@ function getActivityStyle($action) {
             font-size: 0.7rem;
             opacity: 0.9;
             letter-spacing: 0.5px;
+            color: #555;
         }
 
         .school-name {
@@ -200,20 +190,22 @@ function getActivityStyle($action) {
             font-weight: 700;
             margin: 0.1rem 0;
             line-height: 1.2;
+            color: #555;
         }
 
         .clinic-title {
             font-size: 0.8rem;
             opacity: 0.9;
             font-weight: 500;
+            color: #555;
         }
 
-        /* Mobile Menu Toggle - COMPLETELY FIXED POSITION */
+        /* Mobile Menu Toggle - SAME AS STUDENT */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 95px; /* MAS MALAYO SA HEADER */
-            left: 20px; /* MAS MALAYO SA GILID */
+            top: 95px;
+            left: 20px;
             z-index: 1025;
             background: var(--primary);
             color: white;
@@ -231,13 +223,13 @@ function getActivityStyle($action) {
             background: var(--primary-dark);
         }
 
-        /* Dashboard Container - IMPROVED */
+        /* Dashboard Container - SAME AS STUDENT */
         .dashboard-container {
             display: flex;
             min-height: calc(100vh - 80px);
         }
 
-        /* Sidebar Styles - IMPROVED */
+        /* Sidebar Styles - SAME AS STUDENT */
         .sidebar {
             width: 260px;
             background: white;
@@ -262,7 +254,7 @@ function getActivityStyle($action) {
             display: flex;
             align-items: center;
             padding: 0.9rem 1.25rem;
-            color: #444;
+            color: #555;
             text-decoration: none;
             transition: all 0.3s ease;
             border: none;
@@ -280,18 +272,20 @@ function getActivityStyle($action) {
 
         .nav-item.active {
             background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-            color: var(--primary);
-            border-left: 4px solid var(--primary);
+            color: #555;
+            border-left: 8px solid #ffda6a;
         }
 
         .nav-item i {
             width: 22px;
             margin-right: 0.9rem;
             font-size: 1.1rem;
+            color: #555;
         }
 
         .nav-item span {
             flex: 1;
+            color: #555;
         }
 
         .nav-item .arrow {
@@ -346,7 +340,7 @@ function getActivityStyle($action) {
             background: rgba(220, 53, 69, 0.1);
         }
 
-        /* Main Content - IMPROVED */
+        /* Main Content - SAME AS STUDENT */
         .main-content {
             flex: 1;
             padding: 1.5rem;
@@ -355,7 +349,7 @@ function getActivityStyle($action) {
             margin-top: 0;
         }
 
-        /* Sidebar Overlay for Mobile - IMPROVED */
+        /* Sidebar Overlay for Mobile - SAME AS STUDENT */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -371,43 +365,38 @@ function getActivityStyle($action) {
             display: block;
         }
 
-        /* Quick Actions - IMPROVED */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1rem;
+        /* Welcome Section - SAME AS STUDENT */
+        .welcome-section {
+            background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
+            border-radius: 15px;
+            padding: 2rem;
             margin-bottom: 2rem;
-            margin-top: 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(206, 224, 144, 0.2);
+            border-left: 10px solid #ffda6a;
         }
 
-        .action-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.9rem;
-            padding: 1.25rem 1.5rem;
-            background: white;
-            border-radius: 12px;
-            text-decoration: none;
-            color: #444;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-            border: 1px solid #e9ecef;
+        .welcome-content h1 {
+            color: #555;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
         }
 
-        .action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 20px rgba(102,126,234,0.2);
-            color: var(--primary);
-            border-color: var(--primary);
-            text-decoration: none;
+        .welcome-content p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 0;
         }
 
-        .action-btn i {
-            font-size: 1.5rem;
-            color: var(--primary);
+        /* Dashboard Grid - SAME AS STUDENT */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
 
-        /* Dashboard Card - IMPROVED */
         .dashboard-card {
             background: white;
             border-radius: 15px;
@@ -416,179 +405,153 @@ function getActivityStyle($action) {
             border: 1px solid #f0f0f0;
         }
 
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-item {
+        .card-header {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            padding: 1.5rem;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(102,126,234,0.3);
-            transition: transform 0.3s ease;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
         }
 
-        .stat-item:hover {
-            transform: translateY(-3px);
-        }
-
-        .stat-item i {
-            font-size: 2rem;
-            opacity: 0.9;
-        }
-
-        .stat-label {
-            font-size: 0.85rem;
-            opacity: 0.9;
-        }
-
-        .stat-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-
-        .divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #e9ecef, transparent);
-            margin: 2rem 0;
-        }
-
-        .section-title {
+        .card-title {
+            color: #555;
             font-size: 1.3rem;
-            color: #444;
-            margin-bottom: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 600;
+            font-weight: 700;
+            margin: 0;
         }
 
-        .section-title i {
-            color: var(--primary);
-        }
-
-        /* Enhanced Activity Styles - IMPROVED */
-        .activity-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.85rem;
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-            padding: 1.25rem;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid var(--primary);
-            transition: all 0.3s ease;
-            border: 1px solid #e9ecef;
-        }
-
-        .activity-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-        }
-
-        .activity-icon {
-            width: 42px;
-            height: 42px;
+        .card-icon {
+            width: 45px;
+            height: 45px;
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
-            flex-shrink: 0;
-            background: rgba(102, 126, 234, 0.1);
+            font-size: 1.2rem;
+            color: #555;
+            background: #fff7da;
+            transition: all 0.3s ease;
         }
 
-        .activity-content {
-            flex: 1;
-            min-width: 0;
+        .card-icon:hover {
+            transform: scale(1.1);
         }
 
-        .activity-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 0.35rem;
+        /* STATS CARD STYLES - ADAPTED FROM STUDENT INFO CARD */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
         }
 
-        .activity-user {
-            font-weight: 600;
-            color: #2c3e50;
-            font-size: 0.95rem;
+        .stat-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            border-left: 4px solid #ffda6a;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #555;
+            display: block;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+
+        /* ACTIVITIES CARD - SAME AS STUDENT */
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: #555;
+            background: #fff7da;
+            flex-shrink: 0;
+        }
+
+        .activity-details {
+            flex: 1;
+        }
+
+        .activity-details p {
+            margin: 0 0 0.25rem 0;
+            color: var(--dark);
+            font-weight: 500;
         }
 
         .activity-time {
-            color: var(--gray);
-            font-size: 0.85rem;
-            white-space: nowrap;
+            font-size: 0.8rem;
+            color: #6c757d;
         }
 
-        .activity-action {
-            color: #495057;
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-
-        .activity-empty {
+        .no-data {
             text-align: center;
-            padding: 2.5rem;
-            color: var(--gray);
+            padding: 2rem;
+            color: #6c757d;
         }
 
-        .activity-empty i {
-            font-size: 2.5rem;
-            margin-bottom: 0.75rem;
-            opacity: 0.5;
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #dee2e6;
+            display: block;
         }
 
-        .quick-links {
+        /* QUICK ACTIONS - SAME AS STUDENT */
+        .quick-actions {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1rem;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
         }
 
-        .link-btn {
+        .action-btn {
+            background: #fff59d;
+            color: #555;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            text-align: center;
+            text-decoration: none;
             display: flex;
             align-items: center;
-            gap: 0.9rem;
-            padding: 1.25rem;
-            background: #f8f9fa;
-            border-radius: 10px;
-            text-decoration: none;
-            color: #444;
+            justify-content: center;
+            gap: 0.5rem;
+            font-weight: 600;
             transition: all 0.3s ease;
-            border: 1px solid #e9ecef;
         }
 
-        .link-btn:hover {
-            background: var(--primary);
-            color: white;
-            transform: translateX(5px);
-            text-decoration: none;
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
 
-        .link-btn i {
-            color: var(--primary);
-            transition: color 0.3s ease;
-        }
-
-        .link-btn:hover i {
-            color: white;
-        }
-
-        /* Responsive Design - COMPLETELY FIXED MOBILE SPACING */
+        /* Responsive Design - SAME AS STUDENT */
         @media (max-width: 1200px) {
             .sidebar {
                 width: 240px;
@@ -596,10 +559,6 @@ function getActivityStyle($action) {
             
             .main-content {
                 margin-left: 240px;
-            }
-            
-            .quick-actions {
-                grid-template-columns: repeat(2, 1fr);
             }
         }
 
@@ -613,11 +572,7 @@ function getActivityStyle($action) {
                 height: 50px;
             }
 
-            .stats-row {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .quick-links {
+            .dashboard-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
@@ -634,8 +589,8 @@ function getActivityStyle($action) {
             
             .mobile-menu-toggle {
                 display: block;
-                top: 85px; /* MAS MALAYO SA HEADER */
-                left: 20px; /* MAS MALAYO SA GILID */
+                top: 85px;
+                left: 20px;
             }
 
             .sidebar {
@@ -662,18 +617,14 @@ function getActivityStyle($action) {
             }
 
             .main-content {
-                padding: 2rem 1.25rem 1.25rem; /* MAS MALAKING PADDING SA ITAAS */
+                padding: 2rem 1.25rem 1.25rem;
                 width: 100%;
                 margin-left: 0;
             }
 
-            .quick-actions {
+            .dashboard-grid {
                 grid-template-columns: 1fr;
-                margin-top: 1.5rem; /* MAS MALAKING SPACE SA ITAAS NG MGA BUTTON */
-            }
-            
-            .stats-row {
-                grid-template-columns: 1fr;
+                margin-top: 1.5rem;
             }
 
             .header-content {
@@ -688,16 +639,6 @@ function getActivityStyle($action) {
                 font-size: 0.65rem;
             }
 
-            .activity-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.25rem;
-            }
-
-            .activity-time {
-                align-self: flex-start;
-            }
-            
             .dashboard-card {
                 padding: 1.5rem;
             }
@@ -713,40 +654,26 @@ function getActivityStyle($action) {
                 padding: 1.25rem;
             }
 
-            .stat-item {
-                padding: 1.25rem;
+            .welcome-section {
+                padding: 1.5rem;
             }
 
-            .stat-value {
+            .welcome-content h1 {
                 font-size: 1.5rem;
             }
 
-            .quick-links {
-                grid-template-columns: 1fr;
-            }
-
-            .activity-item {
-                padding: 1rem;
-            }
-
-            .activity-icon {
-                width: 38px;
-                height: 38px;
-                font-size: 1rem;
-            }
-            
             .main-content {
-                padding: 1.75rem 1rem 1rem; /* ADJUSTED PADDING */
-            }
-            
-            .quick-actions {
-                margin-top: 1rem;
+                padding: 1.75rem 1rem 1rem;
             }
             
             .mobile-menu-toggle {
                 top: 80px;
                 width: 45px;
                 height: 45px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
             }
         }
         
@@ -774,10 +701,6 @@ function getActivityStyle($action) {
             .main-content {
                 padding: 1.5rem 1rem 1rem;
             }
-            
-            .quick-actions {
-                margin-top: 0.75rem;
-            }
         }
 
         @media (max-width: 375px) {
@@ -792,18 +715,44 @@ function getActivityStyle($action) {
                 padding: 1.25rem 0.75rem 0.75rem;
             }
         }
+
+        /* ANIMATIONS - SAME AS STUDENT */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .stagger-animation > * {
+            opacity: 0;
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .stagger-animation > *:nth-child(1) { animation-delay: 0.1s; }
+        .stagger-animation > *:nth-child(2) { animation-delay: 0.2s; }
+        .stagger-animation > *:nth-child(3) { animation-delay: 0.3s; }
+        .stagger-animation > *:nth-child(4) { animation-delay: 0.4s; }
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - COMPLETELY FIXED POSITION -->
+    <!-- Mobile Menu Toggle Button - SAME AS STUDENT -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - IMPROVED -->
+    <!-- Sidebar Overlay for Mobile - SAME AS STUDENT -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - IMPROVED -->
+    <!-- Header - SAME AS STUDENT -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -818,7 +767,7 @@ function getActivityStyle($action) {
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar - IMPROVED -->
+        <!-- Sidebar - ADMIN MENU ITEMS WITH STUDENT STYLING -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item active">
@@ -827,22 +776,22 @@ function getActivityStyle($action) {
                 </a>
 
                 <div class="nav-group">
-                    <button class="nav-item dropdown-btn" data-target="studentMenu">
-                        <i class="fas fa-user-graduate"></i>
-                        <span>Student Management</span>
-                        <i class="fas fa-chevron-down arrow"></i>
-                    </button>
-                    <div class="submenu show" id="studentMenu">
-                        <a href="students.php" class="submenu-item">
-                            <i class="fas fa-id-card"></i>
-                            Students Profile
-                        </a>
-                        <a href="search_students.php" class="submenu-item">
-                            <i class="fas fa-search"></i>
-                            Search Students
-                        </a>
-                    </div>
-                </div>
+    <button class="nav-item dropdown-btn" data-target="studentMenu">
+        <i class="fas fa-user-graduate"></i>
+        <span>Student Management</span>
+        <i class="fas fa-chevron-down arrow"></i>
+    </button>
+    <div class="submenu" id="studentMenu">  <!-- REMOVED 'show' CLASS -->
+        <a href="students.php" class="submenu-item">
+            <i class="fas fa-id-card"></i>
+            Students Profile
+        </a>
+        <a href="search_students.php" class="submenu-item">
+            <i class="fas fa-search"></i>
+            Search Students
+        </a>
+    </div>
+</div>
 
                 <div class="nav-group">
                     <button class="nav-item dropdown-btn" data-target="consultationMenu">
@@ -933,75 +882,68 @@ function getActivityStyle($action) {
             </nav>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Main Content - FOLLOWING STUDENT DASHBOARD STRUCTURE -->
         <main class="main-content">
-            <!-- Quick Actions - MAY SPACE NA SA ITAAS -->
-            <div class="quick-actions">
-                <a href="search_students.php" class="action-btn">
-                    <i class="fas fa-search"></i>
-                    <span>Search Students</span>
-                </a>
-                <a href="new_announcement.php" class="action-btn">
-                    <i class="fas fa-bullhorn"></i>
-                    <span>New Announcement</span>
-                </a>
-                <a href="approvals.php" class="action-btn">
-                    <i class="fas fa-check-circle"></i>
-                    <span>Manage Requests</span>
-                </a>
-                <a href="monthly_summary.php" class="action-btn">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>View Reports</span>
-                </a>
+            <!-- WELCOME SECTION -->
+            <div class="welcome-section fade-in">
+                <div class="welcome-content">
+                    <h1>Welcome, Admin! 👋</h1>
+                    <p>Here's an overview of the clinic management system</p>
+                </div>
             </div>
 
-            <!-- Dashboard Content -->
-            <div class="dashboard-card">
-                <div class="stats-row">
-                    <div class="stat-item">
-                        <i class="fas fa-calendar-day"></i>
-                        <div>
-                            <div class="stat-label">Today's Consultations</div>
-                            <div class="stat-value"><?php echo $stats['today_consultations']; ?></div>
+            <!-- DASHBOARD GRID -->
+            <div class="dashboard-grid">
+                <!-- SYSTEM STATISTICS CARD -->
+                <div class="dashboard-card stats-card fade-in">
+                    <div class="card-header">
+                        <h3 class="card-title">System Statistics</h3>
+                        <div class="card-icon">
+                            <i class="fas fa-chart-bar"></i>
                         </div>
                     </div>
-                    <div class="stat-item">
-                        <i class="fas fa-clock"></i>
-                        <div>
-                            <div class="stat-label">Pending Requests</div>
-                            <div class="stat-value"><?php echo $stats['pending_requests']; ?></div>
+                    
+                    <div class="stats-grid stagger-animation">
+                        <div class="stat-item">
+                            <span class="stat-value"><?php echo $stats['today_consultations']; ?></span>
+                            <span class="stat-label">Today's Consultations</span>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <span class="stat-value"><?php echo $stats['pending_requests']; ?></span>
+                            <span class="stat-label">Pending Requests</span>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <span class="stat-value"><?php echo $stats['active_announcements']; ?></span>
+                            <span class="stat-label">Active Announcements</span>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <span class="stat-value"><?php echo $stats['today_certificates']; ?></span>
+                            <span class="stat-label">Today's Certificates</span>
                         </div>
                     </div>
-                    <div class="stat-item">
-                        <i class="fas fa-bullhorn"></i>
-                        <div>
-                            <div class="stat-label">Active Announcements</div>
-                            <div class="stat-value"><?php echo $stats['active_announcements']; ?></div>
-                        </div>
-                    </div>
-                    <div class="stat-item">
-                        <i class="fas fa-file-certificate"></i>
-                        <div>
-                            <div class="stat-label">Today's Certificates</div>
-                            <div class="stat-value"><?php echo $stats['today_certificates']; ?></div>
-                        </div>
+
+                    <!-- QUICK ACTIONS -->
+                    <div class="quick-actions">
+                        <a href="monthly_summary.php" class="action-btn">
+                            <i class="fas fa-file-invoice"></i> View Reports
+                        </a>
                     </div>
                 </div>
 
-                <div class="divider"></div>
-
-                <div class="activity-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-history"></i>
-                        Recent Activity
-                    </h3>
-                    <div class="activity-list">
-                        <?php if (empty($recent_activities)): ?>
-                            <div class="activity-empty">
-                                <i class="fas fa-stream"></i>
-                                <div>No recent activity</div>
-                            </div>
-                        <?php else: ?>
+                <!-- RECENT ACTIVITIES CARD -->
+                <div class="dashboard-card activities-card fade-in">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Activities</h3>
+                        <div class="card-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                    </div>
+                    
+                    <?php if (!empty($recent_activities)): ?>
+                        <div class="stagger-animation">
                             <?php foreach ($recent_activities as $activity): ?>
                                 <?php 
                                 $activity_style = getActivityStyle($activity['action']);
@@ -1009,43 +951,57 @@ function getActivityStyle($action) {
                                 $color = $activity_style[1];
                                 ?>
                                 <div class="activity-item">
-                                    <div class="activity-icon" style="background: rgba(<?php echo hex2rgb($color); ?>, 0.1); color: <?php echo $color; ?>;">
+                                    <div class="activity-icon" style="background: <?php echo $color; ?>20; color: <?php echo $color; ?>;">
                                         <i class="<?php echo $icon; ?>"></i>
                                     </div>
-                                    <div class="activity-content">
-                                        <div class="activity-header">
-                                            <span class="activity-user"><?php echo htmlspecialchars($activity['user_name']); ?></span>
-                                            <span class="activity-time"><?php echo formatActivityTime($activity['log_date']); ?></span>
-                                        </div>
-                                        <div class="activity-action">
-                                            <?php echo htmlspecialchars($activity['action']); ?>
-                                        </div>
+                                    <div class="activity-details">
+                                        <p><?php echo htmlspecialchars($activity['action']); ?></p>
+                                        <span class="activity-time">
+                                            <i class="fas fa-clock me-1"></i>
+                                            <?php echo formatActivityTime($activity['log_date']); ?>
+                                        </span>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
-                        <?php endif; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="no-data">
+                            <i class="fas fa-history"></i>
+                            <p>No recent activities</p>
+                            <small>System activities will appear here</small>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="quick-actions">
+                        <a href="users_logs.php" class="action-btn">
+                            <i class="fas fa-list"></i> View All Logs
+                        </a>
                     </div>
                 </div>
 
-                <div class="divider"></div>
-
-                <div class="quick-links">
-                    <a href="students.php" class="link-btn">
-                        <i class="fas fa-users"></i>
-                        View All Students
-                    </a>
-                    <a href="view_records.php" class="link-btn">
-                        <i class="fas fa-folder-open"></i>
-                        Consultation Records
-                    </a>
-                    <a href="announcement_history.php" class="link-btn">
-                        <i class="fas fa-bullhorn"></i>
-                        Announcement History
-                    </a>
-                    <a href="users_logs.php" class="link-btn">
-                        <i class="fas fa-clipboard-list"></i>
-                        System Logs
-                    </a>
+                <!-- QUICK ACTIONS CARD -->
+                <div class="dashboard-card quick-actions-card fade-in">
+                    <div class="card-header">
+                        <h3 class="card-title">Quick Actions</h3>
+                        <div class="card-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-actions">
+                        <a href="search_students.php" class="action-btn">
+                            <i class="fas fa-search"></i> Search Students
+                        </a>
+                        <a href="new_announcement.php" class="action-btn">
+                            <i class="fas fa-bullhorn"></i> New Announcement
+                        </a>
+                        <a href="approvals.php" class="action-btn">
+                            <i class="fas fa-check-circle"></i> Manage Requests
+                        </a>
+                        <a href="students.php" class="action-btn">
+                            <i class="fas fa-users"></i> View All Students
+                        </a>
+                    </div>
                 </div>
             </div>
         </main>
@@ -1056,7 +1012,7 @@ function getActivityStyle($action) {
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - IMPROVED
+            // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS
             document.querySelectorAll('.dropdown-btn').forEach(button => {
                 button.addEventListener('click', function() {
                     const targetId = this.getAttribute('data-target');
@@ -1078,7 +1034,7 @@ function getActivityStyle($action) {
                 });
             });
 
-            // MOBILE MENU FUNCTIONALITY - IMPROVED
+            // MOBILE MENU FUNCTIONALITY - SAME AS STUDENT
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -1107,25 +1063,18 @@ function getActivityStyle($action) {
                     });
                 });
             }
+
+            // LOADING ANIMATIONS - SAME AS STUDENT
+            const staggerElements = document.querySelectorAll('.stagger-animation > *');
+            staggerElements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            const fadeElements = document.querySelectorAll('.fade-in');
+            fadeElements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.2}s`;
+            });
         });
     </script>
-
-    <?php
-    // PHP helper function to convert hex to rgb
-    function hex2rgb($hex) {
-        $hex = str_replace("#", "", $hex);
-        
-        if(strlen($hex) == 3) {
-            $r = hexdec(substr($hex,0,1).substr($hex,0,1));
-            $g = hexdec(substr($hex,1,1).substr($hex,1,1));
-            $b = hexdec(substr($hex,2,1).substr($hex,2,1));
-        } else {
-            $r = hexdec(substr($hex,0,2));
-            $g = hexdec(substr($hex,2,2));
-            $b = hexdec(substr($hex,4,2));
-        }
-        return "$r, $g, $b";
-    }
-    ?>
 </body>
 </html>

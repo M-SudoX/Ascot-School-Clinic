@@ -201,10 +201,14 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         line-height: 1.6;
     }
 
-    /* Header Styles - IMPROVED */
+    /* Header Styles - SAME AS DASHBOARD */
     .top-header {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-        color: white;
+        background: 
+        linear-gradient(90deg, 
+            #ffda6a 0%, 
+            #ffda6a 30%, 
+            #FFF5CC 70%, 
+            #ffffff 100%);
         padding: 0.75rem 0;
         box-shadow: 0 2px 15px rgba(0,0,0,0.1);
         position: fixed;
@@ -226,7 +230,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         width: 60px;
         height: 60px;
         object-fit: contain;
-        filter: brightness(0) invert(1);
     }
 
     .school-info {
@@ -237,6 +240,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         font-size: 0.7rem;
         opacity: 0.9;
         letter-spacing: 0.5px;
+        color: #555;
     }
 
     .school-name {
@@ -244,20 +248,22 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         font-weight: 700;
         margin: 0.1rem 0;
         line-height: 1.2;
+        color: #555;
     }
 
     .clinic-title {
         font-size: 0.8rem;
         opacity: 0.9;
         font-weight: 500;
+        color: #555;
     }
 
-    /* Mobile Menu Toggle - COMPLETELY FIXED POSITION */
+    /* Mobile Menu Toggle - SAME AS DASHBOARD */
     .mobile-menu-toggle {
         display: none;
         position: fixed;
-        top: 95px; /* MAS MALAYO SA HEADER */
-        left: 20px; /* MAS MALAYO SA GILID */
+        top: 95px;
+        left: 20px;
         z-index: 1025;
         background: var(--primary);
         color: white;
@@ -275,13 +281,13 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         background: var(--primary-dark);
     }
 
-    /* Dashboard Container - IMPROVED */
+    /* Dashboard Container - SAME AS DASHBOARD */
     .dashboard-container {
         display: flex;
         min-height: calc(100vh - 80px);
     }
 
-    /* Sidebar Styles - IMPROVED */
+    /* Sidebar Styles - SAME AS DASHBOARD */
     .sidebar {
         width: 260px;
         background: white;
@@ -324,18 +330,20 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
 
     .nav-item.active {
         background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-        color: var(--primary);
-        border-left: 4px solid var(--primary);
+        color: #555;
+        border-left: 8px solid #ffda6a;
     }
 
     .nav-item i {
         width: 22px;
         margin-right: 0.9rem;
         font-size: 1.1rem;
+        color: #555;
     }
 
     .nav-item span {
         flex: 1;
+        color:#555;
     }
 
     .nav-item.logout {
@@ -347,7 +355,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         background: rgba(220, 53, 69, 0.1);
     }
 
-    /* Main Content - IMPROVED */
+    /* Main Content - SAME AS DASHBOARD */
     .main-content {
         flex: 1;
         padding: 1.5rem;
@@ -356,7 +364,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         margin-top: 0;
     }
 
-    /* Sidebar Overlay for Mobile - IMPROVED */
+    /* Sidebar Overlay for Mobile - SAME AS DASHBOARD */
     .sidebar-overlay {
         display: none;
         position: fixed;
@@ -372,14 +380,39 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         display: block;
     }
 
-    /* Form Header Enhancement */
+    /* WELCOME SECTION - SAME AS DASHBOARD */
+    .welcome-section {
+        background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        border: 1px solid rgba(206, 224, 144, 0.2);
+        border-left: 10px solid #ffda6a;
+    }
+
+    .welcome-content h1 {
+        color: #555;
+        font-weight: 700;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .welcome-content p {
+        color: var(--gray);
+        font-size: 1.1rem;
+        margin-bottom: 0;
+    }
+
+    /* FORM STYLES - KEEPING YOUR ORIGINAL STYLES */
     .form-header-with-logo {
         background: linear-gradient(135deg, rgba(255, 218, 106, 0.9) 0%, rgba(255, 247, 222, 0.95) 100%);
-        padding: 20px;
+        padding: 10px;
         border-radius: 15px;
         margin-bottom: 30px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.1);
         border: 1px solid rgba(255,255,255,0.2);
+        color: #555;
     }
 
     .form-header-with-logo .logo-section {
@@ -396,21 +429,21 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
 
     .form-header-with-logo .college-info h4 {
         margin: 0;
-        color: #2c3e50;
-        font-weight: bold;
+        color: #555;
+        font-weight: 600;
         font-size: 1.1rem;
     }
 
     .form-header-with-logo .college-info h3 {
         margin: 5px 0;
-        color: #2c3e50;
-        font-weight: 800;
+        color: #555;
+        font-weight: 700;
         font-size: 1.4rem;
     }
 
     .form-header-with-logo .college-info p {
         margin: 0;
-        color: #7f8c8d;
+        color: #555;
         font-weight: 600;
         font-size: 0.9rem;
     }
@@ -428,15 +461,14 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         text-align: center;
         margin-bottom: 30px;
         padding-bottom: 20px;
-        border-bottom: 3px solid #3498db;
     }
 
     .form-title h3 {
-        color: #2c3e50;
+        color: #555;
         font-weight: 800;
-        font-size: 2rem;
+        font-size: 1rem;
         margin-bottom: 10px;
-        background: linear-gradient(135deg, #2c3e50, #3498db);
+        background: linear-gradient(135deg, #555, #555);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
@@ -465,12 +497,12 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(135deg, #3498db, #2980b9);
+        background: linear-gradient(135deg, #ffda6a, #ffda6a);
     }
 
     .section-title {
-        background: linear-gradient(135deg, #3498db, #2980b9);
-        color: white;
+        background: linear-gradient(135deg, #fff7da, #fff7da);
+        color: #555;
         padding: 15px 25px;
         border-radius: 10px;
         font-weight: 700;
@@ -516,7 +548,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         padding: 25px;
         border-radius: 12px;
         margin-bottom: 25px;
-        border-left: 4px solid #3498db;
+        border-left: 4px solid #ffda6a;
     }
 
     .question-text {
@@ -648,7 +680,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         color: white;
     }
 
-    /* Responsive Design */
+    /* Responsive Design - COMBINED FROM BOTH */
     @media (max-width: 1200px) {
         .sidebar {
             width: 240px;
@@ -692,8 +724,8 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         
         .mobile-menu-toggle {
             display: block;
-            top: 85px; /* MAS MALAYO SA HEADER */
-            left: 20px; /* MAS MALAYO SA GILID */
+            top: 85px;
+            left: 20px;
         }
 
         .sidebar {
@@ -720,7 +752,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         }
 
         .main-content {
-            padding: 2rem 1.25rem 1.25rem; /* MAS MALAKING PADDING SA ITAAS */
+            padding: 2rem 1.25rem 1.25rem;
             width: 100%;
             margin-left: 0;
         }
@@ -801,7 +833,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         }
 
         .main-content {
-            padding: 1.75rem 1rem 1rem; /* ADJUSTED PADDING */
+            padding: 1.75rem 1rem 1rem;
         }
         
         .mobile-menu-toggle {
@@ -868,15 +900,15 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
   </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - COMPLETELY FIXED POSITION -->
+    <!-- Mobile Menu Toggle Button - SAME AS DASHBOARD -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - IMPROVED -->
+    <!-- Sidebar Overlay for Mobile - SAME AS DASHBOARD -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - IMPROVED (INALIS NA ANG WELCOME MESSAGE SA RIGHT) -->
+    <!-- Header - SAME AS DASHBOARD -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -886,13 +918,12 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                     <h1 class="school-name">AURORA STATE COLLEGE OF TECHNOLOGY</h1>
                     <div class="clinic-title">ONLINE SCHOOL CLINIC</div>
                 </div>
-                <!-- INALIS NA ANG WELCOME MESSAGE AT STUDENT NAME SA RIGHT SIDE -->
             </div>
         </div>
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar - IMPROVED -->
+        <!-- Sidebar - SAME AS DASHBOARD -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="student_dashboard.php" class="nav-item">
@@ -934,6 +965,13 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- WELCOME SECTION - SAME AS DASHBOARD -->
+            <div>
+                <div class="welcome-content">
+
+                </div>
+            </div>
+
             <!-- ERROR MESSAGE DISPLAY -->
             <?php if (isset($update_error)): ?>
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -1087,7 +1125,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                                 <input type="tel" name="cellphone_number" class="form-control underlined"
                                        value="<?php echo htmlspecialchars($student_info['cellphone_number'] ?? ''); ?>"
                                        <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                       placeholder="0917 123 4567" 
+                                       placeholder="09+" 
                                        pattern="[0-9]{4} [0-9]{3} [0-9]{4}" 
                                        title="Please enter phone number in 4-3-4 format (e.g., 0917 123 4567)" 
                                        required>
@@ -1269,7 +1307,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 }, 5000);
             }
 
-            // MOBILE MENU FUNCTIONALITY - IMPROVED
+            // MOBILE MENU FUNCTIONALITY - SAME AS DASHBOARD
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
