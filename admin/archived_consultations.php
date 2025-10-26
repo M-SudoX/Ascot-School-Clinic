@@ -11,7 +11,7 @@ require_once '../includes/db_connect.php';
 // Get student ID from URL
 $student_id = $_GET['id'] ?? 0;
 
-// Fetch student information and consultations
+// Fetch student information and archived consultations
 $student = [];
 $consultations = [];
 
@@ -27,17 +27,17 @@ try {
     $student = $student_stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($student) {
-        // Get only active consultation history (non-archived)
+        // Get only archived consultation history
         $consult_stmt = $pdo->prepare("
             SELECT * FROM consultations 
-            WHERE student_number = ? AND is_archived = 0
+            WHERE student_number = ? AND is_archived = 1
             ORDER BY consultation_date DESC, created_at DESC
         ");
         $consult_stmt->execute([$student['student_number']]);
         $consultations = $consult_stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 } catch (PDOException $e) {
-    error_log("Consultation history error: " . $e->getMessage());
+    error_log("Archived consultations error: " . $e->getMessage());
 }
 ?>
 
@@ -46,7 +46,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consultation History - ASCOT Clinic</title>
+    <title>Archived Consultations - ASCOT Clinic</title>
     
     <!-- Bootstrap & Icons -->
     <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
@@ -425,6 +425,12 @@ try {
             background: #f8f9fa;
         }
 
+        /* Archived row styling */
+        .consultation-table tr.archived-row {
+            opacity: 0.7;
+            background: #f8f9fa;
+        }
+
         /* Action Buttons Styles */
         .action-buttons {
             display: flex;
@@ -451,8 +457,8 @@ try {
             transform: scale(1.05);
         }
 
-        .archive-btn {
-            background: #6c757d;
+        .restore-btn {
+            background: #28a745;
             color: white;
             border: none;
             border-radius: 6px;
@@ -465,8 +471,8 @@ try {
             font-size: 0.85rem;
         }
 
-        .archive-btn:hover {
-            background: #545b62;
+        .restore-btn:hover {
+            background: #218838;
             transform: scale(1.05);
         }
 
@@ -625,7 +631,7 @@ try {
                 gap: 5px;
             }
             
-            .view-btn, .archive-btn {
+            .view-btn, .restore-btn {
                 width: 100%;
                 justify-content: center;
                 font-size: 0.8rem;
@@ -692,9 +698,9 @@ try {
                             <i class="fas fa-search"></i>
                             Search Students
                         </a>
-                        <a href="consultation_history.php?id=<?php echo $student_id; ?>" class="submenu-item active">
-                            <i class="fas fa-file-medical"></i>
-                            Consultation History
+                        <a href="archived_consultations.php?id=<?php echo $student_id; ?>" class="submenu-item active">
+                            <i class="fas fa-archive"></i>
+                            Archived Consultations
                         </a>
                     </div>
                 </div>
@@ -791,16 +797,13 @@ try {
         <main class="main-content">
             <!-- Page Header -->
             <div class="page-header">
-                <h1><i class="fas fa-file-medical"></i> Consultation History</h1>
+                <h1><i class="fas fa-archive"></i> Archived Consultations</h1>
                 <div class="header-buttons">
                     <a href="students.php" class="back-btn">
                         <i class="fas fa-arrow-left"></i> Back to Students
                     </a>
-                    <a href="add_consultation.php?id=<?php echo $student_id; ?>" class="new-consultation-btn">
-                        <i class="fas fa-plus"></i> Add New Consultation
-                    </a>
-                    <a href="archived_consultations.php?id=<?php echo $student_id; ?>" class="view-archived-btn">
-                        <i class="fas fa-archive"></i> View Archived
+                    <a href="consultation_history.php?id=<?php echo $student_id; ?>" class="view-archived-btn">
+                        <i class="fas fa-file-medical"></i> Back to Active Consultations
                     </a>
                 </div>
             </div>
@@ -824,7 +827,7 @@ try {
                     </div>
                 </div>
 
-                <!-- Consultation History Table -->
+                <!-- Archived Consultations Table -->
                 <div class="consultation-table-container">
                     <div class="table-header">
                         <div class="republic-banner">
@@ -833,7 +836,7 @@ try {
                             Zabali, Baler, Aurora - Philippines
                         </div>
                         <div class="table-title">
-                            <span class="title-center">ACTIVE CONSULTATION HISTORY</span>
+                            <span class="title-center">ARCHIVED CONSULTATION HISTORY</span>
                         </div>
                     </div>
                     
@@ -850,13 +853,13 @@ try {
                                 <?php if (empty($consultations)): ?>
                                     <tr>
                                         <td colspan="3" class="text-center py-4">
-                                            <i class="fas fa-file-medical-alt fa-2x text-muted mb-2"></i>
-                                            <p class="text-muted">No active consultation records found.</p>
+                                            <i class="fas fa-archive fa-2x text-muted mb-2"></i>
+                                            <p class="text-muted">No archived consultation records found.</p>
                                         </td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($consultations as $consultation): ?>
-                                        <tr>
+                                        <tr class="archived-row">
                                             <td><?php echo date('F j, Y', strtotime($consultation['consultation_date'])); ?></td>
                                             <td><?php echo htmlspecialchars($consultation['diagnosis'] ?? 'No diagnosis'); ?></td>
                                             <td>
@@ -873,9 +876,9 @@ try {
                                                             data-notes="<?php echo htmlspecialchars($consultation['physician_notes'] ?? ''); ?>">
                                                         <i class="fas fa-eye"></i> View
                                                     </button>
-                                                    <button class="archive-btn" 
-                                                            onclick="archiveConsultation(<?php echo $consultation['id']; ?>)">
-                                                        <i class="fas fa-archive"></i> Archive
+                                                    <button class="restore-btn" 
+                                                            onclick="restoreConsultation(<?php echo $consultation['id']; ?>)">
+                                                        <i class="fas fa-undo"></i> Restore
                                                     </button>
                                                 </div>
                                             </td>
@@ -1028,10 +1031,10 @@ try {
             });
         }
 
-        // Archive Consultation Function
-        function archiveConsultation(consultationId) {
-            if (confirm('Are you sure you want to archive this consultation record?')) {
-                fetch('archive_consultation.php', {
+        // Restore Consultation Function
+        function restoreConsultation(consultationId) {
+            if (confirm('Are you sure you want to restore this consultation record?')) {
+                fetch('restore_consultation.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
@@ -1042,14 +1045,14 @@ try {
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
-                        location.reload(); // Reload to remove the archived record from view
+                        location.reload(); // Reload to remove the restored record from view
                     } else {
                         alert('Error: ' + data.message);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error archiving consultation record.');
+                    alert('Error restoring consultation record.');
                 });
             }
         }

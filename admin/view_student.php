@@ -932,8 +932,7 @@ $isComplete = $profile_status['is_complete'];
                         </div>
                     </div>
                     <div>
-                        <a href="edit_student.php?id=<?php echo $student_id; ?>" class="btn-edit">
-                            <i class="fas fa-edit"></i> Edit Profile
+                        
                         </a>
                     </div>
                 </div>
@@ -1193,8 +1192,6 @@ $isComplete = $profile_status['is_complete'];
 
             <!-- Action Buttons -->
             <div class="action-buttons">
-                <a href="edit_student.php?id=<?php echo $student_id; ?>" class="btn-edit">
-                    <i class="fas fa-edit"></i> Edit Student Information
                 </a>
                 <a href="students.php" class="back-btn">
                     <i class="fas fa-arrow-left"></i> Back to Students List

@@ -3,8 +3,8 @@
 return [
     'smtp' => [
         'host' => 'smtp.gmail.com',
-        'username' => 'cachemeifucan05@gmail.com',
-        'password' => 'zusittxqokhgzotm',
+        'username' => 'zayantomara@gmail.com',
+        'password' => 'zjaoodlqbdtknyno',
         'port' => 587,
         'encryption' => 'tls'
     ],
