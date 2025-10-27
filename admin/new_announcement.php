@@ -1582,9 +1582,6 @@ try {
                             <select class="form-select" id="sentBy" name="sentBy" required>
                                 <option value="">Select sender...</option>
                                 <option value="Admin User">Admin User</option>
-                                <option value="Dr. James Smith">Dr. James Smith</option>
-                                <option value="Nurse Maria Santos">Nurse Maria Santos</option>
-                                <option value="Clinic Administrator">Clinic Administrator</option>
                             </select>
                         </div>
                     </div>

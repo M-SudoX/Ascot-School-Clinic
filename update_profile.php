@@ -1125,7 +1125,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                                 <input type="tel" name="cellphone_number" class="form-control underlined"
                                        value="<?php echo htmlspecialchars($student_info['cellphone_number'] ?? ''); ?>"
                                        <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                       placeholder="09+" 
+                                       placeholder="+69" 
                                        pattern="[0-9]{4} [0-9]{3} [0-9]{4}" 
                                        title="Please enter phone number in 4-3-4 format (e.g., 0917 123 4567)" 
                                        required>
