@@ -1304,9 +1304,6 @@ try {
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times me-1"></i>Close
                     </button>
-                    <button type="button" class="btn btn-outline-primary" onclick="printConsultationDetails()">
-                        <i class="fas fa-print me-1"></i>Print
-                    </button>
                 </div>
             </div>
         </div>
