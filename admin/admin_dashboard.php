@@ -4,16 +4,11 @@ require_once '../includes/db_connect.php';
 
 // Check if this is the first time accessing dashboard after login
 if (!isset($_SESSION['dashboard_accessed'])) {
-    // Log admin access only once per session
-    $admin_name = $_SESSION['admin_name'] ?? 'Admin User';
-    $log_stmt = $pdo->prepare("INSERT INTO admin_logs (admin_name, action) VALUES (?, 'Logged into system')");
-    $log_stmt->execute([$admin_name]);
-    
     // Mark dashboard as accessed to prevent duplicate logging
     $_SESSION['dashboard_accessed'] = true;
 }
 
-// Fetch recent activities (admin activities only, excluding viewed/accessed actions)
+// Fetch recent activities (admin activities only, excluding viewed/accessed/logged in actions)
 $activity_sql = "
     SELECT 
         log_date, 
@@ -21,7 +16,9 @@ $activity_sql = "
         action, 
         'admin' AS user_type
     FROM admin_logs 
-    WHERE action NOT LIKE '%viewed%' AND action NOT LIKE '%accessed%'
+    WHERE action NOT LIKE '%viewed%' 
+    AND action NOT LIKE '%accessed%'
+    AND action NOT LIKE '%logged into system%'
     ORDER BY log_date DESC 
     LIMIT 5
 ";
@@ -88,9 +85,6 @@ function getActivityStyle($action) {
     }
     elseif (strpos($action, 'announce') !== false) {
         return ['fas fa-bullhorn', '#6f42c1'];
-    }
-    elseif (strpos($action, 'logged') !== false) {
-        return ['fas fa-sign-in-alt', '#20c997'];
     }
     elseif (strpos($action, 'profile') !== false) {
         return ['fas fa-user-edit', '#fd7e14'];
@@ -776,22 +770,22 @@ function getActivityStyle($action) {
                 </a>
 
                 <div class="nav-group">
-    <button class="nav-item dropdown-btn" data-target="studentMenu">
-        <i class="fas fa-user-graduate"></i>
-        <span>Student Management</span>
-        <i class="fas fa-chevron-down arrow"></i>
-    </button>
-    <div class="submenu" id="studentMenu">  <!-- REMOVED 'show' CLASS -->
-        <a href="students.php" class="submenu-item">
-            <i class="fas fa-id-card"></i>
-            Students Profile
-        </a>
-        <a href="search_students.php" class="submenu-item">
-            <i class="fas fa-search"></i>
-            Search Students
-        </a>
-    </div>
-</div>
+                    <button class="nav-item dropdown-btn" data-target="studentMenu">
+                        <i class="fas fa-user-graduate"></i>
+                        <span>Student Management</span>
+                        <i class="fas fa-chevron-down arrow"></i>
+                    </button>
+                    <div class="submenu" id="studentMenu">
+                        <a href="students.php" class="submenu-item">
+                            <i class="fas fa-id-card"></i>
+                            Students Profile
+                        </a>
+                        <a href="search_students.php" class="submenu-item">
+                            <i class="fas fa-search"></i>
+                            Search Students
+                        </a>
+                    </div>
+                </div>
 
                 <div class="nav-group">
                     <button class="nav-item dropdown-btn" data-target="consultationMenu">

@@ -1023,7 +1023,7 @@
                                 }
                             }
 
-                            // Student logs query - LAHAT NG ACTIONS MALIBAN SA Viewed at Accessed
+                            // Student logs query - FILTER OUT UNWANTED ACTIONS
                             $student_logs_sql = "
                                 SELECT 
                                     al.id,
@@ -1038,13 +1038,14 @@
                                 AND u.fullname != ''
                                 AND al.action NOT LIKE '%Viewed%'
                                 AND al.action NOT LIKE '%Accessed%'
+                                AND al.action NOT LIKE '%Logged into system%'
                                 ORDER BY al.log_date DESC
                                 LIMIT 100
                             ";
 
                             $student_logs = $conn->query($student_logs_sql);
 
-                            // Admin logs query - LAHAT NG ACTIONS MALIBAN SA Viewed at Accessed
+                            // Admin logs query - FILTER OUT UNWANTED ACTIONS
                             $admin_logs_sql = "
                                 SELECT 
                                     id,
@@ -1056,6 +1057,7 @@
                                 FROM admin_logs 
                                 WHERE action NOT LIKE '%Viewed%'
                                 AND action NOT LIKE '%Accessed%'
+                                AND action NOT LIKE '%Logged into system%'
                                 ORDER BY log_date DESC
                                 LIMIT 100
                             ";
