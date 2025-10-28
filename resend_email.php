@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
     if ($user && $user['is_verified'] == 0) {
         $fullname = $user['fullname'];
         $activation_code = $user['activation_code'];
-        $activation_link = "http://192.168.1.77:8080/ascot-school-clinic/activate.php?code=$activation_code";
+        $activation_link = "http://192.168.100.243:8080/ascot-school-clinic/activate.php?code=$activation_code";
 
         $mail = new PHPMailer(true);
         try {

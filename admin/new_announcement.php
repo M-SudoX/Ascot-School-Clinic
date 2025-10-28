@@ -175,8 +175,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $mail->isSMTP();
                         $mail->Host = 'smtp.gmail.com';
                         $mail->SMTPAuth = true;
-                        $mail->Username = 'cachemeifucan05@gmail.com';
-                        $mail->Password = 'zusittxqokhgzotm';
+                        $mail->Username = 'zayantomara@gmail.com';
+                        $mail->Password = 'zjaoodlqbdtknyno';
                         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                         $mail->Port = 587;
                         $mail->SMTPOptions = array(
@@ -188,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         );
                         
                         // Recipients
-                        $mail->setFrom('cachemeifucan05@gmail.com', 'ASCOT Clinic');
+                        $mail->setFrom('zayantomara@gmail.com', 'ASCOT Clinic');
                         $mail->addAddress($to, $name);
                         
                         // Content
@@ -1582,6 +1582,9 @@ try {
                             <select class="form-select" id="sentBy" name="sentBy" required>
                                 <option value="">Select sender...</option>
                                 <option value="Admin User">Admin User</option>
+                                <option value="Dr. James Smith">Dr. James Smith</option>
+                                <option value="Nurse Maria Santos">Nurse Maria Santos</option>
+                                <option value="Clinic Administrator">Clinic Administrator</option>
                             </select>
                         </div>
                     </div>
