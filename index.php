@@ -142,7 +142,6 @@ try {
       height: 140px;
       border-radius: 50%;
       object-fit: cover;
-      border: 4px solid var(--white);
       box-shadow: var(--shadow);
       margin-bottom: 1.5rem;
       transition: var(--transition);
