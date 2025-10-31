@@ -27,12 +27,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'])) {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'zayantomara@gmail.com';
-            $mail->Password = 'zjaoodlqbdtknyno';
+            $mail->Username = 'ascotclinic79@gmail.com';
+            $mail->Password = 'ysgutmnwuesppaus';
             $mail->SMTPSecure = 'tls';
             $mail->Port = 587;
 
-            $mail->setFrom('zayantomara@gmail.com', 'ASCOT Online Clinic');
+            $mail->setFrom('ascotclinic79@gmail.com', 'ASCOT Online Clinic');
             $mail->addAddress($email, $fullname);
             $mail->isHTML(true);
             $mail->Subject = 'Resend: Activate Your ASCOT Online Clinic Account';

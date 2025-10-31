@@ -30,8 +30,8 @@ if (isset($_POST['resend']) && isset($_SESSION['pending_reset_user'])) {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'zayantomara@gmail.com'; // ✅ SAME AS OTHER FILES
-            $mail->Password = 'zjaoodlqbdtknyno'; // ✅ SAME AS OTHER FILES
+            $mail->Username = 'ascotclinic79@gmail.com'; // ✅ SAME AS OTHER FILES
+            $mail->Password = 'ysgutmnwuesppaus'; // ✅ SAME AS OTHER FILES
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
             
@@ -39,9 +39,9 @@ if (isset($_POST['resend']) && isset($_SESSION['pending_reset_user'])) {
             $mail->Timeout = 30;
 
             // Recipients
-            $mail->setFrom('zayantomara@gmail.com', 'ASCOT Online School Clinic');
+            $mail->setFrom('ascotclinic79@gmail.com', 'ASCOT Online School Clinic');
             $mail->addAddress($user['email'], $user['fullname']);
-            $mail->addReplyTo('zayantomara@gmail.com', 'ASCOT Online School Clinic');
+            $mail->addReplyTo('ascotclinic79@gmail.com', 'ASCOT Online School Clinic');
 
             // Content
             $mail->isHTML(true);
