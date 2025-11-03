@@ -41,13 +41,14 @@ try {
                 GROUP BY student_number
             ) s2 ON s1.student_number = s2.student_number AND s1.created_at = s2.max_created
         ) si ON c.student_number = si.student_number 
+        WHERE c.is_archived = 0  -- Only show non-archived records
     ";
     
     $params = [];
     
     // Search filter
     if (!empty($search)) {
-        $query .= " WHERE (si.fullname LIKE ? OR c.diagnosis LIKE ? OR si.student_number LIKE ?)";
+        $query .= " AND (si.fullname LIKE ? OR c.diagnosis LIKE ? OR si.student_number LIKE ?)";
         $search_term = "%$search%";
         $params[] = $search_term;
         $params[] = $search_term;
@@ -1102,7 +1103,6 @@ try {
                     <table class="records-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
                                 <th>Date</th>
                                 <th>Student Name</th>
                                 <th>Student ID</th>
@@ -1113,7 +1113,7 @@ try {
                         <tbody>
                             <?php if (empty($records)): ?>
                                 <tr>
-                                    <td colspan="6" class="text-center py-4">
+                                    <td colspan="5" class="text-center py-4">
                                         <i class="fas fa-folder-open fa-2x text-muted mb-2"></i>
                                         <p class="text-muted">
                                             <?php if (!empty($search)): ?>
@@ -1132,7 +1132,6 @@ try {
                             <?php else: ?>
                                 <?php foreach($records as $record): ?>
                                 <tr>
-                                    <td><?php echo $record['id']; ?></td>
                                     <td><?php echo date('m-d-Y', strtotime($record['consultation_date'])); ?></td>
                                     <td><?php echo htmlspecialchars($record['student_name']); ?></td>
                                     <td><?php echo htmlspecialchars($record['student_number']); ?></td>

@@ -13,18 +13,18 @@ $consultation_id = $_POST['id'] ?? 0;
 
 if ($consultation_id) {
     try {
-        // Archive the consultation by updating is_archived flag
-        $archive_stmt = $pdo->prepare("
-            UPDATE consultations 
-            SET is_archived = 1, archived_at = NOW() 
-            WHERE id = ?
-        ");
-        $archive_stmt->execute([$consultation_id]);
+        // Archive the consultation
+        $stmt = $pdo->prepare("UPDATE consultations SET is_archived = 1 WHERE id = ?");
+        $stmt->execute([$consultation_id]);
         
-        echo json_encode(['success' => true, 'message' => 'Consultation archived successfully!']);
+        if ($stmt->rowCount() > 0) {
+            echo json_encode(['success' => true, 'message' => 'Consultation archived successfully.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Consultation not found or already archived.']);
+        }
     } catch (PDOException $e) {
         error_log("Archive consultation error: " . $e->getMessage());
-        echo json_encode(['success' => false, 'message' => 'Error archiving consultation record.']);
+        echo json_encode(['success' => false, 'message' => 'Error archiving consultation.']);
     }
 } else {
     echo json_encode(['success' => false, 'message' => 'Invalid consultation ID.']);

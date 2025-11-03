@@ -715,7 +715,6 @@ try {
                         <table class="activity-table">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
                                     <th>Action</th>
                                     <th>Date & Time</th>
                                 </tr>
@@ -723,7 +722,6 @@ try {
                             <tbody class="stagger-animation">
                                 <?php foreach ($logs as $log): ?>
                                     <tr>
-                                        <td><?php echo htmlspecialchars($log['id']); ?></td>
                                         <td>
                                             <div class="action-cell">
                                                 <?php 

@@ -929,7 +929,6 @@
                         <thead>
                             <tr>
                                 <th width="50">Select</th>
-                                <th>ID</th>
                                 <th>Student ID</th>
                                 <th>Name</th>
                                 <th>User Type</th>
@@ -1088,7 +1087,7 @@
 
                             // Display logs
                             if (empty($all_logs)) {
-                                echo '<tr><td colspan="8" class="no-results">No user logs available</td></tr>';
+                                echo '<tr><td colspan="7" class="no-results">No user logs available</td></tr>';
                             } else {
                                 foreach ($all_logs as $log) {
                                     $student_id = $log['student_id'];
@@ -1105,7 +1104,6 @@
                                         <td>
                                             <input type='checkbox' class='row-checkbox' name='selected_logs[]' value='{$checkbox_value}'>
                                         </td>
-                                        <td>{$id}</td>
                                         <td>{$student_id}</td>
                                         <td>{$name}</td>
                                         <td><span class='user-type {$user_type}'>" . ucfirst($user_type) . "</span></td>
@@ -1312,7 +1310,7 @@
                 if (visibleCount === 0 && rows.length > 0) {
                     const firstRow = rows[0];
                     if (!firstRow.querySelector('.no-results')) {
-                        tableBody.innerHTML = '<tr><td colspan="8" class="no-results">No matching records found</td></tr>';
+                        tableBody.innerHTML = '<tr><td colspan="7" class="no-results">No matching records found</td></tr>';
                     }
                 }
             }

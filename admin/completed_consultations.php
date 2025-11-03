@@ -9,7 +9,7 @@ if (!isset($_SESSION['admin_id'])) {
 }
 
 // ===============================
-// ✅ HANDLE APPROVE / REJECT / RESCHEDULE / DELETE
+// ✅ HANDLE ACTIONS FOR COMPLETED CONSULTATIONS
 // ===============================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -17,25 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action && $id) {
         try {
-            if ($action === 'approve') {
-                $stmt = $pdo->prepare("UPDATE consultation_requests SET status = 'Approved' WHERE id = ?");
-                $stmt->execute([$id]);
-                $_SESSION['success_message'] = "Consultation request approved successfully.";
-
-            } elseif ($action === 'reject') {
-                $stmt = $pdo->prepare("UPDATE consultation_requests SET status = 'Rejected' WHERE id = ?");
-                $stmt->execute([$id]);
-                $_SESSION['success_message'] = "Consultation request rejected successfully.";
-
-            } elseif ($action === 'reschedule') {
-                $newDate = $_POST['new_date'] ?? '';
-                $newTime = $_POST['new_time'] ?? '';
-                if ($newDate && $newTime) {
-                    $stmt = $pdo->prepare("UPDATE consultation_requests SET date = ?, time = ?, status = 'Rescheduled' WHERE id = ?");
-                    $stmt->execute([$newDate, $newTime, $id]);
-                    $_SESSION['success_message'] = "Consultation rescheduled successfully.";
-                }
-            } elseif ($action === 'delete') {
+            if ($action === 'delete') {
                 $stmt = $pdo->prepare("DELETE FROM consultation_requests WHERE id = ?");
                 $stmt->execute([$id]);
                 $_SESSION['success_message'] = "Consultation request deleted successfully.";
@@ -45,18 +27,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    header("Location: approvals.php");
+    header("Location: completed_consultations.php");
     exit();
 }
 
 // ===============================
-// ✅ FETCH ONLY PENDING CONSULTATION REQUESTS
+// ✅ FETCH ONLY COMPLETED CONSULTATION REQUESTS
 // ===============================
 $stmt = $pdo->prepare("
     SELECT c.id, u.fullname, c.requested, c.date, c.time, c.status
     FROM consultation_requests c
     JOIN users u ON c.student_id = u.id
-    WHERE c.status = 'Pending'
+    WHERE c.status = 'Completed'
     ORDER BY c.date DESC, c.time DESC
 ");
 $stmt->execute();
@@ -71,7 +53,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Approvals - ASCOT Clinic</title>
+    <title>Completed Consultations - ASCOT Clinic</title>
 
     <!-- Bootstrap -->
     <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
@@ -440,7 +422,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             gap: 8px;
         }
 
-        .btn-approve, .btn-decline, .btn-reschedule, .btn-delete {
+        .btn-delete {
             border: none;
             border-radius: 8px;
             width: 40px;
@@ -451,39 +433,6 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             cursor: pointer;
             transition: all 0.3s ease;
             font-size: 1rem;
-        }
-
-        .btn-approve {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .btn-approve:hover {
-            background: #c3e6cb;
-            transform: scale(1.1);
-        }
-
-        .btn-decline {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .btn-decline:hover {
-            background: #f1b0b7;
-            transform: scale(1.1);
-        }
-
-        .btn-reschedule {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-
-        .btn-reschedule:hover {
-            background: #bee5eb;
-            transform: scale(1.1);
-        }
-
-        .btn-delete {
             background: #f8d7da;
             color: #721c24;
         }
@@ -531,33 +480,9 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             border-left: 4px solid #ffc107;
         }
 
-        /* Modal Styles */
-        .modal-content {
-            border-radius: 15px;
-            border: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-bottom: none;
-            border-radius: 15px 15px 0 0;
-            padding: 1.5rem;
-        }
-
-        .modal-header .modal-title {
-            font-weight: 600;
-            color: white;
-        }
-
-        .modal-body {
-            padding: 2rem;
-        }
-
-        .modal-footer {
-            border-top: 1px solid #e9ecef;
-            padding: 1.5rem;
+        .action-btn.completed {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            border-left: 4px solid #17a2b8;
         }
 
         /* Badge Styles */
@@ -672,7 +597,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 gap: 5px;
             }
 
-            .btn-approve, .btn-decline, .btn-reschedule, .btn-delete {
+            .btn-delete {
                 width: 35px;
                 height: 35px;
                 font-size: 0.9rem;
@@ -711,7 +636,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 gap: 5px;
             }
 
-            .btn-approve, .btn-decline, .btn-reschedule, .btn-delete {
+            .btn-delete {
                 width: 32px;
                 height: 32px;
                 font-size: 0.8rem;
@@ -858,13 +783,21 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                             <i class="fas fa-calendar-alt"></i>
                             Calendar View
                         </a>
-                        <a href="approvals.php" class="submenu-item active">
+                        <a href="approvals.php" class="submenu-item">
                             <i class="fas fa-clock"></i>
                             Pending Requests
                         </a>
                         <a href="approved_consultations.php" class="submenu-item">
                             <i class="fas fa-check-circle"></i>
                             Approved Consultations
+                        </a>
+                        <a href="completed_consultations.php" class="submenu-item active">
+                            <i class="fas fa-flag-checkered"></i>
+                            Completed Consultations
+                        </a>
+                        <a href="rejected_consultations.php" class="submenu-item">
+                           <i class="fas fa-times-circle"></i>
+                             Rejected Consultations
                         </a>
                     </div>
                 </div>
@@ -930,8 +863,8 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         <main class="main-content">
             <!-- Page Header -->
             <div class="page-header fade-in">
-                <h1><i class="fas fa-clock me-2"></i>Pending Consultation Requests</h1>
-                <p>Manage and approve consultation requests from students</p>
+                <h1><i class="fas fa-flag-checkered me-2"></i>Completed Consultations</h1>
+                <p>View completed consultation records</p>
             </div>
 
             <?php if ($success_message): ?>
@@ -956,22 +889,23 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                     <i class="fas fa-clock"></i>
                     View Pending Requests
                 </a>
+                <a href="completed_consultations.php" class="action-btn completed">
+                    <i class="fas fa-flag-checkered"></i>
+                    View Completed
+                </a>
                 <a href="rejected_consultations.php" class="action-btn rejected">
     <i class="fas fa-times-circle"></i>
     View Rejected
 </a>
-<a href="rescheduled_consultations.php" class="action-btn rescheduled">
-        <i class="fas fa-calendar-alt"></i>
-        View Rescheduled
-    </a>
-</div>
-            <!-- Approvals Container -->
+            </div>
+
+            <!-- Completed Consultations Container -->
             <div class="dashboard-card fade-in">
                 <div class="card-header">
-                    <h3 class="card-title">Pending Requests</h3>
-                    <div class="pending-badge">
-                        <i class="fas fa-clock me-1"></i>
-                        <?= count($consultations); ?> Pending
+                    <h3 class="card-title">Completed Consultations</h3>
+                    <div class="pending-badge" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                        <i class="fas fa-flag-checkered me-1"></i>
+                        <?= count($consultations); ?> Completed
                     </div>
                 </div>
                 
@@ -981,7 +915,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                             <tr>
                                 <th>Name</th>
                                 <th>Concern</th>
-                                <th>Requested Date</th>
+                                <th>Completed Date</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -990,8 +924,8 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                             <?php if (empty($consultations)): ?>
                                 <tr>
                                     <td colspan="5" class="text-center py-4">
-                                        <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
-                                        <p class="text-muted">No pending consultation requests found.</p>
+                                        <i class="fas fa-flag-checkered fa-2x text-muted mb-2"></i>
+                                        <p class="text-muted">No completed consultations found.</p>
                                     </td>
                                 </tr>
                             <?php else: ?>
@@ -1001,37 +935,12 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                                         <td><?= htmlspecialchars($c['requested']); ?></td>
                                         <td><?= date('M d, Y g:i A', strtotime($c['date'].' '.$c['time'])); ?></td>
                                         <td>
-                                            <span class="badge bg-warning">
+                                            <span class="badge bg-info">
                                                 <?= htmlspecialchars($c['status']); ?>
                                             </span>
                                         </td>
                                         <td class="action-buttons">
-                                            <form method="POST" class="d-inline">
-                                                <input type="hidden" name="consultation_id" value="<?= $c['id']; ?>">
-                                                <input type="hidden" name="action" value="approve">
-                                                <button type="submit" class="btn-approve" title="Approve">
-                                                    <i class="fas fa-check-circle"></i>
-                                                </button>
-                                            </form>
-
-                                            <form method="POST" class="d-inline">
-                                                <input type="hidden" name="consultation_id" value="<?= $c['id']; ?>">
-                                                <input type="hidden" name="action" value="reject">
-                                                <button type="submit" class="btn-decline" title="Reject">
-                                                    <i class="fas fa-times-circle"></i>
-                                                </button>
-                                            </form>
-
-                                            <!-- Reschedule -->
-                                            <button class="btn-reschedule" title="Reschedule"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#rescheduleModal"
-                                                data-id="<?= $c['id']; ?>"
-                                                data-name="<?= htmlspecialchars($c['fullname']); ?>">
-                                                <i class="fas fa-calendar-alt"></i>
-                                            </button>
-
-                                            <!-- DELETE BUTTON -->
+                                            <!-- DELETE BUTTON ONLY FOR COMPLETED CONSULTATIONS -->
                                             <form method="POST" class="d-inline" onsubmit="return confirmDelete()">
                                                 <input type="hidden" name="consultation_id" value="<?= $c['id']; ?>">
                                                 <input type="hidden" name="action" value="delete">
@@ -1048,37 +957,6 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 </div>
             </div>
         </main>
-    </div>
-
-    <!-- RESCHEDULE MODAL -->
-    <div class="modal fade" id="rescheduleModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <form method="POST" class="modal-content">
-                <input type="hidden" name="action" value="reschedule">
-                <input type="hidden" name="consultation_id" id="reschedule_id">
-
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-calendar-alt me-2"></i>Reschedule Consultation
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">New Date:</label>
-                        <input type="date" name="new_date" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">New Time:</label>
-                        <input type="time" name="new_time" class="form-control" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                </div>
-            </form>
-        </div>
     </div>
 
     <!-- BOOTSTRAP JS -->
@@ -1125,17 +1003,20 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
         });
 
-        // Reschedule Modal functionality
-        const rescheduleModal = document.getElementById('rescheduleModal');
-        rescheduleModal.addEventListener('show.bs.modal', function (event) {
-            const button = event.relatedTarget;
-            const id = button.getAttribute('data-id');
-            document.getElementById('reschedule_id').value = id;
-        });
+        // Close sidebar when clicking submenu items on mobile
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.submenu-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    sidebarOverlay.classList.remove('active');
+                    mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+                });
+            });
+        }
 
         // Delete confirmation function
         function confirmDelete() {
-            return confirm('Are you sure you want to delete this consultation request? This action cannot be undone.');
+            return confirm('Are you sure you want to delete this completed consultation? This action cannot be undone.');
         }
     </script>
 </body>

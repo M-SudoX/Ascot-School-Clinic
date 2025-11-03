@@ -26,32 +26,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $lab_tests = $_POST['lab_tests'] ?? [];
         $medical_officer = $_POST['medical_officer'] ?? '';
 
-        // Insert certificate into database
-        $stmt = $pdo->prepare("
-            INSERT INTO certificates 
-            (consultation_id, student_name, certificate_type, diagnosis, recommendation, date_issued) 
-            VALUES (?, ?, ?, ?, ?, ?)
-        ");
+        // Get current college physician from database
+        $physician_query = "SELECT name, title FROM college_physician WHERE id = 1 LIMIT 1";
+        $physician_stmt = $pdo->query($physician_query);
+        $college_physician = $physician_stmt->fetch(PDO::FETCH_ASSOC);
         
-        $stmt->execute([
-            $consultation_id,
-            $student_name,
-            $certificate_type,
-            $diagnosis,
-            $recommendation,
-            $date_issued
-        ]);
+        // If no physician found in database, use default
+        if (!$college_physician) {
+            $college_physician = [
+                'name' => 'MARILYN R. GANTE, MD',
+                'title' => 'College Physician'
+            ];
+        }
 
-        $certificate_id = $pdo->lastInsertId();
-
-        // Display certificate using EXACT template format
-        displayCertificateTemplate($student_name, $address, $diagnosis, $recommendation, $certificate_type, $date_issued, $certificate_id, [
+        // Store data in session for later use when printing
+        $_SESSION['certificate_data'] = [
+            'consultation_id' => $consultation_id,
+            'student_name' => $student_name,
+            'address' => $address,
+            'diagnosis' => $diagnosis,
+            'recommendation' => $recommendation,
+            'certificate_type' => $certificate_type,
+            'date_issued' => $date_issued,
             'student_number' => $student_number,
             'course_year' => $course_year,
             'schedule' => $schedule,
             'cellphone_number' => $cellphone_number,
             'lab_tests' => $lab_tests,
-            'medical_officer' => $medical_officer
+            'medical_officer' => $medical_officer,
+            'college_physician' => $college_physician
+        ];
+
+        // Display certificate template WITHOUT saving to database yet
+        displayCertificateTemplate($student_name, $address, $diagnosis, $recommendation, $certificate_type, $date_issued, 0, [
+            'student_number' => $student_number,
+            'course_year' => $course_year,
+            'schedule' => $schedule,
+            'cellphone_number' => $cellphone_number,
+            'lab_tests' => $lab_tests,
+            'medical_officer' => $medical_officer,
+            'college_physician' => $college_physician
         ]);
 
     } catch (PDOException $e) {
@@ -81,7 +95,7 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
             
             body {
                 font-family: 'Times New Roman', Times, serif;
-                background: #fff7de;
+                background: white;
                 padding: 0;
                 margin: 0;
                 line-height: 1.4;
@@ -227,13 +241,13 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                 border-bottom: 1px solid #000;
                 padding-bottom: 2px;
                 min-height: 18px;
-                background: #fff7de;
+                background: white;
             }
             
             .step-section {
                 margin: 25px 0;
                 padding: 12px;
-                background: #fff7de;
+                background: white;
                 border-radius: 4px;
                 border-left: 3px solid #ffda6a;
             }
@@ -270,7 +284,7 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                 flex: 1;
                 margin-left: 4px;
                 padding-bottom: 1px;
-                background: #fff7de;
+                background: white;
             }
             
             .form-footer {
@@ -279,7 +293,7 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                 left: 1.2cm;
                 font-size: 8pt;
                 color: #666;
-                background: #fff7de;
+                background: white;
                 padding: 4px 8px;
                 border-radius: 3px;
                 border: 1px solid #ffda6a;
@@ -332,9 +346,9 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
             
             .date-section {
                 margin-bottom: 12px;
-                text-align: left;
+                text-align: right;
                 padding: 8px;
-                background: #fff7de;
+                background: white;
                 border-radius: 4px;
             }
             
@@ -347,7 +361,7 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
             .section {
                 margin-bottom: 12px;
                 padding: 8px;
-                background: #fff7de;
+                background: white;
                 border-radius: 4px;
             }
             
@@ -368,17 +382,17 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                 text-align: justify;
                 font-style: italic;
                 padding: 8px;
-                background: #fff7de;
+                background: white;
                 border-radius: 4px;
             }
             
             .signature-area {
-                text-align: center;
+                text-align: right;
                 margin-top: 40px;
                 padding: 15px;
-                background: #fff7de;
+                background: white;
                 border-radius: 4px;
-                border-top: 2px solid #ffda6a;
+                margin-right: 100px;
             }
             
             .signature-name {
@@ -401,7 +415,7 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                 left: 1.2cm;
                 font-size: 7pt;
                 color: #666;
-                background: #fff7de;
+                background: white;
                 padding: 3px 6px;
                 border-radius: 2px;
                 border: 1px solid #ffda6a;
@@ -412,7 +426,7 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                     background: white;
                     padding: 0;
                     margin: 0;
-                    background: #fff7de !important;
+                    background: white !important;
                 }
                 
                 .page {
@@ -454,7 +468,7 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                 
                 .step-section, .date-section, .section, .closing-statement, 
                 .signature-area, .form-footer, .form-number {
-                    background: #fff7de !important;
+                    background: white !important;
                     -webkit-print-color-adjust: exact;
                     print-color-adjust: exact;
                 }
@@ -595,10 +609,6 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                         
                         <div style="min-height: 30px; margin: 8px 0;"></div>
                         
-                        <div class="body-text">
-                            <?php echo nl2br(htmlspecialchars($diagnosis)); ?>
-                        </div>
-                        
                         <div style="min-height: 15px; margin: 8px 0;"></div>
                         
                         <div class="section">
@@ -617,8 +627,8 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                         <div style="min-height: 40px; margin: 15px 0;"></div>
 
                         <div class="signature-area">
-                            <div class="signature-name">MARILYN R. GANTE, MD</div>
-                            <div class="signature-title">College Physician</div>
+                            <div class="signature-name"><?php echo htmlspecialchars($lab_data['college_physician']['name']); ?></div>
+                            <div class="signature-title"><?php echo htmlspecialchars($lab_data['college_physician']['title']); ?></div>
                         </div>
 
                         <div class="form-number">
@@ -705,8 +715,8 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
                         </div>
 
                         <div class="signature-area">
-                            <div class="signature-name">MARILYN R. GANTE, MD</div>
-                            <div class="signature-title">College Physician</div>
+                            <div class="signature-name"><?php echo htmlspecialchars($lab_data['college_physician']['name']); ?></div>
+                            <div class="signature-title"><?php echo htmlspecialchars($lab_data['college_physician']['title']); ?></div>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -715,7 +725,7 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
 
         <!-- Print Controls -->
         <div class="print-controls">
-            <button class="print-btn" onclick="window.print()">
+            <button class="print-btn" onclick="saveAndPrint()">
                 🖨️ Print Certificate
             </button>
             <button class="close-btn" onclick="window.close()">
@@ -724,10 +734,37 @@ function displayCertificateTemplate($student_name, $address, $diagnosis, $recomm
         </div>
 
         <script>
+            function saveAndPrint() {
+                // Send AJAX request to save certificate to database
+                fetch('save_certificate.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'save_certificate': 'true'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // After saving, trigger print
+                        window.print();
+                    } else {
+                        alert('Error saving certificate: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error saving certificate');
+                });
+            }
+
             window.onload = function() {
-                setTimeout(function() {
-                    window.print();
-                }, 500);
+                // Remove auto-print since we only want to print after saving
+                // setTimeout(function() {
+                //     window.print();
+                // }, 500);
             };
         </script>
     </body>

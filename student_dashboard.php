@@ -77,7 +77,7 @@ try {
         AND action NOT LIKE '%logged in%' 
         AND action NOT LIKE '%logged out%'
         ORDER BY log_date DESC 
-        LIMIT 5
+        LIMIT 3
     ");
     $activity_stmt->execute([$student_id]);
     $recent_activities = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);

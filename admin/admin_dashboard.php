@@ -995,6 +995,10 @@ function getActivityStyle($action) {
                         <a href="students.php" class="action-btn">
                             <i class="fas fa-users"></i> View All Students
                         </a>
+                        <!-- ADDED: Manage Certificate Settings Button -->
+                        <a href="manage_physician.php" class="action-btn">
+                            <i class="fas fa-file-medical-alt"></i> Certificate Settings
+                        </a>
                     </div>
                 </div>
             </div>

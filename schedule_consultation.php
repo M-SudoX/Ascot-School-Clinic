@@ -27,6 +27,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $concern = $_POST['other_concern'];
     }
 
+    // ✅ VALIDATION: Check if the selected date/time is in the past
+    $selected_datetime = strtotime($date . ' ' . $time);
+    $current_datetime = time();
+    
+    if ($selected_datetime <= $current_datetime) {
+        $_SESSION['error_message'] = 'You cannot schedule a consultation for a past date/time. Please select a future date and time.';
+        header("Location: schedule_consultation.php");
+        exit();
+    }
+
     try {
         $stmt = $pdo->prepare("INSERT INTO consultation_requests (student_id, date, time, requested, notes, status) VALUES (?, ?, ?, ?, ?, 'Pending')");
         $stmt->execute([$student_id, $date, $time, $concern, $notes]);
@@ -52,6 +62,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $time = $_POST['edit_time'];
     $concern = $_POST['edit_concern'];
     $notes = $_POST['edit_notes'];
+
+    // ✅ VALIDATION: Check if the selected date/time is in the past
+    $selected_datetime = strtotime($date . ' ' . $time);
+    $current_datetime = time();
+    
+    if ($selected_datetime <= $current_datetime) {
+        $_SESSION['error_message'] = 'You cannot schedule a consultation for a past date/time. Please select a future date and time.';
+        header("Location: schedule_consultation.php");
+        exit();
+    }
 
     try {
         $stmt = $pdo->prepare("UPDATE consultation_requests SET date = ?, time = ?, requested = ?, notes = ? WHERE id = ? AND status IN ('Pending', 'Approved')");
@@ -130,6 +150,10 @@ function formatTime($time) {
 function formatDate($date) { 
     return date('M d', strtotime($date)); 
 }
+
+// ✅ Get current date and time for validation
+$current_date = date('Y-m-d');
+$current_time = date('H:i');
 ?>
 
 <!DOCTYPE html>
@@ -950,8 +974,8 @@ function formatDate($date) {
                             <div class="form-group">
                                 <label class="form-label"><strong>Date:</strong></label>
                                 <input type="date" name="date" class="form-control" 
-                                       min="<?= date('Y-m-d'); ?>" 
-                                       value="<?= date('Y-m-d'); ?>" 
+                                       min="<?= $current_date; ?>" 
+                                       value="<?= $current_date; ?>" 
                                        required>
                                 <small class="form-text text-muted">Select your preferred date</small>
                             </div>
@@ -959,7 +983,7 @@ function formatDate($date) {
                         <div class="col-md-6 mb-3">
                             <div class="form-group">
                                 <label class="form-label"><strong>Time:</strong></label>
-                                <select name="time" class="form-control" required>
+                                <select name="time" class="form-control" id="timeSelect" required>
                                     <option value="">Select Time</option>
                                     <option value="08:00">8:00 AM</option>
                                     <option value="08:30">8:30 AM</option>
@@ -1120,7 +1144,7 @@ function formatDate($date) {
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label"><strong>Date:</strong></label>
-                        <input type="date" id="edit_date" name="edit_date" class="form-control" required>
+                        <input type="date" id="edit_date" name="edit_date" class="form-control" min="<?= $current_date; ?>" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label"><strong>Time:</strong></label>
@@ -1154,6 +1178,8 @@ function formatDate($date) {
             const otherConcernContainer = document.getElementById('otherConcernContainer');
             const otherConcernInput = document.getElementById('otherConcern');
             const consultationForm = document.getElementById('consultationForm');
+            const dateInput = document.querySelector('input[name="date"]');
+            const timeSelect = document.getElementById('timeSelect');
 
             concernSelect.addEventListener('change', function() {
                 if (this.value === 'Other') {
@@ -1166,12 +1192,46 @@ function formatDate($date) {
                 }
             });
 
+            // ✅ VALIDATION: Check if selected time is in the past
+            function validateDateTime() {
+                const selectedDate = dateInput.value;
+                const selectedTime = timeSelect.value;
+                
+                if (selectedDate && selectedTime) {
+                    const selectedDateTime = new Date(selectedDate + 'T' + selectedTime);
+                    const currentDateTime = new Date();
+                    
+                    if (selectedDateTime <= currentDateTime) {
+                        alert('You cannot schedule a consultation for a past date/time. Please select a future date and time.');
+                        timeSelect.value = '';
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            // Add validation when time is selected
+            timeSelect.addEventListener('change', validateDateTime);
+            
+            // Add validation when date is changed
+            dateInput.addEventListener('change', function() {
+                if (timeSelect.value) {
+                    validateDateTime();
+                }
+            });
+
             // Form submission handling
             consultationForm.addEventListener('submit', function(e) {
                 if (concernSelect.value === 'Other' && otherConcernInput.value.trim() === '') {
                     e.preventDefault();
                     alert('Please specify your concern in the "Other" field.');
                     otherConcernInput.focus();
+                    return;
+                }
+                
+                // Validate date/time on form submission
+                if (!validateDateTime()) {
+                    e.preventDefault();
                     return;
                 }
             });
