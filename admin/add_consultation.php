@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $heart_rate = trim($_POST['heart_rate'] ?? '');
         $attending_staff = trim($_POST['attending_staff'] ?? '');
         $consultation_date = trim($_POST['consultation_date'] ?? date('Y-m-d'));
+        $consultation_time = trim($_POST['consultation_time'] ?? date('H:i:s'));
         $physician_notes = trim($_POST['physician_notes'] ?? '');
         
         // Validate required fields
@@ -57,8 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             INSERT INTO consultations (
                 student_number, symptoms, temperature, diagnosis, 
                 blood_pressure, treatment, heart_rate, attending_staff, 
-                consultation_date, physician_notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                consultation_date, consultation_time, physician_notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         
         $insert_stmt->execute([
@@ -71,6 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $heart_rate,
             $attending_staff,
             $consultation_date,
+            $consultation_time,
             $physician_notes
         ]);
         
@@ -112,7 +114,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         /* Header Styles - FIXED */
         .top-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: 
+                linear-gradient(90deg, 
+                    #ffda6a 0%, 
+                    #ffda6a 30%, 
+                    #FFF5CC 70%, 
+                    #ffffff 100%);
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -143,17 +150,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .republic {
             font-size: 0.75rem;
             opacity: 0.9;
+            color: #555;
         }
 
         .school-name {
             font-size: 1.2rem;
             font-weight: bold;
             margin: 0.2rem 0;
+            color: #555;
         }
 
         .clinic-title {
             font-size: 0.85rem;
             opacity: 0.9;
+            color: #555;
         }
 
         /* Mobile Menu Toggle - FIXED */
@@ -954,6 +964,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                            value="<?php echo htmlspecialchars($_POST['consultation_date'] ?? date('Y-m-d')); ?>" 
                                            required>
                                     <div class="error-message" id="dateError">Please select consultation date</div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="consultation_time" class="required-field">Consultation Time:</label>
+                                    <input type="time" id="consultation_time" name="consultation_time" class="form-control" 
+                                           value="<?php echo htmlspecialchars($_POST['consultation_time'] ?? date('H:i')); ?>" 
+                                           required>
+                                    <div class="error-message" id="timeError">Please select consultation time</div>
+                                </div>
+                                <div class="form-group">
+                                    <!-- Spacer to maintain grid layout -->
                                 </div>
                             </div>
                         </div>

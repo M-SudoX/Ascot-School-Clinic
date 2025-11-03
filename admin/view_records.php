@@ -13,11 +13,12 @@ $records = [];
 $search = $_GET['search'] ?? '';
 
 try {
-    // Build query with search - FIXED TO PREVENT DUPLICATES
+    // Build query with search - FIXED TO PREVENT DUPLICATES AND ONLY SHOW NON-ARCHIVED
     $query = "
         SELECT DISTINCT
             c.id,
             c.consultation_date,
+            c.consultation_time,
             c.diagnosis,
             c.symptoms,
             c.temperature,
@@ -38,6 +39,7 @@ try {
             INNER JOIN (
                 SELECT student_number, MAX(created_at) as max_created
                 FROM student_information 
+                WHERE (archived = 0 OR archived IS NULL)
                 GROUP BY student_number
             ) s2 ON s1.student_number = s2.student_number AND s1.created_at = s2.max_created
         ) si ON c.student_number = si.student_number 
@@ -55,7 +57,7 @@ try {
         $params[] = $search_term;
     }
     
-    $query .= " ORDER BY c.consultation_date DESC, c.created_at DESC";
+    $query .= " ORDER BY c.consultation_date DESC, c.consultation_time DESC";
     
     $stmt = $pdo->prepare($query);
     $stmt->execute($params);
@@ -1104,6 +1106,7 @@ try {
                         <thead>
                             <tr>
                                 <th>Date</th>
+                                <th>Time</th>
                                 <th>Student Name</th>
                                 <th>Student ID</th>
                                 <th>Diagnosis</th>
@@ -1113,7 +1116,7 @@ try {
                         <tbody>
                             <?php if (empty($records)): ?>
                                 <tr>
-                                    <td colspan="5" class="text-center py-4">
+                                    <td colspan="6" class="text-center py-4">
                                         <i class="fas fa-folder-open fa-2x text-muted mb-2"></i>
                                         <p class="text-muted">
                                             <?php if (!empty($search)): ?>
@@ -1133,6 +1136,7 @@ try {
                                 <?php foreach($records as $record): ?>
                                 <tr>
                                     <td><?php echo date('m-d-Y', strtotime($record['consultation_date'])); ?></td>
+                                    <td><?php echo date('h:i A', strtotime($record['consultation_time'])); ?></td>
                                     <td><?php echo htmlspecialchars($record['student_name']); ?></td>
                                     <td><?php echo htmlspecialchars($record['student_number']); ?></td>
                                     <td><?php echo htmlspecialchars($record['diagnosis']); ?></td>
@@ -1142,6 +1146,7 @@ try {
                                                     data-bs-toggle="modal" data-bs-target="#recordModal"
                                                     data-student="<?php echo htmlspecialchars($record['student_name']); ?>"
                                                     data-date="<?php echo date('F j, Y', strtotime($record['consultation_date'])); ?>"
+                                                    data-time="<?php echo date('h:i A', strtotime($record['consultation_time'])); ?>"
                                                     data-diagnosis="<?php echo htmlspecialchars($record['diagnosis']); ?>"
                                                     data-symptoms="<?php echo htmlspecialchars($record['symptoms']); ?>"
                                                     data-temperature="<?php echo htmlspecialchars($record['temperature']); ?>"
@@ -1203,6 +1208,14 @@ try {
                                 <div class="detail-item">
                                     <span class="detail-label">Consultation Date:</span>
                                     <span class="detail-value" id="modalDate">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <span class="detail-label">Consultation Time:</span>
+                                    <span class="detail-value" id="modalTime">-</span>
                                 </div>
                             </div>
                         </div>
@@ -1501,6 +1514,7 @@ try {
                 // Patient Information
                 document.getElementById('modalStudent').textContent = button.getAttribute('data-student') || 'Not specified';
                 document.getElementById('modalDate').textContent = button.getAttribute('data-date') || 'Not specified';
+                document.getElementById('modalTime').textContent = button.getAttribute('data-time') || 'Not specified';
                 
                 // Medical Assessment
                 document.getElementById('modalSymptoms').textContent = button.getAttribute('data-symptoms') || 'Not specified';

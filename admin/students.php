@@ -24,14 +24,29 @@ if (isset($_GET['archive_id'])) {
     $archive_id = $_GET['archive_id'];
 
     try {
-        // Update student_information table to set archived status and archive date
-        $archive_stmt = $pdo->prepare("UPDATE student_information SET archived = 1, archived_at = NOW() WHERE id = ?");
-        $archive_success = $archive_stmt->execute([$archive_id]);
+        // Get student number before archiving for consultation records
+        $student_stmt = $pdo->prepare("SELECT student_number FROM student_information WHERE id = ?");
+        $student_stmt->execute([$archive_id]);
+        $student = $student_stmt->fetch(PDO::FETCH_ASSOC);
         
-        if ($archive_success) {
-            $success = "Student archived successfully!";
+        if ($student) {
+            $student_number = $student['student_number'];
+            
+            // Update student_information table to set archived status and archive date
+            $archive_stmt = $pdo->prepare("UPDATE student_information SET archived = 1, archived_at = NOW() WHERE id = ?");
+            $archive_success = $archive_stmt->execute([$archive_id]);
+            
+            if ($archive_success) {
+                // Also archive all consultations for this student
+                $consultation_stmt = $pdo->prepare("UPDATE consultations SET is_archived = 1 WHERE student_number = ?");
+                $consultation_stmt->execute([$student_number]);
+                
+                $success = "Student archived successfully! All consultation records have also been archived.";
+            } else {
+                $error = "Failed to archive student!";
+            }
         } else {
-            $error = "Failed to archive student!";
+            $error = "Student not found!";
         }
     } catch (PDOException $e) {
         $error = "Database error: " . $e->getMessage();
@@ -44,12 +59,25 @@ if (isset($_POST['bulk_archive']) && isset($_POST['selected_students'])) {
     
     if (!empty($selected_students)) {
         try {
+            // Get student numbers for the selected students
             $placeholders = str_repeat('?,', count($selected_students) - 1) . '?';
+            $student_stmt = $pdo->prepare("SELECT student_number FROM student_information WHERE id IN ($placeholders)");
+            $student_stmt->execute($selected_students);
+            $students = $student_stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $student_numbers = array_column($students, 'student_number');
+            
+            // Archive students
             $archive_stmt = $pdo->prepare("UPDATE student_information SET archived = 1, archived_at = NOW() WHERE id IN ($placeholders)");
             $archive_success = $archive_stmt->execute($selected_students);
             
-            if ($archive_success) {
-                $success = "Successfully archived " . count($selected_students) . " student(s)!";
+            if ($archive_success && !empty($student_numbers)) {
+                // Archive all consultations for these students
+                $consultation_placeholders = str_repeat('?,', count($student_numbers) - 1) . '?';
+                $consultation_stmt = $pdo->prepare("UPDATE consultations SET is_archived = 1 WHERE student_number IN ($consultation_placeholders)");
+                $consultation_stmt->execute($student_numbers);
+                
+                $success = "Successfully archived " . count($selected_students) . " student(s)! All consultation records have also been archived.";
             } else {
                 $error = "Failed to archive selected students!";
             }
@@ -100,6 +128,7 @@ try {
             INNER JOIN (
                 SELECT student_number, MAX(created_at) as max_created
                 FROM student_information 
+                WHERE (archived = 0 OR archived IS NULL)
                 GROUP BY student_number
             ) s2 ON s1.student_number = s2.student_number AND s1.created_at = s2.max_created
         ) si ON u.student_number = si.student_number 
@@ -1261,6 +1290,7 @@ function getProfileStatus($student) {
                                                         <button class="btn btn-warning btn-sm archive-student" 
                                                                 data-id="<?php echo $studentId; ?>" 
                                                                 data-name="<?php echo htmlspecialchars($student['fullname']); ?>"
+                                                                data-number="<?php echo htmlspecialchars($student['student_number']); ?>"
                                                                 title="Archive">
                                                             <i class="fas fa-archive"></i>
                                                         </button>
@@ -1291,11 +1321,21 @@ function getProfileStatus($student) {
                 </div>
                 <div class="modal-body">
                     <p>Are you sure you want to archive student: <strong id="studentNameToArchive"></strong>?</p>
-                    <p class="text-warning">Archiving will remove the student from active lists but keep their records for historical purposes.</p>
+                    <p><strong>Student ID:</strong> <span id="studentNumberToArchive"></span></p>
+                    <p class="text-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Archiving will:
+                    </p>
+                    <ul class="text-warning small">
+                        <li>Remove student from active student list</li>
+                        <li>Archive all consultation records for this student</li>
+                        <li>Remove student from view records page</li>
+                        <li>Keep all records for historical purposes</li>
+                    </ul>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <a href="#" class="btn btn-warning" id="confirmArchive">Archive</a>
+                    <a href="#" class="btn btn-warning" id="confirmArchive">Archive Student</a>
                 </div>
             </div>
         </div>
@@ -1311,12 +1351,21 @@ function getProfileStatus($student) {
                 </div>
                 <div class="modal-body">
                     <p>Are you sure you want to archive <strong id="selectedStudentsCount"></strong> selected student(s)?</p>
-                    <p class="text-warning">Archiving will remove these students from active lists but keep their records for historical purposes.</p>
+                    <p class="text-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Archiving will:
+                    </p>
+                    <ul class="text-warning small">
+                        <li>Remove students from active student list</li>
+                        <li>Archive all consultation records for these students</li>
+                        <li>Remove students from view records page</li>
+                        <li>Keep all records for historical purposes</li>
+                    </ul>
                     <div id="selectedStudentsList" class="mt-3 small text-muted"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-warning" id="confirmBulkArchive">Archive Selected</button>
+                    <button type="button" class="btn btn-warning" id="confirmBulkArchive">Archive Selected Students</button>
                 </div>
             </div>
         </div>
@@ -1383,13 +1432,17 @@ function getProfileStatus($student) {
             const archiveButtons = document.querySelectorAll('.archive-student');
             const archiveModal = new bootstrap.Modal(document.getElementById('archiveStudentModal'));
             const studentNameArchiveElement = document.getElementById('studentNameToArchive');
+            const studentNumberArchiveElement = document.getElementById('studentNumberToArchive');
             const confirmArchiveButton = document.getElementById('confirmArchive');
             
             archiveButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     const studentId = this.getAttribute('data-id');
                     const studentName = this.getAttribute('data-name');
+                    const studentNumber = this.getAttribute('data-number');
+                    
                     studentNameArchiveElement.textContent = studentName;
+                    studentNumberArchiveElement.textContent = studentNumber;
                     confirmArchiveButton.href = 'students.php?archive_id=' + studentId;
                     archiveModal.show();
                 });
@@ -1468,13 +1521,14 @@ function getProfileStatus($student) {
                     if (index < 5) { // Show only first 5 names
                         const row = checkbox.closest('tr');
                         const name = row.cells[2].textContent;
-                        studentNames.push(name);
+                        const number = row.cells[1].textContent;
+                        studentNames.push({name: name, number: number});
                     }
                 });
                 
                 let namesHtml = '<strong>Selected Students:</strong><br>';
-                studentNames.forEach(name => {
-                    namesHtml += `<i class="fas fa-user me-2"></i>${name}<br>`;
+                studentNames.forEach(student => {
+                    namesHtml += `<i class="fas fa-user me-2"></i>${student.name} (${student.number})<br>`;
                 });
                 
                 if (checkedBoxes.length > 5) {

@@ -1,33 +1,97 @@
 <?php
 // START SESSION TO ACCESS ADMIN AUTHENTICATION DATA
-
-//Admin-only access - Ensures only authorized administrators can search student data
 session_start();
+
 // CHECK IF ADMIN IS LOGGED IN BY VERIFYING ADMIN_ID SESSION VARIABLE EXISTS
-
 if (!isset($_SESSION['admin_id'])) {
-        // IF NOT LOGGED IN, REDIRECT TO ADMIN LOGIN PAGE
-
+    // IF NOT LOGGED IN, REDIRECT TO ADMIN LOGIN PAGE
     header("Location: admin_login.php");
-    exit();// TERMINATE SCRIPT EXECUTION
-
+    exit(); // TERMINATE SCRIPT EXECUTION
 }
 
-// INCLUDE DATABASE CONNECTION FILE - USES PDO (PHP DATA OBJECTS) FOR DATABASE OPERATIONS
+// INCLUDE DATABASE CONNECTION FILE
 require_once '../includes/db_connect.php';
 
-// INITIALIZE VARIABLES FOR SUCCESS/ERROR MESSAGES AND SEARCH RESULTS
-
+// INITIALIZE VARIABLES
 $success = '';
 $error = '';
-
-// INITIALIZE SEARCH RESULTS ARRAY AND FILTER VARIABLES
 $search_results = [];
 $search_query = '';
 $year_level_filter = '';
 $gender_filter = '';
 $status_filter = '';
 
+// ARCHIVE STUDENT FUNCTIONALITY (SAME AS students.php)
+if (isset($_GET['archive_id'])) {
+    $archive_id = $_GET['archive_id'];
+
+    try {
+        // Get student number before archiving for consultation records
+        $student_stmt = $pdo->prepare("SELECT student_number FROM student_information WHERE id = ?");
+        $student_stmt->execute([$archive_id]);
+        $student = $student_stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($student) {
+            $student_number = $student['student_number'];
+            
+            // Update student_information table to set archived status and archive date
+            $archive_stmt = $pdo->prepare("UPDATE student_information SET archived = 1, archived_at = NOW() WHERE id = ?");
+            $archive_success = $archive_stmt->execute([$archive_id]);
+            
+            if ($archive_success) {
+                // Also archive all consultations for this student
+                $consultation_stmt = $pdo->prepare("UPDATE consultations SET is_archived = 1 WHERE student_number = ?");
+                $consultation_stmt->execute([$student_number]);
+                
+                $success = "Student archived successfully! All consultation records have also been archived.";
+            } else {
+                $error = "Failed to archive student!";
+            }
+        } else {
+            $error = "Student not found!";
+        }
+    } catch (PDOException $e) {
+        $error = "Database error: " . $e->getMessage();
+    }
+}
+
+// BULK ARCHIVE STUDENTS (SAME AS students.php)
+if (isset($_POST['bulk_archive']) && isset($_POST['selected_students'])) {
+    $selected_students = $_POST['selected_students'];
+    
+    if (!empty($selected_students)) {
+        try {
+            // Get student numbers for the selected students
+            $placeholders = str_repeat('?,', count($selected_students) - 1) . '?';
+            $student_stmt = $pdo->prepare("SELECT student_number FROM student_information WHERE id IN ($placeholders)");
+            $student_stmt->execute($selected_students);
+            $students = $student_stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $student_numbers = array_column($students, 'student_number');
+            
+            // Archive students
+            $archive_stmt = $pdo->prepare("UPDATE student_information SET archived = 1, archived_at = NOW() WHERE id IN ($placeholders)");
+            $archive_success = $archive_stmt->execute($selected_students);
+            
+            if ($archive_success && !empty($student_numbers)) {
+                // Archive all consultations for these students
+                $consultation_placeholders = str_repeat('?,', count($student_numbers) - 1) . '?';
+                $consultation_stmt = $pdo->prepare("UPDATE consultations SET is_archived = 1 WHERE student_number IN ($consultation_placeholders)");
+                $consultation_stmt->execute($student_numbers);
+                
+                $success = "Successfully archived " . count($selected_students) . " student(s)! All consultation records have also been archived.";
+            } else {
+                $error = "Failed to archive selected students!";
+            }
+        } catch (PDOException $e) {
+            $error = "Database error: " . $e->getMessage();
+        }
+    } else {
+        $error = "No students selected for archiving!";
+    }
+}
+
+// SEARCH FUNCTIONALITY
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
     $search_query = trim($_POST['search_query'] ?? '');
     $year_level_filter = trim($_POST['year_level'] ?? '');
@@ -38,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
         $where_conditions = [];
         $params = [];
         
-        // Base search query
+        // Base search query with medical history join (UPDATED)
         if (!empty($search_query)) {
             $search_term = "%$search_query%";
             $where_conditions[] = "(si.student_number LIKE ? OR si.fullname LIKE ? OR u.email LIKE ? OR si.course_year LIKE ? OR si.cellphone_number LIKE ?)";
@@ -66,15 +130,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
             }
         }
         
-        // Build final query
+        // Build final query with medical history (UPDATED)
         $query = "
-            SELECT si.*, u.email 
-            FROM student_information si 
-            LEFT JOIN users u ON si.student_number = u.student_number 
+            SELECT 
+                si.id,
+                si.student_number,
+                si.fullname,
+                si.course_year,
+                si.cellphone_number,
+                si.address,
+                si.age,
+                si.sex,
+                si.created_at,
+                u.email,
+                u.created_at as user_created,
+                mh.medical_attention,
+                mh.medical_conditions,
+                mh.other_conditions,
+                mh.previous_hospitalization,
+                mh.hosp_year,
+                mh.surgery,
+                mh.surgery_details,
+                mh.food_allergies,
+                mh.medicine_allergies
+            FROM users u 
+            INNER JOIN student_information si ON u.student_number = si.student_number 
+            LEFT JOIN medical_history mh ON u.student_number = mh.student_number
+            WHERE (si.archived = 0 OR si.archived IS NULL)
         ";
         
         if (!empty($where_conditions)) {
-            $query .= " WHERE " . implode(" AND ", $where_conditions);
+            $query .= " AND " . implode(" AND ", $where_conditions);
         }
         
         $query .= " ORDER BY si.fullname ASC";
@@ -93,7 +179,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
         $error = "Search failed: " . $e->getMessage();
     }
 }
+
+// FUNCTION TO CHECK IF PROFILE IS COMPLETE (SAME AS students.php)
+function isProfileComplete($student) {
+    // PART 1: Student Information Requirements
+    $part1_complete = !empty($student['fullname']) && 
+                     !empty($student['address']) && 
+                     !empty($student['age']) && 
+                     !empty($student['sex']) && 
+                     !empty($student['course_year']) && 
+                     !empty($student['cellphone_number']);
+    
+    // PART 2: Medical History Requirements
+    $part2_complete = !empty($student['medical_attention']) && 
+                     !empty($student['previous_hospitalization']) && 
+                     !empty($student['surgery']);
+    
+    return $part1_complete && $part2_complete;
+}
+
+// FUNCTION TO GET COMPLETION STATUS WITH DETAILS (SAME AS students.php)
+function getProfileStatus($student) {
+    $missing_fields = [];
+    
+    // Check Part 1 fields
+    if (empty($student['fullname'])) $missing_fields[] = 'Full Name';
+    if (empty($student['address'])) $missing_fields[] = 'Address';
+    if (empty($student['age'])) $missing_fields[] = 'Age';
+    if (empty($student['sex'])) $missing_fields[] = 'Sex';
+    if (empty($student['course_year'])) $missing_fields[] = 'Course/Year';
+    if (empty($student['cellphone_number'])) $missing_fields[] = 'Cellphone Number';
+    
+    // Check Part 2 fields
+    if (empty($student['medical_attention'])) $missing_fields[] = 'Medical Attention';
+    if (empty($student['previous_hospitalization'])) $missing_fields[] = 'Previous Hospitalization';
+    if (empty($student['surgery'])) $missing_fields[] = 'Surgery Information';
+    
+    return [
+        'is_complete' => empty($missing_fields),
+        'missing_fields' => $missing_fields,
+        'part1_complete' => !empty($student['fullname']) && !empty($student['address']) && !empty($student['age']) && !empty($student['sex']) && !empty($student['course_year']) && !empty($student['cellphone_number']),
+        'part2_complete' => !empty($student['medical_attention']) && !empty($student['previous_hospitalization']) && !empty($student['surgery'])
+    ];
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -107,6 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
     <link href="../assets/webfonts/all.min.css" rel="stylesheet">
     
     <style>
+        /* ALL THE SAME CSS FROM YOUR ORIGINAL FILE - NO CHANGES */
         :root {
             --primary: #667eea;
             --primary-dark: #5a6fd8;
@@ -514,6 +645,69 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
             margin: 0;
         }
 
+        /* NEW STYLES ADDED FOR ARCHIVE FUNCTIONALITY */
+        .incomplete-profile {
+            background-color: #fff3cd !important;
+        }
+        .status-badge {
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        .completion-details {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+        .part-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .part-complete {
+            background-color: #28a745;
+        }
+        .part-incomplete {
+            background-color: #dc3545;
+        }
+        .missing-fields-tooltip {
+            cursor: help;
+            border-bottom: 1px dotted #6c757d;
+        }
+
+        /* Bulk Action Styles */
+        .bulk-actions {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+        }
+        .bulk-actions .form-check {
+            margin-bottom: 0.5rem;
+        }
+        .selected-count {
+            background: var(--warning);
+            color: #000;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        /* Checkbox Styles */
+        .student-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .select-all-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
         /* Responsive Design - SAME AS STUDENT */
         @media (max-width: 1200px) {
             .sidebar {
@@ -620,6 +814,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
 
             .action-buttons {
                 flex-direction: column;
+            }
+
+            .bulk-actions {
+                padding: 0.75rem;
             }
         }
 
@@ -924,52 +1122,117 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
                             Found <strong><?php echo count($search_results); ?></strong> student(s) matching your search
                         </div>
 
+                        <!-- Bulk Actions -->
+                        <div class="bulk-actions" id="bulkActions" style="display: none;">
+                            <form method="POST" action="search_students.php" id="bulkArchiveForm">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="selectAll">
+                                            <label class="form-check-label fw-bold" for="selectAll">
+                                                Select All 
+                                                <span class="selected-count" id="selectedCount">0 selected</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <button type="button" class="btn btn-warning btn-sm" id="bulkArchiveBtn">
+                                            <i class="fas fa-archive me-1"></i>Archive Selected
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-sm" id="clearSelection">
+                                            <i class="fas fa-times me-1"></i>Clear
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
                         <!-- Results Table -->
                         <div class="table-responsive">
-                            <table class="table table-bordered table-hover text-center align-middle">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Student Number</th>
-                                        <th>Name</th>
-                                        <th>Sex</th>
-                                        <th>Year Level</th>
-                                        <th>Email</th>
-                                        <th>Contact</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($search_results as $student): 
-                                        $studentId = $student['id'] ?? 0;
-                                    ?>
+                            <form method="POST" action="search_students.php" id="studentTableForm">
+                                <table class="table table-bordered table-hover text-center align-middle">
+                                    <thead class="table-dark">
                                         <tr>
-                                            <td><?php echo htmlspecialchars($student['student_number'] ?? 'N/A'); ?></td>
-                                            <td><?php echo htmlspecialchars($student['fullname'] ?? 'Unknown'); ?></td>
-                                            <td><?php echo htmlspecialchars($student['sex'] ?? 'N/A'); ?></td>
-                                            <td><?php echo htmlspecialchars($student['course_year'] ?? 'Not set'); ?></td>
-                                            <td><?php echo htmlspecialchars($student['email'] ?? 'N/A'); ?></td>
-                                            <td><?php echo htmlspecialchars($student['cellphone_number'] ?? 'Not set'); ?></td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <?php if ($studentId && $studentId > 0): ?>
-                                                        <a href="view_student.php?id=<?php echo $studentId; ?>" class="btn btn-success btn-sm" title="View">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                        <a href="edit_student.php?id=<?php echo $studentId; ?>" class="btn btn-warning btn-sm" title="Edit">
-                                                            <i class="fas fa-edit"></i>
-                                                        </a>
-                                                        <a href="students.php?delete_id=<?php echo $studentId; ?>" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure you want to delete this student?')">
-                                                            <i class="fas fa-trash-alt"></i>
-                                                        </a>
-                                                    <?php else: ?>
-                                                        <span class="text-muted small">Edit via Students</span>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
+                                            <th width="40">
+                                                <input type="checkbox" class="select-all-checkbox" id="selectAllCheckbox">
+                                            </th>
+                                            <th>Student ID</th>
+                                            <th>Name</th>
+                                            <th>Course/Year</th>
+                                            <th>Email</th>
+                                            <th>Contact</th>
+                                            <th>Status</th>
+                                            <th>Completion</th>
+                                            <th>Actions</th>
                                         </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($search_results as $student): 
+                                            $status = getProfileStatus($student);
+                                            $isComplete = $status['is_complete'];
+                                            $rowClass = $isComplete ? '' : 'incomplete-profile';
+                                            $studentId = $student['id'] ?? $student['user_id'] ?? 0;
+                                        ?>
+                                            <tr class="<?php echo $rowClass; ?>">
+                                                <td>
+                                                    <input type="checkbox" class="student-checkbox" name="selected_students[]" value="<?php echo $studentId; ?>">
+                                                </td>
+                                                <td><?php echo htmlspecialchars($student['student_number'] ?? 'N/A'); ?></td>
+                                                <td><?php echo htmlspecialchars($student['fullname'] ?? 'Unknown'); ?></td>
+                                                <td><?php echo htmlspecialchars($student['course_year'] ?? 'Not set'); ?></td>
+                                                <td><?php echo htmlspecialchars($student['email'] ?? 'N/A'); ?></td>
+                                                <td><?php echo htmlspecialchars($student['cellphone_number'] ?? 'Not set'); ?></td>
+                                                <td>
+                                                    <?php if ($isComplete): ?>
+                                                        <span class="badge bg-success status-badge">Complete</span>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-warning status-badge">Incomplete</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <div class="completion-details">
+                                                        <div>
+                                                            <span class="part-status <?php echo $status['part1_complete'] ? 'part-complete' : 'part-incomplete'; ?>"></span>
+                                                            Part 1: <?php echo $status['part1_complete'] ? 'Complete' : 'Incomplete'; ?>
+                                                        </div>
+                                                        <div>
+                                                            <span class="part-status <?php echo $status['part2_complete'] ? 'part-complete' : 'part-incomplete'; ?>"></span>
+                                                            Part 2: <?php echo $status['part2_complete'] ? 'Complete' : 'Incomplete'; ?>
+                                                        </div>
+                                                        <?php if (!$isComplete && !empty($status['missing_fields'])): ?>
+                                                            <small class="text-danger missing-fields-tooltip" title="Missing: <?php echo implode(', ', $status['missing_fields']); ?>">
+                                                                Missing <?php echo count($status['missing_fields']); ?> fields
+                                                            </small>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="action-buttons">
+                                                        <?php if ($studentId && $studentId > 0): ?>
+                                                            <a href="view_student.php?id=<?php echo $studentId; ?>" class="btn btn-success btn-sm" title="View">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                            <a href="consultation_history.php?id=<?php echo $studentId; ?>" class="btn btn-info btn-sm" title="Consultation History">
+                                                                <i class="fas fa-file-medical"></i>
+                                                            </a>
+                                                            <button class="btn btn-warning btn-sm archive-student" 
+                                                                    data-id="<?php echo $studentId; ?>" 
+                                                                    data-name="<?php echo htmlspecialchars($student['fullname']); ?>"
+                                                                    data-number="<?php echo htmlspecialchars($student['student_number']); ?>"
+                                                                    title="Archive">
+                                                                <i class="fas fa-archive"></i>
+                                                            </button>
+                                                        <?php else: ?>
+                                                            <span class="text-muted small">Edit via Students</span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                                <input type="hidden" name="bulk_archive" value="1">
+                            </form>
                         </div>
                     </div>
                 <?php else: ?>
@@ -1018,6 +1281,66 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
                 </div>
             <?php endif; ?>
         </main>
+    </div>
+
+    <!-- Archive Confirmation Modal (SAME AS students.php) -->
+    <div class="modal fade" id="archiveStudentModal" tabindex="-1" aria-labelledby="archiveStudentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="archiveStudentModalLabel">Confirm Archive</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to archive student: <strong id="studentNameToArchive"></strong>?</p>
+                    <p><strong>Student ID:</strong> <span id="studentNumberToArchive"></span></p>
+                    <p class="text-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Archiving will:
+                    </p>
+                    <ul class="text-warning small">
+                        <li>Remove student from active student list</li>
+                        <li>Archive all consultation records for this student</li>
+                        <li>Remove student from view records page</li>
+                        <li>Keep all records for historical purposes</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <a href="#" class="btn btn-warning" id="confirmArchive">Archive Student</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Archive Confirmation Modal (SAME AS students.php) -->
+    <div class="modal fade" id="bulkArchiveModal" tabindex="-1" aria-labelledby="bulkArchiveModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bulkArchiveModalLabel">Confirm Bulk Archive</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to archive <strong id="selectedStudentsCount"></strong> selected student(s)?</p>
+                    <p class="text-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Archiving will:
+                    </p>
+                    <ul class="text-warning small">
+                        <li>Remove students from active student list</li>
+                        <li>Archive all consultation records for these students</li>
+                        <li>Remove students from view records page</li>
+                        <li>Keep all records for historical purposes</li>
+                    </ul>
+                    <div id="selectedStudentsList" class="mt-3 small text-muted"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" id="confirmBulkArchive">Archive Selected Students</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- JS -->
@@ -1076,6 +1399,128 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['search'])) {
                     });
                 });
             }
+
+            // Archive student confirmation (SAME AS students.php)
+            const archiveButtons = document.querySelectorAll('.archive-student');
+            const archiveModal = new bootstrap.Modal(document.getElementById('archiveStudentModal'));
+            const studentNameArchiveElement = document.getElementById('studentNameToArchive');
+            const studentNumberArchiveElement = document.getElementById('studentNumberToArchive');
+            const confirmArchiveButton = document.getElementById('confirmArchive');
+            
+            archiveButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const studentId = this.getAttribute('data-id');
+                    const studentName = this.getAttribute('data-name');
+                    const studentNumber = this.getAttribute('data-number');
+                    
+                    studentNameArchiveElement.textContent = studentName;
+                    studentNumberArchiveElement.textContent = studentNumber;
+                    confirmArchiveButton.href = 'search_students.php?archive_id=' + studentId;
+                    archiveModal.show();
+                });
+            });
+
+            // Bulk Archive Functionality (SAME AS students.php)
+            const bulkActions = document.getElementById('bulkActions');
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const selectAll = document.getElementById('selectAll');
+            const studentCheckboxes = document.querySelectorAll('.student-checkbox');
+            const selectedCount = document.getElementById('selectedCount');
+            const bulkArchiveBtn = document.getElementById('bulkArchiveBtn');
+            const clearSelection = document.getElementById('clearSelection');
+            const bulkArchiveModal = new bootstrap.Modal(document.getElementById('bulkArchiveModal'));
+            const selectedStudentsCount = document.getElementById('selectedStudentsCount');
+            const selectedStudentsList = document.getElementById('selectedStudentsList');
+            const confirmBulkArchive = document.getElementById('confirmBulkArchive');
+            const studentTableForm = document.getElementById('studentTableForm');
+
+            // Update selected count and show/hide bulk actions
+            function updateSelectedCount() {
+                const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+                const count = checkedBoxes.length;
+                selectedCount.textContent = count + ' selected';
+                
+                if (count > 0) {
+                    bulkActions.style.display = 'block';
+                } else {
+                    bulkActions.style.display = 'none';
+                }
+                
+                // Update select all checkbox state
+                selectAllCheckbox.checked = count > 0 && count === studentCheckboxes.length;
+                selectAll.checked = count > 0 && count === studentCheckboxes.length;
+            }
+
+            // Select all checkboxes
+            function toggleSelectAll(checked) {
+                studentCheckboxes.forEach(checkbox => {
+                    checkbox.checked = checked;
+                });
+                updateSelectedCount();
+            }
+
+            // Event listeners for checkboxes
+            selectAllCheckbox.addEventListener('change', function() {
+                toggleSelectAll(this.checked);
+            });
+
+            selectAll.addEventListener('change', function() {
+                toggleSelectAll(this.checked);
+            });
+
+            studentCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedCount);
+            });
+
+            // Clear selection
+            clearSelection.addEventListener('click', function() {
+                toggleSelectAll(false);
+            });
+
+            // Bulk archive confirmation
+            bulkArchiveBtn.addEventListener('click', function() {
+                const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+                if (checkedBoxes.length === 0) {
+                    alert('Please select at least one student to archive.');
+                    return;
+                }
+
+                selectedStudentsCount.textContent = checkedBoxes.length;
+                
+                // Show first few selected student names
+                let studentNames = [];
+                checkedBoxes.forEach((checkbox, index) => {
+                    if (index < 5) { // Show only first 5 names
+                        const row = checkbox.closest('tr');
+                        const name = row.cells[2].textContent;
+                        const number = row.cells[1].textContent;
+                        studentNames.push({name: name, number: number});
+                    }
+                });
+                
+                let namesHtml = '<strong>Selected Students:</strong><br>';
+                studentNames.forEach(student => {
+                    namesHtml += `<i class="fas fa-user me-2"></i>${student.name} (${student.number})<br>`;
+                });
+                
+                if (checkedBoxes.length > 5) {
+                    namesHtml += `... and ${checkedBoxes.length - 5} more`;
+                }
+                
+                selectedStudentsList.innerHTML = namesHtml;
+                bulkArchiveModal.show();
+            });
+
+            // Confirm bulk archive
+            confirmBulkArchive.addEventListener('click', function() {
+                studentTableForm.submit();
+            });
+
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
 
             // Focus on search input on page load
             const searchInput = document.querySelector('input[name="search_query"]');

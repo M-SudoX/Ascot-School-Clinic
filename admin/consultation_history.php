@@ -16,12 +16,12 @@ $student = [];
 $consultations = [];
 
 try {
-    // Get student details
+    // Get student details - only non-archived students
     $student_stmt = $pdo->prepare("
         SELECT si.*, u.email, u.student_number 
         FROM student_information si 
         JOIN users u ON si.student_number = u.student_number 
-        WHERE si.id = ?
+        WHERE si.id = ? AND (si.archived = 0 OR si.archived IS NULL)
     ");
     $student_stmt->execute([$student_id]);
     $student = $student_stmt->fetch(PDO::FETCH_ASSOC);
@@ -31,7 +31,7 @@ try {
         $consult_stmt = $pdo->prepare("
             SELECT * FROM consultations 
             WHERE student_number = ? AND is_archived = 0
-            ORDER BY consultation_date DESC, created_at DESC
+            ORDER BY consultation_date DESC, consultation_time DESC
         ");
         $consult_stmt->execute([$student['student_number']]);
         $consultations = $consult_stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -67,7 +67,12 @@ try {
 
         /* Header Styles - FIXED */
         .top-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: 
+                linear-gradient(90deg, 
+                    #ffda6a 0%, 
+                    #ffda6a 30%, 
+                    #FFF5CC 70%, 
+                    #ffffff 100%);
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -98,17 +103,20 @@ try {
         .republic {
             font-size: 0.75rem;
             opacity: 0.9;
+            color: #555;
         }
 
         .school-name {
             font-size: 1.2rem;
             font-weight: bold;
             margin: 0.2rem 0;
+            color: #555;
         }
 
         .clinic-title {
             font-size: 0.85rem;
             opacity: 0.9;
+            color: #555;
         }
 
         /* Mobile Menu Toggle - FIXED */
@@ -165,7 +173,7 @@ try {
             display: flex;
             align-items: center;
             padding: 1rem 1.5rem;
-            color: #444;
+            color: #555;
             text-decoration: none;
             transition: all 0.3s ease;
             border: none;
@@ -173,6 +181,7 @@ try {
             width: 100%;
             text-align: left;
             cursor: pointer;
+            font-weight: 500;
         }
 
         .nav-item:hover {
@@ -182,22 +191,26 @@ try {
 
         .nav-item.active {
             background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-            color: #667eea;
-            border-left: 4px solid #667eea;
+            color: #555;
+            border-left: 8px solid #ffda6a;
         }
 
         .nav-item i {
             width: 25px;
             margin-right: 1rem;
+            font-size: 1.1rem;
+            color: #555;
         }
 
         .nav-item span {
             flex: 1;
+            color: #555;
         }
 
         .nav-item .arrow {
             margin-left: auto;
             transition: transform 0.3s ease;
+            font-size: 0.8rem;
         }
 
         .nav-item .arrow.rotate {
@@ -223,6 +236,7 @@ try {
             text-decoration: none;
             transition: all 0.3s ease;
             font-size: 0.9rem;
+            font-weight: 400;
         }
 
         .submenu-item:hover {
@@ -230,9 +244,16 @@ try {
             color: #667eea;
         }
 
+        .submenu-item.active {
+            background: #e9ecef;
+            color: #667eea;
+            font-weight: 500;
+        }
+
         .submenu-item i {
             width: 20px;
             margin-right: 0.75rem;
+            font-size: 0.9rem;
         }
 
         .nav-item.logout {
@@ -841,15 +862,16 @@ try {
                         <table class="consultation-table">
                             <thead>
                                 <tr>
-                                    <th width="25%">Date</th>
-                                    <th width="50%">Diagnosis</th>
+                                    <th width="20%">Date</th>
+                                    <th width="15%">Time</th>
+                                    <th width="40%">Diagnosis</th>
                                     <th width="25%">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (empty($consultations)): ?>
                                     <tr>
-                                        <td colspan="3" class="text-center py-4">
+                                        <td colspan="4" class="text-center py-4">
                                             <i class="fas fa-file-medical-alt fa-2x text-muted mb-2"></i>
                                             <p class="text-muted">No active consultation records found.</p>
                                         </td>
@@ -858,11 +880,13 @@ try {
                                     <?php foreach ($consultations as $consultation): ?>
                                         <tr>
                                             <td><?php echo date('F j, Y', strtotime($consultation['consultation_date'])); ?></td>
+                                            <td><?php echo date('h:i A', strtotime($consultation['consultation_time'])); ?></td>
                                             <td><?php echo htmlspecialchars($consultation['diagnosis'] ?? 'No diagnosis'); ?></td>
                                             <td>
                                                 <div class="action-buttons">
                                                     <button class="view-btn" data-bs-toggle="modal" data-bs-target="#consultationModal"
                                                             data-date="<?php echo date('F j, Y', strtotime($consultation['consultation_date'])); ?>"
+                                                            data-time="<?php echo date('h:i A', strtotime($consultation['consultation_time'])); ?>"
                                                             data-diagnosis="<?php echo htmlspecialchars($consultation['diagnosis'] ?? ''); ?>"
                                                             data-symptoms="<?php echo htmlspecialchars($consultation['symptoms'] ?? ''); ?>"
                                                             data-temperature="<?php echo htmlspecialchars($consultation['temperature'] ?? ''); ?>"
@@ -891,7 +915,7 @@ try {
                 <div class="alert alert-danger text-center">
                     <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
                     <h4>Student Not Found</h4>
-                    <p>The requested student record could not be found.</p>
+                    <p>The requested student record could not be found or has been archived.</p>
                     <a href="students.php" class="btn btn-primary">Back to Students</a>
                 </div>
             <?php endif; ?>
@@ -913,6 +937,10 @@ try {
                         <div class="detail-row">
                             <label>Date:</label>
                             <span id="modalDate"></span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Time:</label>
+                            <span id="modalTime"></span>
                         </div>
                         <div class="detail-row">
                             <label>Diagnosis:</label>
@@ -1017,6 +1045,7 @@ try {
                 const button = event.relatedTarget;
                 
                 document.getElementById('modalDate').textContent = button.getAttribute('data-date') || 'Not specified';
+                document.getElementById('modalTime').textContent = button.getAttribute('data-time') || 'Not specified';
                 document.getElementById('modalDiagnosis').textContent = button.getAttribute('data-diagnosis') || 'No diagnosis';
                 document.getElementById('modalSymptoms').textContent = button.getAttribute('data-symptoms') || 'No symptoms recorded';
                 document.getElementById('modalTemperature').textContent = button.getAttribute('data-temperature') || 'Not recorded';

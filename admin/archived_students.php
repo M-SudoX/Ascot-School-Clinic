@@ -19,22 +19,73 @@ require_once '../includes/db_connect.php';
 $success = '';
 $error = '';
 
-// UNARCHIVE STUDENT
+// UNARCHIVE STUDENT (RESTORE)
 if (isset($_GET['unarchive_id'])) {
     $unarchive_id = $_GET['unarchive_id'];
 
     try {
-        // Update student_information table to set archived status to 0
-        $unarchive_stmt = $pdo->prepare("UPDATE student_information SET archived = 0, archived_at = NULL WHERE id = ?");
-        $unarchive_success = $unarchive_stmt->execute([$unarchive_id]);
+        // Get student number before restoring for consultation records
+        $student_stmt = $pdo->prepare("SELECT student_number FROM student_information WHERE id = ?");
+        $student_stmt->execute([$unarchive_id]);
+        $student = $student_stmt->fetch(PDO::FETCH_ASSOC);
         
-        if ($unarchive_success) {
-            $success = "Student unarchived successfully!";
+        if ($student) {
+            $student_number = $student['student_number'];
+            
+            // Update student_information table to set archived status to 0
+            $unarchive_stmt = $pdo->prepare("UPDATE student_information SET archived = 0, archived_at = NULL WHERE id = ?");
+            $unarchive_success = $unarchive_stmt->execute([$unarchive_id]);
+            
+            if ($unarchive_success) {
+                // Also restore all consultations for this student
+                $consultation_stmt = $pdo->prepare("UPDATE consultations SET is_archived = 0 WHERE student_number = ?");
+                $consultation_stmt->execute([$student_number]);
+                
+                $success = "Student restored successfully! All consultation records have also been restored.";
+            } else {
+                $error = "Failed to restore student!";
+            }
         } else {
-            $error = "Failed to unarchive student!";
+            $error = "Student not found!";
         }
     } catch (PDOException $e) {
         $error = "Database error: " . $e->getMessage();
+    }
+}
+
+// BULK RESTORE STUDENTS
+if (isset($_POST['bulk_restore']) && isset($_POST['selected_students'])) {
+    $selected_students = $_POST['selected_students'];
+    
+    if (!empty($selected_students)) {
+        try {
+            // Get student numbers for the selected students
+            $placeholders = str_repeat('?,', count($selected_students) - 1) . '?';
+            $student_stmt = $pdo->prepare("SELECT student_number FROM student_information WHERE id IN ($placeholders)");
+            $student_stmt->execute($selected_students);
+            $students = $student_stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $student_numbers = array_column($students, 'student_number');
+            
+            // Restore students
+            $restore_stmt = $pdo->prepare("UPDATE student_information SET archived = 0, archived_at = NULL WHERE id IN ($placeholders)");
+            $restore_success = $restore_stmt->execute($selected_students);
+            
+            if ($restore_success && !empty($student_numbers)) {
+                // Restore all consultations for these students
+                $consultation_placeholders = str_repeat('?,', count($student_numbers) - 1) . '?';
+                $consultation_stmt = $pdo->prepare("UPDATE consultations SET is_archived = 0 WHERE student_number IN ($consultation_placeholders)");
+                $consultation_stmt->execute($student_numbers);
+                
+                $success = "Successfully restored " . count($selected_students) . " student(s)! All consultation records have also been restored.";
+            } else {
+                $error = "Failed to restore selected students!";
+            }
+        } catch (PDOException $e) {
+            $error = "Database error: " . $e->getMessage();
+        }
+    } else {
+        $error = "No students selected for restoration!";
     }
 }
 
@@ -51,6 +102,17 @@ if (isset($_GET['delete_archived_id'])) {
         if ($student) {
             $student_number = $student['student_number'];
             
+            // Start transaction for data consistency
+            $pdo->beginTransaction();
+            
+            // Delete consultation records
+            $consultation_stmt = $pdo->prepare("DELETE FROM consultations WHERE student_number = ?");
+            $consultation_stmt->execute([$student_number]);
+            
+            // Delete medical history
+            $medical_stmt = $pdo->prepare("DELETE FROM medical_history WHERE student_number = ?");
+            $medical_stmt->execute([$student_number]);
+            
             // Delete from student_information table
             $delete_stmt = $pdo->prepare("DELETE FROM student_information WHERE id = ?");
             $delete_success = $delete_stmt->execute([$delete_id]);
@@ -60,13 +122,70 @@ if (isset($_GET['delete_archived_id'])) {
                 $delete_user_stmt = $pdo->prepare("DELETE FROM users WHERE student_number = ?");
                 $delete_user_stmt->execute([$student_number]);
                 
-                $success = "Archived student permanently deleted!";
+                $pdo->commit();
+                $success = "Archived student permanently deleted! All related records have been removed.";
+            } else {
+                $pdo->rollBack();
+                $error = "Failed to delete student!";
             }
         } else {
             $error = "Student not found!";
         }
     } catch (PDOException $e) {
+        $pdo->rollBack();
         $error = "Database error: " . $e->getMessage();
+    }
+}
+
+// BULK DELETE ARCHIVED STUDENTS
+if (isset($_POST['bulk_delete']) && isset($_POST['selected_students'])) {
+    $selected_students = $_POST['selected_students'];
+    
+    if (!empty($selected_students)) {
+        try {
+            // Get student numbers for the selected students
+            $placeholders = str_repeat('?,', count($selected_students) - 1) . '?';
+            $student_stmt = $pdo->prepare("SELECT student_number FROM student_information WHERE id IN ($placeholders)");
+            $student_stmt->execute($selected_students);
+            $students = $student_stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $student_numbers = array_column($students, 'student_number');
+            
+            // Start transaction
+            $pdo->beginTransaction();
+            
+            // Delete consultation records
+            if (!empty($student_numbers)) {
+                $consultation_placeholders = str_repeat('?,', count($student_numbers) - 1) . '?';
+                $consultation_stmt = $pdo->prepare("DELETE FROM consultations WHERE student_number IN ($consultation_placeholders)");
+                $consultation_stmt->execute($student_numbers);
+                
+                // Delete medical history
+                $medical_stmt = $pdo->prepare("DELETE FROM medical_history WHERE student_number IN ($consultation_placeholders)");
+                $medical_stmt->execute($student_numbers);
+                
+                // Delete users
+                $user_stmt = $pdo->prepare("DELETE FROM users WHERE student_number IN ($consultation_placeholders)");
+                $user_stmt->execute($student_numbers);
+            }
+            
+            // Delete student information
+            $delete_stmt = $pdo->prepare("DELETE FROM student_information WHERE id IN ($placeholders)");
+            $delete_success = $delete_stmt->execute($selected_students);
+            
+            if ($delete_success) {
+                $pdo->commit();
+                $success = "Successfully permanently deleted " . count($selected_students) . " student(s)! All related records have been removed.";
+            } else {
+                $pdo->rollBack();
+                $error = "Failed to delete selected students!";
+            }
+        } catch (PDOException $e) {
+            $pdo->rollBack();
+            $error = "Database error: " . $e->getMessage();
+        }
+    } else {
+        $error = "No students selected for deletion!";
     }
 }
 
@@ -91,19 +210,9 @@ try {
             si.created_at,
             si.archived_at,
             u.email,
-            u.created_at as user_created,
-            mh.medical_attention,
-            mh.medical_conditions,
-            mh.other_conditions,
-            mh.previous_hospitalization,
-            mh.hosp_year,
-            mh.surgery,
-            mh.surgery_details,
-            mh.food_allergies,
-            mh.medicine_allergies
+            u.created_at as user_created
         FROM users u 
         INNER JOIN student_information si ON u.student_number = si.student_number 
-        LEFT JOIN medical_history mh ON u.student_number = mh.student_number
         WHERE si.archived = 1
     ";
 
@@ -581,6 +690,44 @@ $total_archived = count($students);
             font-size: 0.8rem;
         }
 
+        /* Bulk Action Styles */
+        .bulk-actions {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+        }
+        .bulk-actions .form-check {
+            margin-bottom: 0.5rem;
+        }
+        .selected-count {
+            background: var(--warning);
+            color: #000;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        /* Checkbox Styles */
+        .student-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .select-all-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        /* Danger Zone Styles */
+        .danger-zone {
+            border-left: 4px solid #dc3545;
+            background-color: #f8d7da;
+        }
+
         /* Responsive Design - SAME AS STUDENT */
         @media (max-width: 1200px) {
             .sidebar {
@@ -687,6 +834,10 @@ $total_archived = count($students);
 
             .action-buttons {
                 flex-direction: column;
+            }
+
+            .bulk-actions {
+                padding: 0.75rem;
             }
         }
 
@@ -1005,70 +1156,129 @@ $total_archived = count($students);
                         <i class="fas fa-archive"></i>
                     </div>
                 </div>
+
+                <!-- Bulk Actions -->
+                <div class="bulk-actions" id="bulkActions" style="display: none;">
+                    <form method="POST" action="archived_students.php" id="bulkActionForm">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAll">
+                                    <label class="form-check-label fw-bold" for="selectAll">
+                                        Select All 
+                                        <span class="selected-count" id="selectedCount">0 selected</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <button type="button" class="btn btn-success btn-sm" id="bulkRestoreBtn">
+                                    <i class="fas fa-undo me-1"></i>Restore Selected
+                                </button>
+                                <button type="button" class="btn btn-danger btn-sm" id="bulkDeleteBtn">
+                                    <i class="fas fa-trash me-1"></i>Delete Selected
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-sm" id="clearSelection">
+                                    <i class="fas fa-times me-1"></i>Clear
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
                 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover text-center align-middle">
-                        <thead class="table-secondary">
-                            <tr>
-                                <th>Student ID</th>
-                                <th>Name</th>
-                                <th>Course/Year</th>
-                                <th>Email</th>
-                                <th>Contact</th>
-                                <th>Archived Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (empty($students)): ?>
+                    <form method="POST" action="archived_students.php" id="studentTableForm">
+                        <table class="table table-bordered table-hover text-center align-middle">
+                            <thead class="table-secondary">
                                 <tr>
-                                    <td colspan="7" class="text-center py-4">
-                                        <i class="fas fa-archive fa-2x text-muted mb-2"></i>
-                                        <p class="text-muted">No archived students found.</p>
-                                        <a href="students.php" class="btn btn-primary">
-                                            <i class="fas fa-users me-2"></i>View Active Students
-                                        </a>
-                                    </td>
+                                    <th width="40">
+                                        <input type="checkbox" class="select-all-checkbox" id="selectAllCheckbox">
+                                    </th>
+                                    <th>Student ID</th>
+                                    <th>Name</th>
+                                    <th>Course/Year</th>
+                                    <th>Email</th>
+                                    <th>Contact</th>
+                                    <th>Archived Date</th>
+                                    <th>Actions</th>
                                 </tr>
-                            <?php else: ?>
-                                <?php foreach ($students as $student): 
-                                    $studentId = $student['id'] ?? $student['user_id'] ?? 0;
-                                ?>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($students)): ?>
                                     <tr>
-                                        <td><?php echo htmlspecialchars($student['student_number'] ?? 'N/A'); ?></td>
-                                        <td><?php echo htmlspecialchars($student['fullname'] ?? 'Unknown'); ?></td>
-                                        <td><?php echo htmlspecialchars($student['course_year'] ?? 'Not set'); ?></td>
-                                        <td><?php echo htmlspecialchars($student['email'] ?? 'N/A'); ?></td>
-                                        <td><?php echo htmlspecialchars($student['cellphone_number'] ?? 'Not set'); ?></td>
-                                        <td><?php echo !empty($student['archived_at']) ? date('M d, Y h:i A', strtotime($student['archived_at'])) : 'Unknown'; ?></td>
-                                        <td>
-                                            <div class="action-buttons">
-                                                <?php if ($studentId && $studentId > 0): ?>
-                                                    <a href="view_student.php?id=<?php echo $studentId; ?>" class="btn btn-success btn-sm" title="View">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    <button class="btn btn-primary btn-sm unarchive-student" 
-                                                            data-id="<?php echo $studentId; ?>" 
-                                                            data-name="<?php echo htmlspecialchars($student['fullname']); ?>"
-                                                            title="Restore">
-                                                        <i class="fas fa-undo"></i>
-                                                    </button>
-                                                    <button class="btn btn-danger btn-sm delete-archived-student" 
-                                                            data-id="<?php echo $studentId; ?>" 
-                                                            data-name="<?php echo htmlspecialchars($student['fullname']); ?>"
-                                                            title="Permanently Delete">
-                                                        <i class="fas fa-trash-alt"></i>
-                                                    </button>
-                                                <?php else: ?>
-                                                    <span class="text-muted small">N/A</span>
-                                                <?php endif; ?>
-                                            </div>
+                                        <td colspan="8" class="text-center py-4">
+                                            <i class="fas fa-archive fa-2x text-muted mb-2"></i>
+                                            <p class="text-muted">No archived students found.</p>
+                                            <a href="students.php" class="btn btn-primary">
+                                                <i class="fas fa-users me-2"></i>View Active Students
+                                            </a>
                                         </td>
                                     </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                                <?php else: ?>
+                                    <?php foreach ($students as $student): 
+                                        $studentId = $student['id'];
+                                    ?>
+                                        <tr>
+                                            <td>
+                                                <input type="checkbox" class="student-checkbox" name="selected_students[]" value="<?php echo $studentId; ?>">
+                                            </td>
+                                            <td><?php echo htmlspecialchars($student['student_number'] ?? 'N/A'); ?></td>
+                                            <td><?php echo htmlspecialchars($student['fullname'] ?? 'Unknown'); ?></td>
+                                            <td><?php echo htmlspecialchars($student['course_year'] ?? 'Not set'); ?></td>
+                                            <td><?php echo htmlspecialchars($student['email'] ?? 'N/A'); ?></td>
+                                            <td><?php echo htmlspecialchars($student['cellphone_number'] ?? 'Not set'); ?></td>
+                                            <td><?php echo !empty($student['archived_at']) ? date('M d, Y h:i A', strtotime($student['archived_at'])) : 'Unknown'; ?></td>
+                                            <td>
+                                                <div class="action-buttons">
+                                                    <?php if ($studentId && $studentId > 0): ?>
+                                                        <a href="view_student.php?id=<?php echo $studentId; ?>" class="btn btn-success btn-sm" title="View">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a href="archived_students.php?unarchive_id=<?php echo $studentId; ?>" class="btn btn-primary btn-sm unarchive-student" 
+                                                                data-id="<?php echo $studentId; ?>" 
+                                                                data-name="<?php echo htmlspecialchars($student['fullname']); ?>"
+                                                                title="Restore">
+                                                            <i class="fas fa-undo"></i>
+                                                        </a>
+                                                        <a href="archived_students.php?delete_archived_id=<?php echo $studentId; ?>" class="btn btn-danger btn-sm delete-archived-student" 
+                                                                data-id="<?php echo $studentId; ?>" 
+                                                                data-name="<?php echo htmlspecialchars($student['fullname']); ?>"
+                                                                title="Permanently Delete">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </a>
+                                                    <?php else: ?>
+                                                        <span class="text-muted small">N/A</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                        <input type="hidden" name="bulk_restore" id="bulkRestoreInput" value="1">
+                        <input type="hidden" name="bulk_delete" id="bulkDeleteInput" value="1">
+                    </form>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="dashboard-card danger-zone fade-in">
+                <div class="card-header">
+                    <h3 class="card-title text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Danger Zone
+                    </h3>
+                </div>
+                <div class="alert alert-warning">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>Warning</h5>
+                    <p class="mb-2">Permanently deleting students will:</p>
+                    <ul class="mb-2">
+                        <li>Remove all student information permanently</li>
+                        <li>Delete all consultation records for this student</li>
+                        <li>Remove medical history records</li>
+                        <li>Delete user account</li>
+                        <li><strong>This action cannot be undone!</strong></li>
+                    </ul>
+                    <p class="mb-0">Consider restoring students instead if you might need the data later.</p>
                 </div>
             </div>
         </main>
@@ -1084,11 +1294,50 @@ $total_archived = count($students);
                 </div>
                 <div class="modal-body">
                     <p>Are you sure you want to restore student: <strong id="studentNameToUnarchive"></strong>?</p>
-                    <p class="text-primary">This will move the student back to active students list.</p>
+                    <p class="text-success">
+                        <i class="fas fa-info-circle"></i> 
+                        Restoring will:
+                    </p>
+                    <ul class="text-success small">
+                        <li>Return student to active student list</li>
+                        <li>Restore all consultation records for this student</li>
+                        <li>Make student visible in view records page</li>
+                        <li>Make student visible in consultation history</li>
+                    </ul>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <a href="#" class="btn btn-primary" id="confirmUnarchive">Restore</a>
+                    <a href="#" class="btn btn-success" id="confirmUnarchive">Restore Student</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Restore Confirmation Modal -->
+    <div class="modal fade" id="bulkRestoreModal" tabindex="-1" aria-labelledby="bulkRestoreModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bulkRestoreModalLabel">Confirm Bulk Restore</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to restore <strong id="selectedStudentsCountRestore"></strong> selected student(s)?</p>
+                    <p class="text-success">
+                        <i class="fas fa-info-circle"></i> 
+                        Restoring will:
+                    </p>
+                    <ul class="text-success small">
+                        <li>Return students to active student list</li>
+                        <li>Restore all consultation records for these students</li>
+                        <li>Make students visible in view records page</li>
+                        <li>Make students visible in consultation history</li>
+                    </ul>
+                    <div id="selectedStudentsListRestore" class="mt-3 small text-muted"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="confirmBulkRestore">Restore Selected Students</button>
                 </div>
             </div>
         </div>
@@ -1098,17 +1347,64 @@ $total_archived = count($students);
     <div class="modal fade" id="deleteArchivedStudentModal" tabindex="-1" aria-labelledby="deleteArchivedStudentModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteArchivedStudentModalLabel">Permanently Delete Archived Student</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteArchivedStudentModalLabel">Permanent Deletion</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Warning: This action cannot be undone!</h6>
+                    </div>
                     <p>Are you sure you want to permanently delete archived student: <strong id="studentNameToDeleteArchived"></strong>?</p>
-                    <p class="text-danger"><strong>Warning:</strong> This action cannot be undone and will permanently remove all student records from the database.</p>
+                    <p class="text-danger">
+                        <i class="fas fa-exclamation-circle"></i> 
+                        This will permanently delete:
+                    </p>
+                    <ul class="text-danger small">
+                        <li>All student information</li>
+                        <li>All consultation records</li>
+                        <li>Medical history data</li>
+                        <li>User account</li>
+                    </ul>
+                    <p><strong>This action is irreversible!</strong></p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <a href="#" class="btn btn-danger" id="confirmDeleteArchived">Permanently Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Delete Confirmation Modal -->
+    <div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-labelledby="bulkDeleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="bulkDeleteModalLabel">Confirm Bulk Permanent Deletion</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Warning: This action cannot be undone!</h6>
+                    </div>
+                    <p>Are you sure you want to permanently delete <strong id="selectedStudentsCountDelete"></strong> selected student(s)?</p>
+                    <p class="text-danger">
+                        <i class="fas fa-exclamation-circle"></i> 
+                        This will permanently delete:
+                    </p>
+                    <ul class="text-danger small">
+                        <li>All student information</li>
+                        <li>All consultation records</li>
+                        <li>Medical history data</li>
+                        <li>User accounts</li>
+                    </ul>
+                    <p><strong>This action is irreversible!</strong></p>
+                    <div id="selectedStudentsListDelete" class="mt-3 small text-muted"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmBulkDelete">Permanently Delete Selected</button>
                 </div>
             </div>
         </div>
@@ -1178,7 +1474,8 @@ $total_archived = count($students);
             const confirmUnarchiveButton = document.getElementById('confirmUnarchive');
             
             unarchiveButtons.forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
                     const studentId = this.getAttribute('data-id');
                     const studentName = this.getAttribute('data-name');
                     studentNameUnarchiveElement.textContent = studentName;
@@ -1194,13 +1491,162 @@ $total_archived = count($students);
             const confirmDeleteArchivedButton = document.getElementById('confirmDeleteArchived');
             
             deleteArchivedButtons.forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
                     const studentId = this.getAttribute('data-id');
                     const studentName = this.getAttribute('data-name');
                     studentNameDeleteArchivedElement.textContent = studentName;
                     confirmDeleteArchivedButton.href = 'archived_students.php?delete_archived_id=' + studentId;
                     deleteArchivedModal.show();
                 });
+            });
+
+            // Bulk Archive Functionality
+            const bulkActions = document.getElementById('bulkActions');
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const selectAll = document.getElementById('selectAll');
+            const studentCheckboxes = document.querySelectorAll('.student-checkbox');
+            const selectedCount = document.getElementById('selectedCount');
+            const bulkRestoreBtn = document.getElementById('bulkRestoreBtn');
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            const clearSelection = document.getElementById('clearSelection');
+            const bulkRestoreModal = new bootstrap.Modal(document.getElementById('bulkRestoreModal'));
+            const selectedStudentsCountRestore = document.getElementById('selectedStudentsCountRestore');
+            const selectedStudentsListRestore = document.getElementById('selectedStudentsListRestore');
+            const confirmBulkRestore = document.getElementById('confirmBulkRestore');
+            const bulkDeleteModal = new bootstrap.Modal(document.getElementById('bulkDeleteModal'));
+            const selectedStudentsCountDelete = document.getElementById('selectedStudentsCountDelete');
+            const selectedStudentsListDelete = document.getElementById('selectedStudentsListDelete');
+            const confirmBulkDelete = document.getElementById('confirmBulkDelete');
+            const studentTableForm = document.getElementById('studentTableForm');
+            const bulkRestoreInput = document.getElementById('bulkRestoreInput');
+            const bulkDeleteInput = document.getElementById('bulkDeleteInput');
+
+            // Update selected count and show/hide bulk actions
+            function updateSelectedCount() {
+                const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+                const count = checkedBoxes.length;
+                selectedCount.textContent = count + ' selected';
+                
+                if (count > 0) {
+                    bulkActions.style.display = 'block';
+                } else {
+                    bulkActions.style.display = 'none';
+                }
+                
+                // Update select all checkbox state
+                selectAllCheckbox.checked = count > 0 && count === studentCheckboxes.length;
+                selectAll.checked = count > 0 && count === studentCheckboxes.length;
+            }
+
+            // Select all checkboxes
+            function toggleSelectAll(checked) {
+                studentCheckboxes.forEach(checkbox => {
+                    checkbox.checked = checked;
+                });
+                updateSelectedCount();
+            }
+
+            // Event listeners for checkboxes
+            selectAllCheckbox.addEventListener('change', function() {
+                toggleSelectAll(this.checked);
+            });
+
+            selectAll.addEventListener('change', function() {
+                toggleSelectAll(this.checked);
+            });
+
+            studentCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedCount);
+            });
+
+            // Clear selection
+            clearSelection.addEventListener('click', function() {
+                toggleSelectAll(false);
+            });
+
+            // Bulk restore confirmation
+            bulkRestoreBtn.addEventListener('click', function() {
+                const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+                if (checkedBoxes.length === 0) {
+                    alert('Please select at least one student to restore.');
+                    return;
+                }
+
+                selectedStudentsCountRestore.textContent = checkedBoxes.length;
+                
+                // Show first few selected student names
+                let studentNames = [];
+                checkedBoxes.forEach((checkbox, index) => {
+                    if (index < 5) { // Show only first 5 names
+                        const row = checkbox.closest('tr');
+                        const name = row.cells[2].textContent;
+                        const number = row.cells[1].textContent;
+                        studentNames.push({name: name, number: number});
+                    }
+                });
+                
+                let namesHtml = '<strong>Selected Students:</strong><br>';
+                studentNames.forEach(student => {
+                    namesHtml += `<i class="fas fa-user me-2"></i>${student.name} (${student.number})<br>`;
+                });
+                
+                if (checkedBoxes.length > 5) {
+                    namesHtml += `... and ${checkedBoxes.length - 5} more`;
+                }
+                
+                selectedStudentsListRestore.innerHTML = namesHtml;
+                bulkRestoreModal.show();
+            });
+
+            // Confirm bulk restore
+            confirmBulkRestore.addEventListener('click', function() {
+                // Set the restore input and submit
+                bulkRestoreInput.disabled = false;
+                bulkDeleteInput.disabled = true;
+                studentTableForm.submit();
+            });
+
+            // Bulk delete confirmation
+            bulkDeleteBtn.addEventListener('click', function() {
+                const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+                if (checkedBoxes.length === 0) {
+                    alert('Please select at least one student to delete.');
+                    return;
+                }
+
+                selectedStudentsCountDelete.textContent = checkedBoxes.length;
+                
+                // Show first few selected student names
+                let studentNames = [];
+                checkedBoxes.forEach((checkbox, index) => {
+                    if (index < 5) { // Show only first 5 names
+                        const row = checkbox.closest('tr');
+                        const name = row.cells[2].textContent;
+                        const number = row.cells[1].textContent;
+                        studentNames.push({name: name, number: number});
+                    }
+                });
+                
+                let namesHtml = '<strong>Selected Students:</strong><br>';
+                studentNames.forEach(student => {
+                    namesHtml += `<i class="fas fa-user me-2"></i>${student.name} (${student.number})<br>`;
+                });
+                
+                if (checkedBoxes.length > 5) {
+                    namesHtml += `... and ${checkedBoxes.length - 5} more`;
+                }
+                
+                selectedStudentsListDelete.innerHTML = namesHtml;
+                bulkDeleteModal.show();
+            });
+
+            // Confirm bulk delete
+            confirmBulkDelete.addEventListener('click', function() {
+                // Set the delete input and submit
+                bulkRestoreInput.disabled = true;
+                bulkDeleteInput.disabled = false;
+                studentTableForm.submit();
             });
 
             // Initialize tooltips
