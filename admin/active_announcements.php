@@ -8,6 +8,20 @@ if (!isset($_SESSION['admin_logged_in'])) {
     exit;
 }
 
+// Handle expire action - SET is_active = 0
+if (isset($_GET['expire_id'])) {
+    $expire_id = $_GET['expire_id'];
+    try {
+        $stmt = $pdo->prepare("UPDATE announcements SET is_active = 0 WHERE id = ?");
+        $stmt->execute([$expire_id]);
+        $_SESSION['success_message'] = 'Announcement expired successfully!';
+        header('Location: active_announcements.php');
+        exit;
+    } catch (PDOException $e) {
+        $error_message = "Error expiring announcement: " . $e->getMessage();
+    }
+}
+
 // Handle delete action
 if (isset($_GET['delete_id'])) {
     $delete_id = $_GET['delete_id'];
@@ -15,14 +29,14 @@ if (isset($_GET['delete_id'])) {
         $stmt = $pdo->prepare("DELETE FROM announcements WHERE id = ?");
         $stmt->execute([$delete_id]);
         $_SESSION['success_message'] = 'Announcement deleted successfully!';
-        header('Location: announcement_history.php');
+        header('Location: active_announcements.php');
         exit;
     } catch (PDOException $e) {
         $error_message = "Error deleting announcement: " . $e->getMessage();
     }
 }
 
-// FIXED: Fetch only expired announcements
+// FIXED: Fetch only active announcements
 $announcements = [];
 try {
     // First, let's check what columns actually exist
@@ -39,8 +53,8 @@ try {
         }
     }
     
-    // Query to get only expired announcements
-    $query = "SELECT " . implode(', ', $select_columns) . " FROM announcements WHERE is_active = 0 OR expiry_date < NOW() OR created_at < DATE_SUB(NOW(), INTERVAL 30 DAY) ORDER BY created_at DESC";
+    // Query to get only active announcements
+    $query = "SELECT " . implode(', ', $select_columns) . " FROM announcements WHERE is_active = 1 AND (expiry_date > NOW() OR expiry_date IS NULL) AND created_at > DATE_SUB(NOW(), INTERVAL 30 DAY) ORDER BY created_at DESC";
     $stmt = $pdo->prepare($query);
     $stmt->execute();
     $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -115,13 +129,34 @@ function formatDateTime($datetime) {
     }
     return date('m-d-Y h:i A', strtotime($datetime));
 }
+
+// Calculate days remaining until expiry
+function getDaysRemaining($expiry_date) {
+    if (empty($expiry_date) || $expiry_date === null) {
+        return 'No expiry';
+    }
+    
+    $current_time = time();
+    $expiry_time = strtotime($expiry_date);
+    $days_remaining = ceil(($expiry_time - $current_time) / (60 * 60 * 24));
+    
+    if ($days_remaining < 0) {
+        return 'Expired';
+    } elseif ($days_remaining == 0) {
+        return 'Today';
+    } elseif ($days_remaining == 1) {
+        return '1 day';
+    } else {
+        return $days_remaining . ' days';
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Announcement History - ASCOT Clinic</title>
+    <title>Active Announcements - ASCOT Clinic</title>
     
     <!-- Bootstrap -->
     <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
@@ -300,11 +335,7 @@ function formatDateTime($datetime) {
             flex: 1;
             color: #555;
         }
-        .alert-success {
-            background: #D0F0C0;
-            color: #555;
-        }
-    
+
         .nav-item .arrow {
             margin-left: auto;
             transition: transform 0.3s ease;
@@ -339,7 +370,6 @@ function formatDateTime($datetime) {
 
         .submenu-item:hover {
             background: #e9ecef;
-
         }
 
         .submenu-item.active {
@@ -394,8 +424,9 @@ function formatDateTime($datetime) {
             padding: 1rem;
             margin-bottom: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            border: 1px solid rgba(206, 224, 144, 0.2);
+            border: 1px solid rgba(144, 238, 144, 0.2);
             border-left: 10px solid #ffda6a;
+
         }
 
         .welcome-content h1 {
@@ -452,7 +483,7 @@ function formatDateTime($datetime) {
             justify-content: center;
             font-size: 1.2rem;
             color: #555;
-            background: #fff7da;
+            background: #e8f5e8;
             transition: all 0.3s ease;
         }
 
@@ -572,7 +603,6 @@ function formatDateTime($datetime) {
         }
 
         .modal-header .btn-close {
-            filter: invert(1);
             opacity: 0.8;
         }
 
@@ -580,6 +610,10 @@ function formatDateTime($datetime) {
             padding: 2rem;
             max-height: 60vh;
             overflow-y: auto;
+        }
+        .alert-success {
+            background: #D0F0C0;
+            color: #555;
         }
 
         .announcement-detail {
@@ -619,7 +653,7 @@ function formatDateTime($datetime) {
         }
 
         .action-btn {
-            background: #fff59d;
+            background: #c8e6c9;
             color: #555;
             border: none;
             border-radius: 8px;
@@ -985,11 +1019,11 @@ function formatDateTime($datetime) {
                             <i class="fas fa-plus-circle"></i>
                             New Announcement
                         </a>
-                        <a href="active_announcements.php" class="submenu-item">
+                        <a href="active_announcements.php" class="submenu-item active">
                             <i class="fas fa-bell"></i>
                             Active Announcements
                         </a>
-                        <a href="announcement_history.php" class="submenu-item active">
+                        <a href="announcement_history.php" class="submenu-item">
                             <i class="fas fa-history"></i>
                             History (Expired)
                         </a>
@@ -1008,17 +1042,17 @@ function formatDateTime($datetime) {
             <!-- WELCOME SECTION -->
             <div class="welcome-section fade-in">
                 <div class="welcome-content">
-                    <h1>Expired Announcements</h1>
-                    <p>View and manage all your expired announcements</p>
+                    <h1>Active Announcements</h1>
+                    <p>Manage and monitor your currently active announcements</p>
                 </div>
             </div>
 
-            <!-- Announcement History Card -->
+            <!-- Active Announcements Card -->
             <div class="dashboard-card fade-in">
                 <div class="card-header">
-                    <h3 class="card-title">Expired Announcement Records</h3>
+                    <h3 class="card-title">Currently Active Announcements</h3>
                     <div class="card-icon">
-                        <i class="fas fa-history"></i>
+                        <i class="fas fa-bell"></i>
                     </div>
                 </div>
 
@@ -1056,8 +1090,11 @@ function formatDateTime($datetime) {
                             <?php if (empty($announcements)): ?>
                                 <tr>
                                     <td colspan="7" style="text-align: center; padding: 2rem;">
-                                        <i class="fas fa-inbox" style="font-size: 3rem; color: #dee2e6; margin-bottom: 1rem;"></i>
-                                        <p>No expired announcements found</p>
+                                        <i class="fas fa-bell-slash" style="font-size: 3rem; color: #dee2e6; margin-bottom: 1rem;"></i>
+                                        <p>No active announcements found</p>
+                                        <a href="new_announcement.php" class="btn btn-success mt-2">
+                                            <i class="fas fa-plus-circle me-2"></i>Create New Announcement
+                                        </a>
                                     </td>
                                 </tr>
                             <?php else: ?>
@@ -1095,6 +1132,12 @@ function formatDateTime($datetime) {
                                                         title="View Details" 
                                                         onclick="viewAnnouncement(<?php echo $announcement['id']; ?>)">
                                                     <i class="fas fa-eye"></i>
+                                                </button>
+                                                
+                                                <button class="btn-action btn-expire" 
+                                                        title="Mark as Expired"
+                                                        onclick="expireAnnouncement(<?php echo $announcement['id']; ?>, '<?php echo htmlspecialchars($announcement['title']); ?>')">
+                                                    <i class="fas fa-ban"></i>
                                                 </button>
                                                 
                                                 <button class="btn-action btn-delete" 
@@ -1283,10 +1326,17 @@ function formatDateTime($datetime) {
             }
         }
 
+        // EXPIRE Announcement Function - SET is_active = 0
+        function expireAnnouncement(id, title) {
+            if (confirm(`Are you sure you want to mark "${title}" as EXPIRED?\n\nThis will move it to the announcement history.`)) {
+                window.location.href = `active_announcements.php?expire_id=${id}`;
+            }
+        }
+
         // DELETE Announcement Function
         function deleteAnnouncement(id, title) {
             if (confirm(`Are you sure you want to PERMANENTLY DELETE "${title}"?\n\nThis action cannot be undone!`)) {
-                window.location.href = `announcement_history.php?delete_id=${id}`;
+                window.location.href = `active_announcements.php?delete_id=${id}`;
             }
         }
     </script>

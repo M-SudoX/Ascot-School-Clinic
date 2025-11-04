@@ -285,7 +285,7 @@ $totalConsults = array_sum($consultationData);
         .welcome-section {
             background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
             border-radius: 15px;
-            padding: 2rem;
+            padding: 1rem;
             margin-bottom: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
             border: 1px solid rgba(206, 224, 144, 0.2);
@@ -341,8 +341,8 @@ $totalConsults = array_sum($consultationData);
 
         .stats-icon {
             background: linear-gradient(135deg, #ffda6a, #ffda6a);
-            width: 70px;
-            height: 70px;
+            width: 60px;
+            height: 60px;
             border-radius: 15px;
             display: flex;
             align-items: center;
@@ -521,7 +521,7 @@ $totalConsults = array_sum($consultationData);
             }
             
             .stats-card {
-                padding: 20px;
+                padding: 5px;
             }
 
             .stats-info h2 {
@@ -671,10 +671,10 @@ $totalConsults = array_sum($consultationData);
                 </div>
             </div>
 
-            <div class="page-title fade-in">
-                <i class="fas fa-chart-line"></i> Consultation Reports
+            <div>
+             
             </div>
-            <p class="page-subtitle">Track your weekly consultation activity this month</p>
+     
 
             <!-- STATS CARD -->
             <div class="stats-card fade-in">

@@ -627,12 +627,9 @@ try {
 
         .submenu-item:hover {
             background: #e9ecef;
-            color: var(--primary);
         }
 
         .submenu-item.active {
-            background: #e9ecef;
-            color: var(--primary);
             font-weight: 500;
         }
 
@@ -680,7 +677,7 @@ try {
         .welcome-section {
             background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
             border-radius: 15px;
-            padding: 2rem;
+            padding: 1rem;
             margin-bottom: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
             border: 1px solid rgba(206, 224, 144, 0.2);
@@ -1156,6 +1153,10 @@ try {
             gap: 0.75rem;
             margin-top: 1.5rem;
         }
+        .alert-success {
+            background: #D0F0C0;
+            color: #555;
+        }
 
         .action-btn {
             background: #fff59d;
@@ -1512,9 +1513,13 @@ try {
                             <i class="fas fa-plus-circle"></i>
                             New Announcement
                         </a>
-                        <a href="announcement_history.php" class="submenu-item">
+                        <a href="active_announcements.php" class="submenu-item">
+                            <i class="fas fa-bell"></i>
+                            Active Announcements
+                        </a>
+                        <a href="announcement_history.php" class="submenu-item active">
                             <i class="fas fa-history"></i>
-                            History
+                            History (Expired)
                         </a>
                     </div>
                 </div>
