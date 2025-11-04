@@ -429,7 +429,7 @@ try {
         .page-header {
             background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
             border-radius: 15px;
-            padding: 2rem;
+            padding: 1rem;
             margin-bottom: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
             border: 1px solid rgba(206, 224, 144, 0.2);
@@ -1263,13 +1263,8 @@ try {
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
-
                     <div class="divider"></div>
-
-                    <div class="report-actions">
-                        <button class="btn-report" onclick="printReport()">
-                            <i class="fas fa-print"></i>
-                            Print Report
+                    <div>
                         </button>
                     </div>
                 </div>

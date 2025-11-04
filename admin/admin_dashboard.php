@@ -362,7 +362,7 @@ function getActivityStyle($action) {
         .welcome-section {
             background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
             border-radius: 15px;
-            padding: 2rem;
+            padding: 1rem;
             margin-bottom: 2rem;
             box-shadow: 0 2px 15px rgba(0,0,0,0.05);
             border: 1px solid rgba(206, 224, 144, 0.2);

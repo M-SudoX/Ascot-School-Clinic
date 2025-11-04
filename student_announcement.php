@@ -54,6 +54,38 @@ function checkMediaFile($filename) {
     return ['exists' => false, 'path' => '../uploads/announcements/' . $filename];
 }
 
+// Function to calculate time remaining until expiry
+function getTimeRemaining($expiry_date) {
+    if (empty($expiry_date)) return null;
+    
+    $now = new DateTime();
+    $expiry = new DateTime($expiry_date);
+    
+    if ($expiry <= $now) {
+        return 'expired';
+    }
+    
+    $interval = $now->diff($expiry);
+    
+    if ($interval->days > 0) {
+        return $interval->days . ' day' . ($interval->days > 1 ? 's' : '') . ' remaining';
+    } elseif ($interval->h > 0) {
+        return $interval->h . ' hour' . ($interval->h > 1 ? 's' : '') . ' remaining';
+    } else {
+        return $interval->i . ' minute' . ($interval->i > 1 ? 's' : '') . ' remaining';
+    }
+}
+
+// Function to check if announcement is expired
+function isExpired($expiry_date) {
+    if (empty($expiry_date)) return false;
+    
+    $now = new DateTime();
+    $expiry = new DateTime($expiry_date);
+    
+    return $expiry <= $now;
+}
+
 // ✅ FETCH ANNOUNCEMENTS
 try {
     // Get ALL active announcements that should be shown to students
@@ -62,27 +94,29 @@ try {
         FROM announcements a
         WHERE a.post_on_front = 1 
         AND a.is_active = 1
+        AND (a.expiry_date IS NULL OR a.expiry_date > NOW())
         ORDER BY a.created_at DESC
         LIMIT 20
     ");
     $stmt->execute();
     $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Get inactive announcements
-    $archive_stmt = $pdo->prepare("
+    // Get expired announcements
+    $expired_stmt = $pdo->prepare("
         SELECT a.* 
         FROM announcements a
-        WHERE a.is_active = 0
+        WHERE a.post_on_front = 1 
+        AND (a.is_active = 0 OR a.expiry_date <= NOW())
         ORDER BY a.created_at DESC
         LIMIT 20
     ");
-    $archive_stmt->execute();
-    $archived_announcements = $archive_stmt->fetchAll(PDO::FETCH_ASSOC);
+    $expired_stmt->execute();
+    $expired_announcements = $expired_stmt->fetchAll(PDO::FETCH_ASSOC);
     
 } catch (PDOException $e) {
     error_log("Error fetching announcements: " . $e->getMessage());
     $announcements = [];
-    $archived_announcements = [];
+    $expired_announcements = [];
 }
 
 // Use PDO - Secure database access
@@ -380,6 +414,7 @@ try {
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             border-left: 4px solid var(--primary);
             transition: all 0.3s ease;
+            position: relative;
         }
 
         .announcement-card:hover {
@@ -387,10 +422,15 @@ try {
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
 
-        .announcement-card.archived {
+        .announcement-card.expired {
             border-left: 4px solid var(--gray);
             background: #f8f9fa;
             opacity: 0.8;
+        }
+
+        .announcement-card.expiring-soon {
+            border-left: 4px solid var(--warning);
+            background: #fffbf0;
         }
 
         .announcement-header {
@@ -414,8 +454,12 @@ try {
         }
         
 
-        .announcement-icon.archived {
+        .announcement-icon.expired {
             background: var(--gray);
+        }
+
+        .announcement-icon.expiring-soon {
+            background: var(--warning);
         }
 
         .announcement-meta {
@@ -435,10 +479,39 @@ try {
         .announcement-date {
             color: var(--gray);
             font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
         }
 
         .announcement-date i {
             margin-right: 0.5rem;
+        }
+
+        .expiry-info {
+            margin-top: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .expiry-info.expiring {
+            background: rgba(255, 193, 7, 0.1);
+            color: #856404;
+            border-left: 3px solid #ffc107;
+        }
+
+        .expiry-info.expired {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border-left: 3px solid #dc3545;
+        }
+
+        .expiry-info.no-expiry {
+            background: rgba(40, 167, 69, 0.1);
+            color: #155724;
+            border-left: 3px solid #28a745;
         }
 
         .badge {
@@ -458,6 +531,11 @@ try {
         .badge-warning {
             background: rgba(255, 193, 7, 0.1);
             color: #856404;
+        }
+
+        .badge-danger {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
         }
 
         .badge-info {
@@ -486,6 +564,8 @@ try {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
 
         .announcement-category {
@@ -507,6 +587,11 @@ try {
 
         .status-inactive {
             color: var(--gray);
+            font-weight: 600;
+        }
+
+        .status-expired {
+            color: var(--danger);
             font-weight: 600;
         }
 
@@ -615,6 +700,34 @@ try {
 
         .modal-header .btn-close:hover {
             opacity: 1;
+        }
+
+        /* Countdown timer styles */
+        .countdown-timer {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .countdown-expiring {
+            background: #fff3cd;
+            color: #856404;
+            animation: pulse 2s infinite;
+        }
+
+        .countdown-expired {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        @keyframes pulse {
+            0% { background-color: #fff3cd; }
+            50% { background-color: #ffeaa7; }
+            100% { background-color: #fff3cd; }
         }
 
         /* Responsive Design - COMBINED FROM BOTH */
@@ -916,8 +1029,8 @@ try {
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="archive-tab" data-bs-toggle="tab" data-bs-target="#archive" type="button" role="tab">
-                            <i class="fas fa-archive"></i> Archive
-                            <span class="badge bg-secondary ms-1"><?php echo count($archived_announcements); ?></span>
+                            <i class="fas fa-archive"></i> Expired Announcements
+                            <span class="badge bg-secondary ms-1"><?php echo count($expired_announcements); ?></span>
                         </button>
                     </li>
                 </ul>
@@ -933,10 +1046,14 @@ try {
                             </div>
                         <?php else: ?>
                             <div class="stagger-animation">
-                                <?php foreach ($announcements as $announcement): ?>
-                                    <div class="announcement-card">
+                                <?php foreach ($announcements as $announcement): 
+                                    $timeRemaining = getTimeRemaining($announcement['expiry_date']);
+                                    $isExpiringSoon = $timeRemaining && $timeRemaining !== 'expired' && strpos($timeRemaining, 'day') === false;
+                                    $cardClass = $isExpiringSoon ? 'expiring-soon' : '';
+                                ?>
+                                    <div class="announcement-card <?php echo $cardClass; ?>">
                                         <div class="announcement-header">
-                                            <div class="announcement-icon">
+                                            <div class="announcement-icon <?php echo $cardClass; ?>">
                                                 <i class="fas fa-bullhorn"></i>
                                             </div>
                                             <div class="announcement-meta">
@@ -945,11 +1062,35 @@ try {
                                                     <span class="badge badge-success">
                                                         <i class="fas fa-users"></i> All Students
                                                     </span>
+                                                    <?php if ($isExpiringSoon): ?>
+                                                        <span class="badge badge-warning">
+                                                            <i class="fas fa-clock"></i> Expiring Soon
+                                                        </span>
+                                                    <?php endif; ?>
                                                 </h4>
-                                                <span class="announcement-date">
-                                                    <i class="fas fa-calendar-alt"></i>
-                                                    <?php echo date('F j, Y g:i A', strtotime($announcement['created_at'])); ?>
-                                                </span>
+                                                <div class="announcement-date">
+                                                    <span>
+                                                        <i class="fas fa-calendar-alt"></i>
+                                                        Posted: <?php echo date('F j, Y g:i A', strtotime($announcement['created_at'])); ?>
+                                                    </span>
+                                                    
+                                                    <!-- EXPIRY INFORMATION -->
+                                                    <div class="expiry-info <?php echo empty($announcement['expiry_date']) ? 'no-expiry' : ($isExpiringSoon ? 'expiring' : ''); ?>">
+                                                        <i class="fas fa-clock"></i>
+                                                        <?php if (empty($announcement['expiry_date'])): ?>
+                                                            No expiry date
+                                                        <?php else: ?>
+                                                            Expires: <?php echo date('F j, Y g:i A', strtotime($announcement['expiry_date'])); ?>
+                                                            <?php if ($timeRemaining && $timeRemaining !== 'expired'): ?>
+                                                                - <span class="countdown-timer <?php echo $isExpiringSoon ? 'countdown-expiring' : ''; ?>" 
+                                                                       data-expiry="<?php echo $announcement['expiry_date']; ?>">
+                                                                    <i class="fas fa-hourglass-half"></i>
+                                                                    <?php echo $timeRemaining; ?>
+                                                                </span>
+                                                            <?php endif; ?>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="announcement-body">
@@ -1005,6 +1146,9 @@ try {
                                             </span>
                                             <span class="status-active">
                                                 <i class="fas fa-circle"></i> Active
+                                                <?php if ($isExpiringSoon): ?>
+                                                    <span class="badge badge-warning ms-1">Expiring Soon</span>
+                                                <?php endif; ?>
                                             </span>
                                         </div>
                                     </div>
@@ -1013,20 +1157,22 @@ try {
                         <?php endif; ?>
                     </div>
                     
-                    <!-- ARCHIVE TAB -->
+                    <!-- EXPIRED ANNOUNCEMENTS TAB -->
                     <div class="tab-pane fade" id="archive" role="tabpanel">
-                        <?php if (empty($archived_announcements)): ?>
+                        <?php if (empty($expired_announcements)): ?>
                             <div class="no-announcements">
                                 <i class="fas fa-archive"></i>
-                                <h4>Archive is Empty</h4>
-                                <p>No expired or archived announcements found</p>
+                                <h4>No Expired Announcements</h4>
+                                <p>No expired announcements found</p>
                             </div>
                         <?php else: ?>
                             <div class="stagger-animation">
-                                <?php foreach ($archived_announcements as $announcement): ?>
-                                    <div class="announcement-card archived">
+                                <?php foreach ($expired_announcements as $announcement): 
+                                    $isActuallyExpired = isExpired($announcement['expiry_date']);
+                                ?>
+                                    <div class="announcement-card expired">
                                         <div class="announcement-header">
-                                            <div class="announcement-icon archived">
+                                            <div class="announcement-icon expired">
                                                 <i class="fas fa-archive"></i>
                                             </div>
                                             <div class="announcement-meta">
@@ -1035,21 +1181,35 @@ try {
                                                     <span class="badge badge-secondary">
                                                         <i class="fas fa-users"></i> All Students
                                                     </span>
+                                                    <span class="badge badge-danger">
+                                                        <i class="fas fa-ban"></i> Expired
+                                                    </span>
                                                 </h4>
-                                                <span class="announcement-date">
-                                                    <i class="fas fa-calendar-alt"></i>
-                                                    Posted: <?php echo date('F j, Y g:i A', strtotime($announcement['created_at'])); ?>
-                                                </span>
+                                                <div class="announcement-date">
+                                                    <span>
+                                                        <i class="fas fa-calendar-alt"></i>
+                                                        Posted: <?php echo date('F j, Y g:i A', strtotime($announcement['created_at'])); ?>
+                                                    </span>
+                                                    
+                                                    <!-- EXPIRY INFORMATION FOR EXPIRED ANNOUNCEMENTS -->
+                                                    <?php if (!empty($announcement['expiry_date'])): ?>
+                                                        <div class="expiry-info expired">
+                                                            <i class="fas fa-clock"></i>
+                                                            Expired: <?php echo date('F j, Y g:i A', strtotime($announcement['expiry_date'])); ?>
+                                                        </div>
+                                                    <?php else: ?>
+                                                        <div class="expiry-info expired">
+                                                            <i class="fas fa-ban"></i>
+                                                            Manually deactivated
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
                                             </div>
-                                            
-                                            <span class="badge badge-secondary">
-                                                <i class="fas fa-ban"></i> Inactive
-                                            </span>
                                         </div>
                                         <div class="announcement-body">
                                             <p><?php echo nl2br(htmlspecialchars($announcement['content'])); ?></p>
                                             
-                                            <!-- MEDIA DISPLAY FOR ARCHIVED -->
+                                            <!-- MEDIA DISPLAY FOR EXPIRED ANNOUNCEMENTS -->
                                             <?php if (!empty($announcement['attachment'])): 
                                                 $fileCheck = checkMediaFile($announcement['attachment']);
                                                 $actualPath = $fileCheck['path'];
@@ -1062,7 +1222,7 @@ try {
                                                 <?php if (in_array($fileExtension, $imageExtensions)): ?>
                                                     <div class="announcement-media">
                                                         <img src="<?php echo $actualPath; ?>" 
-                                                             alt="Archived Announcement Image" 
+                                                             alt="Expired Announcement Image" 
                                                              class="announcement-image"
                                                              onclick="openImageModal('<?php echo $actualPath; ?>')"
                                                              style="opacity: 0.7;">
@@ -1098,8 +1258,8 @@ try {
                                                 <i class="fas fa-user"></i>
                                                 Sent by: <?php echo htmlspecialchars($announcement['sent_by'] ?? 'Admin'); ?>
                                             </span>
-                                            <span class="status-inactive">
-                                                <i class="fas fa-archive"></i> Inactive
+                                            <span class="status-expired">
+                                                <i class="fas fa-circle"></i> Expired
                                             </span>
                                         </div>
                                     </div>
@@ -1174,6 +1334,47 @@ try {
                     tab.show();
                 }
             }
+
+            // Real-time countdown update for expiring announcements
+            function updateCountdownTimers() {
+                const timers = document.querySelectorAll('.countdown-timer');
+                
+                timers.forEach(timer => {
+                    const expiryDate = new Date(timer.getAttribute('data-expiry'));
+                    const now = new Date();
+                    
+                    if (expiryDate <= now) {
+                        timer.innerHTML = '<i class="fas fa-ban"></i> Expired';
+                        timer.className = 'countdown-timer countdown-expired';
+                        return;
+                    }
+                    
+                    const timeDiff = expiryDate - now;
+                    const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    let remainingText = '';
+                    if (days > 0) {
+                        remainingText = `${days} day${days > 1 ? 's' : ''} remaining`;
+                    } else if (hours > 0) {
+                        remainingText = `${hours} hour${hours > 1 ? 's' : ''} remaining`;
+                    } else {
+                        remainingText = `${minutes} minute${minutes > 1 ? 's' : ''} remaining`;
+                    }
+                    
+                    timer.innerHTML = `<i class="fas fa-hourglass-half"></i> ${remainingText}`;
+                    
+                    // Update class if it's expiring soon (less than 1 day)
+                    if (days === 0) {
+                        timer.className = 'countdown-timer countdown-expiring';
+                    }
+                });
+            }
+
+            // Update countdown every minute
+            updateCountdownTimers();
+            setInterval(updateCountdownTimers, 60000);
 
             // LOADING ANIMATIONS
             const staggerElements = document.querySelectorAll('.stagger-animation > *');
