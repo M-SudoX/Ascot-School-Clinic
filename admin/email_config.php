@@ -3,8 +3,8 @@
 return [
     'smtp' => [
         'host' => 'smtp.gmail.com',
-        'username' => 'zayantomara@gmail.com',
-        'password' => 'zjaoodlqbdtknyno',
+        'username' => 'ascotclinic750@gmail.com',
+        'password' => 'ukbhtxlpahhfqqvy',
         'port' => 587,
         'encryption' => 'tls'
     ],

@@ -30,12 +30,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'zayantomara@gmail.com';   
-            $mail->Password = 'zjaoodlqbdtknyno';     
+            $mail->Username = 'ascotclinic750@gmail.com';   
+            $mail->Password = 'ukbhtxlpahhfqqvy';     
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
 
-            $mail->setFrom('yourgmail@gmail.com', 'ASCOT Clinic');
+            $mail->setFrom('ascotclinic750@gmail.com', 'ASCOT Clinic');
             $mail->addAddress($email, $admin['username']);
 
             $mail->isHTML(true);
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <div class="forgot-card">
     <!-- LOGO -->
-    <img src="../img/logo.png" alt="ASCOT Logo" class="logo">
+    <img src="img/logo.png" alt="ASCOT Logo" class="logo">
 
     <!-- TITLE -->
     <h5>

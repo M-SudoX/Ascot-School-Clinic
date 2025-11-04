@@ -30,8 +30,8 @@ if (isset($_POST['resend']) && isset($_SESSION['pending_reset_user'])) {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'ascotclinic79@gmail.com'; // ✅ SAME AS OTHER FILES
-            $mail->Password = 'ysgutmnwuesppaus'; // ✅ SAME AS OTHER FILES
+            $mail->Username = 'ascotclinic750@gmail.com'; 
+            $mail->Password = 'ukbhtxlpahhfqqvy';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
             
@@ -39,9 +39,9 @@ if (isset($_POST['resend']) && isset($_SESSION['pending_reset_user'])) {
             $mail->Timeout = 30;
 
             // Recipients
-            $mail->setFrom('ascotclinic79@gmail.com', 'ASCOT Online School Clinic');
+            $mail->setFrom('ascotclinic750@gmail.com', 'ASCOT Online School Clinic');
             $mail->addAddress($user['email'], $user['fullname']);
-            $mail->addReplyTo('ascotclinic79@gmail.com', 'ASCOT Online School Clinic');
+            $mail->addReplyTo('ascotclinic750@gmail.com', 'ASCOT Online School Clinic');
 
             // Content
             $mail->isHTML(true);
@@ -246,7 +246,7 @@ p {
 </head>
 <body>
   <div class="card">
-    <img src="../img/logo.png" alt="ASCOT Logo" class="logo">
+    <img src="img/logo.png" alt="ASCOT Logo" class="logo">
     <h5>Verification Code</h5>
     <p>Enter the 6-digit code sent to your email.</p>
 
