@@ -111,7 +111,7 @@ try {
       content: "";
       position: absolute;
       inset: 0;
-      background: rgba(0,0,0,0.1);
+      background: #5b5fc7;
       backdrop-filter: blur(2px);
     }
 
@@ -214,8 +214,8 @@ try {
     }
 
     .btn-login {
-      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-      color: var(--white);
+      background: #ffda6a;
+      color: #555;
       font-weight: 600;
       padding: 1rem 2rem;
       border-radius: 12px;
@@ -232,8 +232,8 @@ try {
 
     .btn-login:hover {
       transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
-      color: var(--white);
+      box-shadow: (110deg, #ffda6a 50%, #fff7da 50%);
+      background: #ffda6a;
     }
 
     .btn-login:active {
@@ -693,10 +693,9 @@ try {
                 <i class="fas fa-arrow-right"></i>
               </button>
               
-              <div class="mt-3 text-center">
-                <small class="text-muted">
-                  <i class="fas fa-shield-alt me-1"></i>
-                  Secure login system
+              <div>
+                  <i>
+                  </i>                
                 </small>
               </div>
             </form>

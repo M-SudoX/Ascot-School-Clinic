@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <div class="forgot-card">
     <!-- LOGO -->
-    <img src="img/logo.png" alt="ASCOT Logo" class="logo">
+    <img src="../img/logo.png" alt="ASCOT Logo" class="logo">
 
     <!-- TITLE -->
     <h5>
