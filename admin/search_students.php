@@ -444,7 +444,6 @@ function getProfileStatus($student) {
 
         .submenu-item:hover {
             background: #e9ecef;
-            color: var(--primary);
         }
 
         .submenu-item i {

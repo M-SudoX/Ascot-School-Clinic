@@ -393,7 +393,6 @@ function getProfileStatus($student) {
 
         .nav-item:hover {
             background: #f8f9fa;
-            color: var(--primary);
         }
 
         .nav-item.active {
@@ -448,7 +447,6 @@ function getProfileStatus($student) {
 
         .submenu-item:hover {
             background: #e9ecef;
-            color: var(--primary);
         }
 
         .submenu-item i {

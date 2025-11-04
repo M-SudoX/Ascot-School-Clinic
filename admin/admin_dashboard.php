@@ -316,7 +316,6 @@ function getActivityStyle($action) {
 
         .submenu-item:hover {
             background: #e9ecef;
-            color: var(--primary);
         }
 
         .submenu-item i {

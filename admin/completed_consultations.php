@@ -266,13 +266,11 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         }
 
         .submenu-item:hover {
-            background: #e9ecef;
-            color: var(--primary);
+            background: #e9ecef;   
         }
 
         .submenu-item.active {
             background: #e9ecef;
-            color: var(--primary);
             font-weight: 500;
         }
 

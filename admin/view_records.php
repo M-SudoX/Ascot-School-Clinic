@@ -287,12 +287,10 @@ try {
 
         .submenu-item:hover {
             background: #e9ecef;
-            color: var(--primary);
         }
 
         .submenu-item.active {
             background: #e9ecef;
-            color: var(--primary);
             font-weight: 500;
         }
 
