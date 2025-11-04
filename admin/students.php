@@ -1082,41 +1082,6 @@ function getProfileStatus($student) {
                 </div>
             <?php endif; ?>
 
-            <!-- Professional Search Bar -->
-            <div class="dashboard-card fade-in">
-                <div class="card-header">
-                    <h3 class="card-title">Search Students</h3>
-                    <div class="card-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                </div>
-                
-                <div class="search-container">
-                    <form method="GET" action="students.php">
-                        <div class="d-flex align-items-center">
-                            <div class="search-input-group flex-grow-1">
-                                <i class="fas fa-search search-icon"></i>
-                                <input type="text" class="form-control" name="search" 
-                                       placeholder="Search students by ID, name, email, or course..." 
-                                       value="<?php echo htmlspecialchars($search); ?>">
-                            </div>
-                            &nbsp;<button class="btn btn-primary" type="submit">
-                               <i class="fas fa-search me-2"></i>Search
-                            </button>
-                        </div>
-                        <?php if (!empty($search)): ?>
-                            <div class="search-stats">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Found <?php echo $total_students; ?> student(s) matching "<?php echo htmlspecialchars($search); ?>"
-                                <a href="students.php" class="text-danger ms-2 text-decoration-none">
-                                    <i class="fas fa-times me-1"></i>Clear search
-                                </a>
-                            </div>
-                        <?php endif; ?>
-                    </form>
-                </div>
-            </div>
-
             <!-- Filters -->
             <div class="dashboard-card fade-in">
                 <div class="card-header">
@@ -1549,12 +1514,6 @@ function getProfileStatus($student) {
             const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
-
-            // Auto-focus search input
-            const searchInput = document.querySelector('input[name="search"]');
-            if (searchInput && !searchInput.value) {
-                searchInput.focus();
-            }
 
             // LOADING ANIMATIONS
             const fadeElements = document.querySelectorAll('.fade-in');
