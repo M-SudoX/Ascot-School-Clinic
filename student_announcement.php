@@ -135,9 +135,9 @@ try {
     
     <style>
         :root {
-            --primary: #ffda6a;
-            --primary-dark: #e6c45f;
-            --secondary: #ffda6a;
+            --primary: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary: #764ba2;
             --success: #28a745;
             --info: #17a2b8;
             --warning: #ffc107;
@@ -145,6 +145,13 @@ try {
             --light: #f8f9fa;
             --dark: #343a40;
             --gray: #6c757d;
+            --accent: #ffda6a;
+            --accent-light: #fff7da;
+            --text-dark: #2c3e50;
+            --text-light: #6c757d;
+            --border-radius: 16px;
+            --shadow: 0 8px 32px rgba(0,0,0,0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
@@ -155,27 +162,27 @@ try {
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f6fa;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
             padding-top: 80px;
             line-height: 1.6;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Header Styles - SAME AS DASHBOARD */
+        /* Header Styles - ENHANCED */
         .top-header {
-            background: 
-            linear-gradient(90deg, 
-                #ffda6a 0%, 
-                #ffda6a 30%, 
-                #FFF5CC 70%, 
-                #ffffff 100%);
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
             padding: 0.75rem 0;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1030;
             height: 80px;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
 
         .header-content {
@@ -189,6 +196,12 @@ try {
             width: 60px;
             height: 60px;
             object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            transition: var(--transition);
+        }
+
+        .logo-img:hover {
+            transform: scale(1.05);
         }
 
         .school-info {
@@ -199,25 +212,31 @@ try {
             font-size: 0.7rem;
             opacity: 0.9;
             letter-spacing: 0.5px;
-            color: #555;
+            color: var(--text-dark);
+            font-weight: 600;
         }
 
         .school-name {
             font-size: 1.1rem;
-            font-weight: 700;
+            font-weight: 800;
             margin: 0.1rem 0;
             line-height: 1.2;
-            color: #555;
+            color: var(--text-dark);
+            background: linear-gradient(135deg, var(--text-dark), #495057);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .clinic-title {
             font-size: 0.8rem;
             opacity: 0.9;
-            font-weight: 500;
-            color: #555;
+            font-weight: 600;
+            color: var(--text-dark);
+            letter-spacing: 0.5px;
         }
 
-        /* Mobile Menu Toggle - SAME AS DASHBOARD */
+        /* Mobile Menu Toggle - ENHANCED */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
@@ -230,28 +249,31 @@ try {
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: var(--shadow);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
         }
 
         .mobile-menu-toggle:hover {
             transform: scale(1.05);
             background: var(--primary-dark);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
         }
 
-        /* Dashboard Container - SAME AS DASHBOARD */
+        /* Dashboard Container - ENHANCED */
         .dashboard-container {
             display: flex;
             min-height: calc(100vh - 80px);
         }
 
-        /* Sidebar Styles - SAME AS DASHBOARD */
+        /* Sidebar Styles - ENHANCED */
         .sidebar {
-            width: 260px;
-            background: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-            padding: 1.5rem 0;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: 2px 0 20px rgba(0,0,0,0.08);
+            padding: 2rem 0;
             transition: transform 0.3s ease;
             position: fixed;
             top: 80px;
@@ -259,73 +281,101 @@ try {
             bottom: 0;
             overflow-y: auto;
             z-index: 1020;
+            border-right: 1px solid rgba(255,255,255,0.2);
         }
 
         .sidebar-nav {
             display: flex;
             flex-direction: column;
             height: 100%;
+            gap: 0.5rem;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 0.9rem 1.25rem;
-            color: #444;
+            padding: 1rem 1.5rem;
+            color: var(--text-dark);
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             border: none;
             background: none;
             width: 100%;
             text-align: left;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
+            border-radius: 0 12px 12px 0;
+            margin: 0.25rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
+            transition: var(--transition);
         }
 
         .nav-item:hover {
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .nav-item:hover::before {
+            width: 100%;
         }
 
         .nav-item.active {
-            background: linear-gradient(90deg, rgba(255,218,106,0.1) 0%, transparent 100%);
-            color: #555;
-            border-left: 8px solid #ffda6a;
+            background: linear-gradient(90deg, rgba(255,218,106,0.15) 0%, transparent 100%);
+            color: var(--text-dark);
+            border-left: 6px solid var(--accent);
+        }
+
+        .nav-item.active::before {
+            width: 100%;
         }
 
         .nav-item i {
-            width: 22px;
-            margin-right: 0.9rem;
-            font-size: 1.1rem;
-            color: #555;
+            width: 24px;
+            margin-right: 1rem;
+            font-size: 1.2rem;
+            color: inherit;
+            transition: var(--transition);
         }
 
         .nav-item span {
             flex: 1;
-            
+            color: inherit;
+            font-size: 0.95rem;
         }
 
         .nav-item.logout {
             color: var(--danger);
             margin-top: auto;
-        }
-        .bg-primary {
-            background-color: rgba(var(--bs-primary-rgb), var(--bs-bg-opacity)) !important;
+            border-left: 6px solid transparent;
         }
 
         .nav-item.logout:hover {
             background: rgba(220, 53, 69, 0.1);
+            color: var(--danger);
         }
 
-        /* Main Content - SAME AS DASHBOARD */
+        /* Main Content - ENHANCED */
         .main-content {
             flex: 1;
-            padding: 1.5rem;
+            padding: 2rem;
             overflow-x: hidden;
-            margin-left: 260px;
+            margin-left: 280px;
             margin-top: 0;
         }
 
-        /* Sidebar Overlay for Mobile - SAME AS DASHBOARD */
+        /* Sidebar Overlay for Mobile - ENHANCED */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -334,6 +384,7 @@ try {
             right: 0;
             bottom: 0;
             background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
             z-index: 1019;
         }
 
@@ -341,125 +392,190 @@ try {
             display: block;
         }
 
-        /* WELCOME SECTION - SAME AS DASHBOARD */
+        /* WELCOME SECTION - ENHANCED */
         .welcome-section {
-            background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
-            border-radius: 15px;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            border: 1px solid rgba(206, 224, 144, 0.2);
-            border-left: 10px solid #ffda6a;
-        }
-
-        .welcome-content h1 {
-            color: #555;
-            font-weight: 700;
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .welcome-content p {
-            color: var(--gray);
-            font-size: 1.1rem;
-            margin-bottom: 0;
-        }
-
-        /* KEEPING YOUR ORIGINAL ANNOUNCEMENT STYLES */
-        .announcement-tabs {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
+            background: linear-gradient(135deg, var(--accent-light) 0%, rgba(255,247,218,0.9) 100%);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            margin-bottom: 2.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255,218,106,0.3);
+            border-left: 8px solid var(--accent);
+            position: relative;
             overflow: hidden;
         }
 
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.3;
+        }
+
+        .welcome-content h1 {
+            color: var(--text-dark);
+            font-weight: 800;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+
+        .welcome-content p {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            margin-bottom: 0;
+            font-weight: 500;
+        }
+
+        /* ANNOUNCEMENT TABS - ENHANCED */
+        .announcement-tabs {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: var(--transition);
+        }
+
+        .announcement-tabs:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
         .nav-tabs {
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid rgba(233, 236, 239, 0.8);
             padding: 0;
+            background: linear-gradient(135deg, rgba(248, 249, 250, 0.9) 0%, rgba(233, 236, 239, 0.95) 100%);
         }
 
         .nav-tabs .nav-link {
             border: none;
-            color: #666;
-            font-weight: 500;
-            padding: 1.25rem 2rem;
+            color: var(--text-light);
+            font-weight: 600;
+            padding: 1.5rem 2rem;
             margin-bottom: -1px;
-            transition: all 0.3s ease;
+            transition: var(--transition);
+            font-size: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-tabs .nav-link::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(135deg, var(--accent), #ffd24a);
+            transition: var(--transition);
+            transform: translateX(-50%);
         }
 
         .nav-tabs .nav-link.active {
-            color: #555;
+            color: var(--text-dark);
             background: transparent;
-            border-bottom: 3px solid #ffda6a;
+        }
 
+        .nav-tabs .nav-link.active::before {
+            width: 100%;
         }
 
         .nav-tabs .nav-link:hover {
             border: none;
-            color: #555;
-            background: rgba(255,218,106,0.05);
+            color: var(--text-dark);
+            background: rgba(255,255,255,0.5);
+            transform: translateY(-1px);
         }
 
         .tab-content {
-            padding: 2rem;
+            padding: 2.5rem;
         }
 
-        /* Announcement Cards */
+        /* Announcement Cards - ENHANCED */
         .announcement-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            padding: 2rem;
             margin-bottom: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            border-left: 4px solid var(--primary);
-            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            border-left: 6px solid var(--accent);
+            transition: var(--transition);
             position: relative;
+            overflow: hidden;
         }
 
         .announcement-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .announcement-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .announcement-card:hover::before {
+            left: 100%;
         }
 
         .announcement-card.expired {
-            border-left: 4px solid var(--gray);
-            background: #f8f9fa;
+            border-left: 6px solid var(--gray);
+            background: rgba(248, 249, 250, 0.9);
             opacity: 0.8;
         }
 
         .announcement-card.expiring-soon {
-            border-left: 4px solid var(--warning);
-            background: #fffbf0;
+            border-left: 6px solid var(--warning);
+            background: rgba(255, 251, 240, 0.9);
         }
 
         .announcement-header {
             display: flex;
             align-items: flex-start;
-            gap: 1rem;
-            margin-bottom: 1rem;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
         .announcement-icon {
-            background: #ffda6a;
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), #ffd24a);
+            color: var(--text-dark);
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             flex-shrink: 0;
+            box-shadow: 0 4px 15px rgba(255,218,106,0.4);
+            transition: var(--transition);
         }
-        
+
+        .announcement-card:hover .announcement-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
 
         .announcement-icon.expired {
-            background: var(--gray);
+            background: linear-gradient(135deg, var(--gray), #6c757d);
         }
 
         .announcement-icon.expiring-soon {
-            background: var(--warning);
+            background: linear-gradient(135deg, var(--warning), #e0a800);
         }
 
         .announcement-meta {
@@ -467,21 +583,22 @@ try {
         }
 
         .announcement-meta h4 {
-            color: var(--dark);
-            margin-bottom: 0.5rem;
-            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+            font-weight: 800;
             display: flex;
             align-items: center;
             flex-wrap: wrap;
-            gap: 0.5rem;
+            gap: 0.75rem;
+            font-size: 1.3rem;
         }
 
         .announcement-date {
-            color: var(--gray);
-            font-size: 0.9rem;
+            color: var(--text-light);
+            font-size: 0.95rem;
             display: flex;
             flex-direction: column;
-            gap: 0.25rem;
+            gap: 0.5rem;
         }
 
         .announcement-date i {
@@ -489,63 +606,76 @@ try {
         }
 
         .expiry-info {
-            margin-top: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 500;
+            margin-top: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-left: 4px solid;
+            transition: var(--transition);
         }
 
         .expiry-info.expiring {
             background: rgba(255, 193, 7, 0.1);
             color: #856404;
-            border-left: 3px solid #ffc107;
+            border-left-color: var(--warning);
         }
 
         .expiry-info.expired {
             background: rgba(220, 53, 69, 0.1);
-            color: #dc3545;
-            border-left: 3px solid #dc3545;
+            color: var(--danger);
+            border-left-color: var(--danger);
         }
 
         .expiry-info.no-expiry {
             background: rgba(40, 167, 69, 0.1);
             color: #155724;
-            border-left: 3px solid #28a745;
+            border-left-color: var(--success);
         }
 
         .badge {
-            padding: 0.4rem 0.8rem;
+            padding: 0.5rem 1rem;
             border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            
-            background: #ffda6a;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .badge-success {
             background: rgba(40, 167, 69, 0.1);
-            color: #555;
+            color: #155724;
+            border: 1px solid rgba(40, 167, 69, 0.2);
         }
 
         .badge-warning {
             background: rgba(255, 193, 7, 0.1);
             color: #856404;
+            border: 1px solid rgba(255, 193, 7, 0.2);
         }
 
         .badge-danger {
             background: rgba(220, 53, 69, 0.1);
-            color: #dc3545;
+            color: var(--danger);
+            border: 1px solid rgba(220, 53, 69, 0.2);
         }
 
         .badge-info {
             background: rgba(23, 162, 184, 0.1);
             color: #0c5460;
+            border: 1px solid rgba(23, 162, 184, 0.2);
         }
 
         .badge-secondary {
             background: rgba(108, 117, 125, 0.1);
-            color: #6c757d;
+            color: var(--gray);
+            border: 1px solid rgba(108, 117, 125, 0.2);
+        }
+
+        .badge-primary {
+            background: rgba(255, 218, 106, 0.2);
+            color: var(--text-dark);
+            border: 1px solid rgba(255, 218, 106, 0.3);
         }
 
         .announcement-body {
@@ -553,72 +683,105 @@ try {
         }
 
         .announcement-body p {
-            color: #555;
-            line-height: 1.6;
+            color: var(--text-dark);
+            line-height: 1.7;
             margin: 0;
+            font-size: 1rem;
         }
 
         .announcement-footer {
-            border-top: 1px solid #e9ecef;
-            padding-top: 1rem;
+            border-top: 1px solid rgba(233, 236, 239, 0.8);
+            padding-top: 1.25rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 0.5rem;
+            gap: 1rem;
         }
 
         .announcement-category {
-            background: #f8f9fa;
-            color: var(--gray);
-            padding: 0.4rem 0.8rem;
-            border-radius: 15px;
-            font-size: 0.8rem;
+            background: rgba(248, 249, 250, 0.8);
+            color: var(--text-light);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .announcement-category:hover {
+            background: rgba(255, 218, 106, 0.2);
+            color: var(--text-dark);
         }
 
         .announcement-category i {
-            margin-right: 0.4rem;
+            margin-right: 0.5rem;
         }
 
         .status-active {
             color: var(--success);
-            font-weight: 600;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .status-inactive {
             color: var(--gray);
-            font-weight: 600;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .status-expired {
             color: var(--danger);
-            font-weight: 600;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .no-announcements {
             text-align: center;
-            padding: 3rem 2rem;
-            color: var(--gray);
+            padding: 4rem 2rem;
+            color: var(--text-light);
         }
 
         .no-announcements i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
             color: #dee2e6;
             display: block;
+            opacity: 0.7;
         }
 
         .no-announcements h4 {
-            color: var(--gray);
-            margin-bottom: 0.5rem;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+            font-weight: 600;
+            font-size: 1.5rem;
         }
 
-        /* Media Styles */
+        .no-announcements p {
+            color: #999;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* Media Styles - ENHANCED */
         .announcement-media {
             margin-top: 1.5rem;
-            border-radius: 10px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: var(--transition);
+        }
+
+        .announcement-media:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
 
         .announcement-image {
@@ -632,7 +795,7 @@ try {
         }
 
         .announcement-image:hover {
-            transform: scale(1.01);
+            transform: scale(1.02);
         }
 
         .announcement-video {
@@ -642,86 +805,110 @@ try {
             background: #000;
             border-radius: 8px;
         }
-        .badge bg-primary ms-1{
-            color: #ffda6a;
-        }
 
         .announcement-pdf-preview {
-            background: linear-gradient(135deg, #ffda6a 0%, #ffda6a 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), #ffd24a);
+            color: var(--text-dark);
+            padding: 2.5rem;
+            border-radius: 12px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 1rem;
+            transition: var(--transition);
+            margin-top: 1.5rem;
+            box-shadow: 0 4px 15px rgba(255,218,106,0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .announcement-pdf-preview::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .announcement-pdf-preview:hover::before {
+            left: 100%;
         }
 
         .announcement-pdf-preview:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(255,218,106,0.6);
         }
 
         .announcement-pdf-preview i {
-            font-size: 2.5rem;
+            font-size: 3rem;
             margin-bottom: 1rem;
             display: block;
         }
 
         .announcement-pdf-preview h5 {
             margin-bottom: 0.5rem;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 1.2rem;
         }
 
         .announcement-pdf-preview p {
             margin: 0;
             opacity: 0.9;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
         }
 
-        /* Modal enhancements */
+        /* Modal enhancements - ENHANCED */
         .modal-content {
-            border-radius: 15px;
+            border-radius: var(--border-radius);
             border: none;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(20px);
+            background: rgba(255,255,255,0.95);
         }
 
         .modal-header {
-            background: linear-gradient(135deg, #ffda6a 0%, #ffda6a 100%);
-            color: white;
+            background: linear-gradient(135deg, var(--accent), #ffd24a);
+            color: var(--text-dark);
             border-bottom: none;
-            border-radius: 15px 15px 0 0;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            padding: 1.5rem 2rem;
         }
 
         .modal-header .btn-close {
-            filter: invert(1);
+            filter: invert(0.3);
             opacity: 0.8;
+            transition: var(--transition);
         }
 
         .modal-header .btn-close:hover {
             opacity: 1;
+            transform: scale(1.1);
         }
 
-        /* Countdown timer styles */
+        /* Countdown timer styles - ENHANCED */
         .countdown-timer {
             display: inline-flex;
             align-items: center;
-            gap: 0.25rem;
-            font-weight: 600;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
+            gap: 0.5rem;
+            font-weight: 700;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            transition: var(--transition);
         }
 
         .countdown-expiring {
             background: #fff3cd;
             color: #856404;
             animation: pulse 2s infinite;
+            border: 1px solid #ffeaa7;
         }
 
         .countdown-expired {
             background: #f8d7da;
             color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
         @keyframes pulse {
@@ -730,14 +917,14 @@ try {
             100% { background-color: #fff3cd; }
         }
 
-        /* Responsive Design - COMBINED FROM BOTH */
+        /* Responsive Design - ENHANCED */
         @media (max-width: 1200px) {
             .sidebar {
-                width: 240px;
+                width: 260px;
             }
             
             .main-content {
-                margin-left: 240px;
+                margin-left: 260px;
             }
         }
 
@@ -749,6 +936,20 @@ try {
             .logo-img {
                 width: 50px;
                 height: 50px;
+            }
+
+            .tab-content {
+                padding: 2rem;
+            }
+
+            .announcement-header {
+                gap: 1.25rem;
+            }
+
+            .announcement-icon {
+                width: 55px;
+                height: 55px;
+                font-size: 1.3rem;
             }
         }
 
@@ -763,7 +964,9 @@ try {
             }
             
             .mobile-menu-toggle {
-                display: block;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 top: 85px;
                 left: 20px;
             }
@@ -776,7 +979,9 @@ try {
                 z-index: 1020;
                 transform: translateX(-100%);
                 overflow-y: auto;
-                width: 280px;
+                width: 300px;
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(30px);
             }
 
             .sidebar.active {
@@ -792,7 +997,7 @@ try {
             }
 
             .main-content {
-                padding: 2rem 1.25rem 1.25rem;
+                padding: 1.5rem;
                 width: 100%;
                 margin-left: 0;
             }
@@ -811,7 +1016,7 @@ try {
 
             .announcement-header {
                 flex-direction: column;
-                gap: 0.75rem;
+                gap: 1rem;
             }
             
             .announcement-icon {
@@ -820,7 +1025,7 @@ try {
             
             .announcement-footer {
                 flex-direction: column;
-                gap: 0.75rem;
+                gap: 1rem;
                 align-items: flex-start;
             }
 
@@ -828,11 +1033,28 @@ try {
                 flex-direction: column;
                 align-items: flex-start;
             }
+
+            .nav-tabs .nav-link {
+                padding: 1.25rem 1.5rem;
+                font-size: 0.95rem;
+            }
+
+            .tab-content {
+                padding: 1.5rem;
+            }
+
+            .welcome-section {
+                padding: 2rem;
+            }
+
+            .welcome-content h1 {
+                font-size: 1.8rem;
+            }
         }
 
         @media (max-width: 576px) {
             .tab-content {
-                padding: 1.5rem;
+                padding: 1.25rem;
             }
             
             .nav-tabs .nav-link {
@@ -841,7 +1063,7 @@ try {
             }
 
             .announcement-card {
-                padding: 1.25rem;
+                padding: 1.5rem;
             }
 
             .welcome-section {
@@ -853,13 +1075,21 @@ try {
             }
 
             .main-content {
-                padding: 1.75rem 1rem 1rem;
+                padding: 1.25rem;
             }
             
             .mobile-menu-toggle {
                 top: 80px;
                 width: 45px;
                 height: 45px;
+            }
+
+            .announcement-pdf-preview {
+                padding: 2rem;
+            }
+
+            .announcement-pdf-preview i {
+                font-size: 2.5rem;
             }
         }
         
@@ -885,7 +1115,15 @@ try {
             }
             
             .main-content {
-                padding: 1.5rem 1rem 1rem;
+                padding: 1rem;
+            }
+
+            .announcement-card {
+                padding: 1.25rem;
+            }
+
+            .welcome-section {
+                padding: 1.25rem;
             }
         }
 
@@ -898,11 +1136,19 @@ try {
             }
             
             .main-content {
-                padding: 1.25rem 0.75rem 0.75rem;
+                padding: 0.75rem;
+            }
+
+            .announcement-card {
+                padding: 1rem;
+            }
+
+            .tab-content {
+                padding: 1rem;
             }
         }
 
-        /* ANIMATIONS */
+        /* ANIMATIONS - ENHANCED */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -914,8 +1160,23 @@ try {
             }
         }
 
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
         .fade-in {
-            animation: fadeInUp 0.6s ease-out;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .slide-in-left {
+            animation: slideInLeft 0.6s ease-out;
         }
 
         .stagger-animation > * {
@@ -927,18 +1188,59 @@ try {
         .stagger-animation > *:nth-child(2) { animation-delay: 0.2s; }
         .stagger-animation > *:nth-child(3) { animation-delay: 0.3s; }
         .stagger-animation > *:nth-child(4) { animation-delay: 0.4s; }
+
+        /* Loading States */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Focus States for Accessibility */
+        .focus-visible {
+            outline: 3px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* Scrollbar Styling */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--primary-dark), #6a4a9a);
+        }
+
+        /* Touch Device Improvements */
+        .touch-device .announcement-card {
+            padding: 1.5rem;
+        }
+
+        .touch-device .announcement-icon {
+            width: 55px;
+            height: 55px;
+        }
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - SAME AS DASHBOARD -->
-    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+    <!-- Mobile Menu Toggle Button - ENHANCED -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - SAME AS DASHBOARD -->
+    <!-- Sidebar Overlay for Mobile - ENHANCED -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - SAME AS DASHBOARD -->
+    <!-- Header - ENHANCED -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -968,7 +1270,7 @@ try {
     </div>
 
     <div class="dashboard-container">
-        <!-- Sidebar - SAME AS DASHBOARD -->
+        <!-- Sidebar - ENHANCED -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="student_dashboard.php" class="nav-item">
@@ -1010,7 +1312,7 @@ try {
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- WELCOME SECTION - SAME AS DASHBOARD -->
+            <!-- WELCOME SECTION - ENHANCED -->
             <div class="welcome-section fade-in">
                 <div class="welcome-content">
                     <h1>Announcements 📢</h1>
@@ -1018,19 +1320,19 @@ try {
                 </div>
             </div>
 
-            <!-- ANNOUNCEMENT TABS -->
+            <!-- ANNOUNCEMENT TABS - ENHANCED -->
             <div class="announcement-tabs fade-in">
                 <ul class="nav nav-tabs" id="announcementTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active" type="button" role="tab">
-                            <i class="fas fa-bell"></i> Active Announcements
-                            <span class="badge bg-primary ms-1"><?php echo count($announcements); ?></span>
+                            <i class="fas fa-bell me-2"></i> Active Announcements
+                            <span class="badge badge-primary ms-2"><?php echo count($announcements); ?></span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="archive-tab" data-bs-toggle="tab" data-bs-target="#archive" type="button" role="tab">
-                            <i class="fas fa-archive"></i> Expired Announcements
-                            <span class="badge bg-secondary ms-1"><?php echo count($expired_announcements); ?></span>
+                            <i class="fas fa-archive me-2"></i> Expired Announcements
+                            <span class="badge badge-secondary ms-2"><?php echo count($expired_announcements); ?></span>
                         </button>
                     </li>
                 </ul>
@@ -1060,23 +1362,23 @@ try {
                                                 <h4>
                                                     <?php echo htmlspecialchars($announcement['title']); ?>
                                                     <span class="badge badge-success">
-                                                        <i class="fas fa-users"></i> All Students
+                                                        <i class="fas fa-users me-1"></i> All Students
                                                     </span>
                                                     <?php if ($isExpiringSoon): ?>
                                                         <span class="badge badge-warning">
-                                                            <i class="fas fa-clock"></i> Expiring Soon
+                                                            <i class="fas fa-clock me-1"></i> Expiring Soon
                                                         </span>
                                                     <?php endif; ?>
                                                 </h4>
                                                 <div class="announcement-date">
                                                     <span>
-                                                        <i class="fas fa-calendar-alt"></i>
+                                                        <i class="fas fa-calendar-alt me-1"></i>
                                                         Posted: <?php echo date('F j, Y g:i A', strtotime($announcement['created_at'])); ?>
                                                     </span>
                                                     
                                                     <!-- EXPIRY INFORMATION -->
                                                     <div class="expiry-info <?php echo empty($announcement['expiry_date']) ? 'no-expiry' : ($isExpiringSoon ? 'expiring' : ''); ?>">
-                                                        <i class="fas fa-clock"></i>
+                                                        <i class="fas fa-clock me-1"></i>
                                                         <?php if (empty($announcement['expiry_date'])): ?>
                                                             No expiry date
                                                         <?php else: ?>
@@ -1084,7 +1386,7 @@ try {
                                                             <?php if ($timeRemaining && $timeRemaining !== 'expired'): ?>
                                                                 - <span class="countdown-timer <?php echo $isExpiringSoon ? 'countdown-expiring' : ''; ?>" 
                                                                        data-expiry="<?php echo $announcement['expiry_date']; ?>">
-                                                                    <i class="fas fa-hourglass-half"></i>
+                                                                    <i class="fas fa-hourglass-half me-1"></i>
                                                                     <?php echo $timeRemaining; ?>
                                                                 </span>
                                                             <?php endif; ?>
@@ -1130,7 +1432,7 @@ try {
                                                     </div>
                                                     
                                                 <?php else: ?>
-                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, #ffda6a, #ffda6a);">
+                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, var(--accent), #ffd24a);">
                                                         <i class="fas fa-file"></i>
                                                         <h5>Document File</h5>
                                                         <p>Click to view the file</p>
@@ -1141,13 +1443,13 @@ try {
                                         </div>
                                         <div class="announcement-footer">
                                             <span class="announcement-category">
-                                                <i class="fas fa-user"></i>
+                                                <i class="fas fa-user me-1"></i>
                                                 Sent by: <?php echo htmlspecialchars($announcement['sent_by'] ?? 'Admin'); ?>
                                             </span>
                                             <span class="status-active">
-                                                <i class="fas fa-circle"></i> Active
+                                                <i class="fas fa-circle me-1"></i> Active
                                                 <?php if ($isExpiringSoon): ?>
-                                                    <span class="badge badge-warning ms-1">Expiring Soon</span>
+                                                    <span class="badge badge-warning ms-2">Expiring Soon</span>
                                                 <?php endif; ?>
                                             </span>
                                         </div>
@@ -1179,27 +1481,27 @@ try {
                                                 <h4>
                                                     <?php echo htmlspecialchars($announcement['title']); ?>
                                                     <span class="badge badge-secondary">
-                                                        <i class="fas fa-users"></i> All Students
+                                                        <i class="fas fa-users me-1"></i> All Students
                                                     </span>
                                                     <span class="badge badge-danger">
-                                                        <i class="fas fa-ban"></i> Expired
+                                                        <i class="fas fa-ban me-1"></i> Expired
                                                     </span>
                                                 </h4>
                                                 <div class="announcement-date">
                                                     <span>
-                                                        <i class="fas fa-calendar-alt"></i>
+                                                        <i class="fas fa-calendar-alt me-1"></i>
                                                         Posted: <?php echo date('F j, Y g:i A', strtotime($announcement['created_at'])); ?>
                                                     </span>
                                                     
                                                     <!-- EXPIRY INFORMATION FOR EXPIRED ANNOUNCEMENTS -->
                                                     <?php if (!empty($announcement['expiry_date'])): ?>
                                                         <div class="expiry-info expired">
-                                                            <i class="fas fa-clock"></i>
+                                                            <i class="fas fa-clock me-1"></i>
                                                             Expired: <?php echo date('F j, Y g:i A', strtotime($announcement['expiry_date'])); ?>
                                                         </div>
                                                     <?php else: ?>
                                                         <div class="expiry-info expired">
-                                                            <i class="fas fa-ban"></i>
+                                                            <i class="fas fa-ban me-1"></i>
                                                             Manually deactivated
                                                         </div>
                                                     <?php endif; ?>
@@ -1237,14 +1539,14 @@ try {
                                                     </div>
                                                     
                                                 <?php elseif (in_array($fileExtension, $pdfExtensions)): ?>
-                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, #ffda6a, #ffda6a); opacity: 0.8;">
+                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, var(--accent), #ffd24a); opacity: 0.8;">
                                                         <i class="fas fa-file-pdf"></i>
                                                         <h5>PDF Document</h5>
                                                         <p>Click to view the document</p>
                                                     </div>
                                                     
                                                 <?php else: ?>
-                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, #ffda6a, #ffda6a); opacity: 0.8;">
+                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, var(--accent), #ffd24a); opacity: 0.8;">
                                                         <i class="fas fa-file"></i>
                                                         <h5>Document File</h5>
                                                         <p>Click to view the file</p>
@@ -1255,11 +1557,11 @@ try {
                                         </div>
                                         <div class="announcement-footer">
                                             <span class="announcement-category">
-                                                <i class="fas fa-user"></i>
+                                                <i class="fas fa-user me-1"></i>
                                                 Sent by: <?php echo htmlspecialchars($announcement['sent_by'] ?? 'Admin'); ?>
                                             </span>
                                             <span class="status-expired">
-                                                <i class="fas fa-circle"></i> Expired
+                                                <i class="fas fa-circle me-1"></i> Expired
                                             </span>
                                         </div>
                                     </div>
@@ -1277,24 +1579,28 @@ try {
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // MOBILE MENU FUNCTIONALITY - SAME AS DASHBOARD
+            // MOBILE MENU FUNCTIONALITY - ENHANCED
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-            mobileMenuToggle.addEventListener('click', function() {
+            function toggleMobileMenu() {
                 sidebar.classList.toggle('active');
                 sidebarOverlay.classList.toggle('active');
-                const icon = this.querySelector('i');
+                const icon = mobileMenuToggle.querySelector('i');
                 icon.classList.toggle('fa-bars');
                 icon.classList.toggle('fa-times');
-            });
+                
+                // Add animation class
+                if (sidebar.classList.contains('active')) {
+                    sidebar.classList.add('slide-in-left');
+                } else {
+                    sidebar.classList.remove('slide-in-left');
+                }
+            }
 
-            sidebarOverlay.addEventListener('click', function() {
-                sidebar.classList.remove('active');
-                sidebarOverlay.classList.remove('active');
-                mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
-            });
+            mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+            sidebarOverlay.addEventListener('click', toggleMobileMenu);
 
             // Close sidebar when clicking nav items on mobile
             if (window.innerWidth <= 768) {
@@ -1344,7 +1650,7 @@ try {
                     const now = new Date();
                     
                     if (expiryDate <= now) {
-                        timer.innerHTML = '<i class="fas fa-ban"></i> Expired';
+                        timer.innerHTML = '<i class="fas fa-ban me-1"></i> Expired';
                         timer.className = 'countdown-timer countdown-expired';
                         return;
                     }
@@ -1363,7 +1669,7 @@ try {
                         remainingText = `${minutes} minute${minutes > 1 ? 's' : ''} remaining`;
                     }
                     
-                    timer.innerHTML = `<i class="fas fa-hourglass-half"></i> ${remainingText}`;
+                    timer.innerHTML = `<i class="fas fa-hourglass-half me-1"></i> ${remainingText}`;
                     
                     // Update class if it's expiring soon (less than 1 day)
                     if (days === 0) {
@@ -1384,7 +1690,49 @@ try {
 
             const fadeElements = document.querySelectorAll('.fade-in');
             fadeElements.forEach((element, index) => {
-                element.style.animationDelay = `${index * 0.2}s`;
+                element.style.animationDelay = `${index * 0.15}s`;
+            });
+
+            // ENHANCED INTERACTIONS
+            const announcementCards = document.querySelectorAll('.announcement-card');
+            announcementCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+            });
+
+            // FOCUS MANAGEMENT FOR ACCESSIBILITY
+            const focusableElements = document.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            focusableElements.forEach(element => {
+                element.addEventListener('focus', function() {
+                    this.classList.add('focus-visible');
+                });
+                
+                element.addEventListener('blur', function() {
+                    this.classList.remove('focus-visible');
+                });
+            });
+
+            // TOUCH DEVICE ENHANCEMENTS
+            if ('ontouchstart' in window) {
+                document.body.classList.add('touch-device');
+                
+                // Increase tap targets
+                const tapTargets = document.querySelectorAll('.nav-item, .announcement-card, .announcement-pdf-preview');
+                tapTargets.forEach(target => {
+                    target.style.minHeight = '44px';
+                });
+            }
+
+            // RESIZE HANDLER
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768 && sidebar.classList.contains('active')) {
+                    toggleMobileMenu();
+                }
             });
 
             // Auto-refresh announcements every 5 minutes

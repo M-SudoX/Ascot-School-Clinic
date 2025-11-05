@@ -87,6 +87,13 @@ $totalConsults = array_sum($consultationData);
             --light: #f8f9fa;
             --dark: #343a40;
             --gray: #6c757d;
+            --accent: #ffda6a;
+            --accent-light: #fff7da;
+            --text-dark: #2c3e50;
+            --text-light: #6c757d;
+            --border-radius: 16px;
+            --shadow: 0 8px 32px rgba(0,0,0,0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
@@ -97,27 +104,27 @@ $totalConsults = array_sum($consultationData);
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f6fa;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
             padding-top: 80px;
             line-height: 1.6;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Header Styles - SAME AS DASHBOARD */
+        /* Header Styles - ENHANCED */
         .top-header {
-            background: 
-            linear-gradient(90deg, 
-                #ffda6a 0%, 
-                #ffda6a 30%, 
-                #FFF5CC 70%, 
-                #ffffff 100%);
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
             padding: 0.75rem 0;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             z-index: 1030;
             height: 80px;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
 
         .header-content {
@@ -131,6 +138,12 @@ $totalConsults = array_sum($consultationData);
             width: 60px;
             height: 60px;
             object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            transition: var(--transition);
+        }
+
+        .logo-img:hover {
+            transform: scale(1.05);
         }
 
         .school-info {
@@ -141,25 +154,31 @@ $totalConsults = array_sum($consultationData);
             font-size: 0.7rem;
             opacity: 0.9;
             letter-spacing: 0.5px;
-            color: #555;
+            color: var(--text-dark);
+            font-weight: 600;
         }
 
         .school-name {
             font-size: 1.1rem;
-            font-weight: 700;
+            font-weight: 800;
             margin: 0.1rem 0;
             line-height: 1.2;
-            color: #555;
+            color: var(--text-dark);
+            background: linear-gradient(135deg, var(--text-dark), #495057);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .clinic-title {
             font-size: 0.8rem;
             opacity: 0.9;
-            font-weight: 500;
-            color: #555;
+            font-weight: 600;
+            color: var(--text-dark);
+            letter-spacing: 0.5px;
         }
 
-        /* Mobile Menu Toggle - SAME AS DASHBOARD */
+        /* Mobile Menu Toggle - ENHANCED */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
@@ -172,28 +191,31 @@ $totalConsults = array_sum($consultationData);
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: var(--shadow);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
         }
 
         .mobile-menu-toggle:hover {
             transform: scale(1.05);
             background: var(--primary-dark);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
         }
 
-        /* Dashboard Container - SAME AS DASHBOARD */
+        /* Dashboard Container - ENHANCED */
         .dashboard-container {
             display: flex;
             min-height: calc(100vh - 80px);
         }
 
-        /* Sidebar Styles - SAME AS DASHBOARD */
+        /* Sidebar Styles - ENHANCED */
         .sidebar {
-            width: 260px;
-            background: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-            padding: 1.5rem 0;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: 2px 0 20px rgba(0,0,0,0.08);
+            padding: 2rem 0;
             transition: transform 0.3s ease;
             position: fixed;
             top: 80px;
@@ -201,71 +223,101 @@ $totalConsults = array_sum($consultationData);
             bottom: 0;
             overflow-y: auto;
             z-index: 1020;
+            border-right: 1px solid rgba(255,255,255,0.2);
         }
 
         .sidebar-nav {
             display: flex;
             flex-direction: column;
             height: 100%;
+            gap: 0.5rem;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 0.9rem 1.25rem;
-            color: #444;
+            padding: 1rem 1.5rem;
+            color: var(--text-dark);
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             border: none;
             background: none;
             width: 100%;
             text-align: left;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
+            border-radius: 0 12px 12px 0;
+            margin: 0.25rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
+            transition: var(--transition);
         }
 
         .nav-item:hover {
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.8);
             color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .nav-item:hover::before {
+            width: 100%;
         }
 
         .nav-item.active {
-            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-            color: #555;
-            border-left: 8px solid #ffda6a;
+            background: linear-gradient(90deg, rgba(255,218,106,0.15) 0%, transparent 100%);
+            color: var(--text-dark);
+            border-left: 6px solid var(--accent);
+        }
+
+        .nav-item.active::before {
+            width: 100%;
         }
 
         .nav-item i {
-            width: 22px;
-            margin-right: 0.9rem;
-            font-size: 1.1rem;
-            color: #555;
+            width: 24px;
+            margin-right: 1rem;
+            font-size: 1.2rem;
+            color: inherit;
+            transition: var(--transition);
         }
 
         .nav-item span {
             flex: 1;
-            color: #555;
+            color: inherit;
+            font-size: 0.95rem;
         }
 
         .nav-item.logout {
             color: var(--danger);
             margin-top: auto;
+            border-left: 6px solid transparent;
         }
 
         .nav-item.logout:hover {
             background: rgba(220, 53, 69, 0.1);
+            color: var(--danger);
         }
 
-        /* Main Content - SAME AS DASHBOARD */
+        /* Main Content - ENHANCED */
         .main-content {
             flex: 1;
-            padding: 1.5rem;
+            padding: 2rem;
             overflow-x: hidden;
-            margin-left: 260px;
+            margin-left: 280px;
             margin-top: 0;
         }
 
-        /* Sidebar Overlay for Mobile - SAME AS DASHBOARD */
+        /* Sidebar Overlay for Mobile - ENHANCED */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -274,6 +326,7 @@ $totalConsults = array_sum($consultationData);
             right: 0;
             bottom: 0;
             background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
             z-index: 1019;
         }
 
@@ -281,141 +334,247 @@ $totalConsults = array_sum($consultationData);
             display: block;
         }
 
-        /* WELCOME SECTION - SAME AS DASHBOARD */
+        /* WELCOME SECTION - ENHANCED */
         .welcome-section {
-            background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
-            border-radius: 15px;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            border: 1px solid rgba(206, 224, 144, 0.2);
-            border-left: 10px solid #ffda6a;
+            background: linear-gradient(135deg, var(--accent-light) 0%, rgba(255,247,218,0.9) 100%);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            margin-bottom: 2.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255,218,106,0.3);
+            border-left: 8px solid var(--accent);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.3;
         }
 
         .welcome-content h1 {
-            color: #555;
-            font-weight: 700;
-            font-size: 2rem;
+            color: var(--text-dark);
+            font-weight: 800;
+            font-size: 2.2rem;
             margin-bottom: 0.5rem;
+            position: relative;
         }
 
         .welcome-content p {
-            color: var(--gray);
+            color: var(--text-light);
             font-size: 1.1rem;
             margin-bottom: 0;
+            font-weight: 500;
         }
 
-        /* KEEPING YOUR ORIGINAL REPORT STYLES */
+        /* PAGE TITLE - ENHANCED */
         .page-title {
-            background: linear-gradient(135deg, rgba(255, 218, 106, 0.9) 0%, rgba(255, 247, 222, 0.95) 100%);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, rgba(255, 218, 106, 0.95) 0%, rgba(255, 247, 222, 0.98) 100%);
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
             text-align: center;
-            color: #555;
+            color: var(--text-dark);
             font-weight: 800;
-            font-size: 1.8rem;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
+            font-size: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-title::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.3;
         }
 
         .page-subtitle {
             text-align: center;
-            color: #7f8c8d;
-            margin-bottom: 30px;
+            color: var(--text-light);
+            margin-bottom: 2.5rem;
             font-size: 1.1rem;
             font-weight: 600;
+            letter-spacing: 0.5px;
         }
 
+        /* STATS CARD - ENHANCED */
         .stats-card {
-            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%);
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2.5rem;
             display: flex;
             align-items: center;
-            gap: 20px;
-            border: 1px solid rgba(255,255,255,0.2);
+            gap: 2rem;
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .stats-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .stats-card:hover::before {
+            left: 100%;
         }
 
         .stats-icon {
-            background: linear-gradient(135deg, #ffda6a, #ffda6a);
-            width: 60px;
-            height: 60px;
-            border-radius: 15px;
+            background: linear-gradient(135deg, var(--accent), #ffd24a);
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: #555;
+            box-shadow: 0 6px 20px rgba(255,218,106,0.4);
+            transition: var(--transition);
+        }
+
+        .stats-card:hover .stats-icon {
+            transform: scale(1.1) rotate(5deg);
         }
 
         .stats-icon i {
-            font-size: 2rem;
-            color: #555;
+            font-size: 2.5rem;
+            color: var(--text-dark);
         }
 
         .stats-info h5 {
-            color: #7f8c8d;
-            margin-bottom: 10px;
-            font-size: 1rem;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
             font-weight: 600;
+            letter-spacing: 0.5px;
         }
 
         .stats-info h2 {
-            color: #555;
+            color: var(--text-dark);
             font-weight: 800;
-            font-size: 2.5rem;
+            font-size: 3rem;
             margin: 0;
+            background: linear-gradient(135deg, var(--text-dark), #495057);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
+        /* CHART CONTAINER - ENHANCED */
         .chart-container {
-            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%);
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.1);
-            width: 700px;
-            height: 400px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 800px;
+            height: 450px;
             margin: 0 auto;
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #555;
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .chart-container:hover::before {
+            left: 100%;
         }
 
         .chart-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 2;
         }
 
         .chart-title {
-            color: #555;
-            font-weight: 700;
-            font-size: 1.3rem;
+            color: var(--text-dark);
+            font-weight: 800;
+            font-size: 1.5rem;
             margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
         .chart-month {
-            background: linear-gradient(135deg, #ffda6a, #ffda6a);
-            color: #555;
-            padding: 8px 15px;
-            border-radius: 20px;
+            background: linear-gradient(135deg, var(--accent), #ffd24a);
+            color: var(--text-dark);
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
             font-weight: 700;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+            box-shadow: 0 4px 15px rgba(255,218,106,0.4);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
         }
 
-        .chart-month i {
-            margin-right: 5px;
+        .chart-month:hover {
+            transform: scale(1.05);
         }
 
-        /* Responsive Design - COMBINED FROM BOTH */
+        /* Responsive Design - ENHANCED */
         @media (max-width: 1200px) {
             .sidebar {
-                width: 240px;
+                width: 260px;
             }
             
             .main-content {
-                margin-left: 240px;
+                margin-left: 260px;
+            }
+            
+            .chart-container {
+                max-width: 700px;
+                height: 400px;
             }
         }
 
@@ -430,14 +589,23 @@ $totalConsults = array_sum($consultationData);
             }
 
             .chart-container {
-                width: 100%;
-                height: 350px;
-                color: #555;
+                max-width: 100%;
+                height: 380px;
             }
             
             .stats-card {
                 flex-direction: column;
                 text-align: center;
+                gap: 1.5rem;
+            }
+
+            .welcome-content h1 {
+                font-size: 1.8rem;
+            }
+
+            .page-title {
+                font-size: 1.6rem;
+                padding: 2rem;
             }
         }
 
@@ -452,7 +620,9 @@ $totalConsults = array_sum($consultationData);
             }
             
             .mobile-menu-toggle {
-                display: block;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 top: 85px;
                 left: 20px;
             }
@@ -465,7 +635,9 @@ $totalConsults = array_sum($consultationData);
                 z-index: 1020;
                 transform: translateX(-100%);
                 overflow-y: auto;
-                width: 280px;
+                width: 300px;
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(30px);
             }
 
             .sidebar.active {
@@ -481,7 +653,7 @@ $totalConsults = array_sum($consultationData);
             }
 
             .main-content {
-                padding: 2rem 1.25rem 1.25rem;
+                padding: 1.5rem;
                 width: 100%;
                 margin-left: 0;
             }
@@ -499,29 +671,45 @@ $totalConsults = array_sum($consultationData);
             }
 
             .page-title {
-                font-size: 1.5rem;
-                padding: 15px;
+                font-size: 1.4rem;
+                padding: 1.5rem;
             }
 
             .chart-container {
-                padding: 20px;
-                height: 300px;
+                padding: 2rem;
+                height: 350px;
             }
 
-            .mobile-menu-toggle {
-                top: 80px;
-                width: 45px;
-                height: 45px;
+            .chart-header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .welcome-section {
+                padding: 2rem;
+            }
+
+            .welcome-content h1 {
+                font-size: 1.6rem;
+            }
+
+            .stats-card {
+                padding: 2rem;
+            }
+
+            .stats-info h2 {
+                font-size: 2.5rem;
             }
         }
 
         @media (max-width: 576px) {
             .main-content {
-                padding: 1.75rem 1rem 1rem;
+                padding: 1.25rem;
             }
             
             .stats-card {
-                padding: 5px;
+                padding: 1.5rem;
             }
 
             .stats-info h2 {
@@ -529,14 +717,30 @@ $totalConsults = array_sum($consultationData);
             }
 
             .chart-container {
-                padding: 15px;
-                height: 250px;
+                padding: 1.5rem;
+                height: 300px;
             }
 
-            .chart-header {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
+            .welcome-section {
+                padding: 1.5rem;
+            }
+
+            .welcome-content h1 {
+                font-size: 1.4rem;
+            }
+
+            .page-title {
+                font-size: 1.2rem;
+                padding: 1.25rem;
+            }
+
+            .stats-icon {
+                width: 70px;
+                height: 70px;
+            }
+
+            .stats-icon i {
+                font-size: 2rem;
             }
         }
         
@@ -562,7 +766,20 @@ $totalConsults = array_sum($consultationData);
             }
             
             .main-content {
-                padding: 1.5rem 1rem 1rem;
+                padding: 1rem;
+            }
+
+            .chart-container {
+                padding: 1.25rem;
+                height: 280px;
+            }
+
+            .stats-card {
+                padding: 1.25rem;
+            }
+
+            .welcome-section {
+                padding: 1.25rem;
             }
         }
 
@@ -575,11 +792,28 @@ $totalConsults = array_sum($consultationData);
             }
             
             .main-content {
-                padding: 1.25rem 0.75rem 0.75rem;
+                padding: 0.75rem;
+            }
+
+            .chart-container {
+                padding: 1rem;
+                height: 250px;
+            }
+
+            .stats-card {
+                padding: 1rem;
+            }
+
+            .stats-info h2 {
+                font-size: 1.8rem;
+            }
+
+            .welcome-content h1 {
+                font-size: 1.3rem;
             }
         }
 
-        /* Animations */
+        /* Animations - ENHANCED */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -591,22 +825,79 @@ $totalConsults = array_sum($consultationData);
             }
         }
 
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
         .fade-in {
-            animation: fadeInUp 0.6s ease-out;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .slide-in-left {
+            animation: slideInLeft 0.6s ease-out;
+        }
+
+        /* Loading States */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Focus States for Accessibility */
+        .focus-visible {
+            outline: 3px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* Scrollbar Styling */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--primary-dark), #6a4a9a);
+        }
+
+        /* Touch Device Improvements */
+        .touch-device .stats-card,
+        .touch-device .chart-container {
+            padding: 1.5rem;
+        }
+
+        .touch-device .stats-icon {
+            width: 70px;
+            height: 70px;
         }
     </style>
 </head>
 
 <body>
-    <!-- Mobile Menu Toggle Button - SAME AS DASHBOARD -->
-    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+    <!-- Mobile Menu Toggle Button - ENHANCED -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - SAME AS DASHBOARD -->
+    <!-- Sidebar Overlay for Mobile - ENHANCED -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - SAME AS DASHBOARD -->
+    <!-- Header - ENHANCED -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -621,7 +912,7 @@ $totalConsults = array_sum($consultationData);
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar - SAME AS DASHBOARD -->
+        <!-- Sidebar - ENHANCED -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="student_dashboard.php" class="nav-item">
@@ -663,7 +954,7 @@ $totalConsults = array_sum($consultationData);
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- WELCOME SECTION - SAME AS DASHBOARD -->
+            <!-- WELCOME SECTION - ENHANCED -->
             <div class="welcome-section fade-in">
                 <div class="welcome-content">
                     <h1>Your Consultation Reports 📊</h1>
@@ -671,12 +962,7 @@ $totalConsults = array_sum($consultationData);
                 </div>
             </div>
 
-            <div>
-             
-            </div>
-     
-
-            <!-- STATS CARD -->
+            <!-- STATS CARD - ENHANCED -->
             <div class="stats-card fade-in">
                 <div class="stats-icon"><i class="fas fa-calendar-check"></i></div>
                 <div class="stats-info">
@@ -685,10 +971,10 @@ $totalConsults = array_sum($consultationData);
                 </div>
             </div>
 
-            <!-- CHART CONTAINER -->
+            <!-- CHART CONTAINER - ENHANCED -->
             <div class="chart-container fade-in">
                 <div class="chart-header">
-                    <h3 class="chart-title">Weekly Consultation History</h3>
+                    <h3 class="chart-title"><i class="fas fa-chart-line me-2"></i>Weekly Consultation History</h3>
                     <div class="chart-month">
                         <i class="fas fa-calendar-alt"></i>
                         <strong><?php echo date('F Y'); ?></strong>
@@ -702,24 +988,28 @@ $totalConsults = array_sum($consultationData);
     <script src="assets/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // MOBILE MENU FUNCTIONALITY - SAME AS DASHBOARD
+            // MOBILE MENU FUNCTIONALITY - ENHANCED
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-            mobileMenuToggle.addEventListener('click', function() {
+            function toggleMobileMenu() {
                 sidebar.classList.toggle('active');
                 sidebarOverlay.classList.toggle('active');
-                const icon = this.querySelector('i');
+                const icon = mobileMenuToggle.querySelector('i');
                 icon.classList.toggle('fa-bars');
                 icon.classList.toggle('fa-times');
-            });
+                
+                // Add animation class
+                if (sidebar.classList.contains('active')) {
+                    sidebar.classList.add('slide-in-left');
+                } else {
+                    sidebar.classList.remove('slide-in-left');
+                }
+            }
 
-            sidebarOverlay.addEventListener('click', function() {
-                sidebar.classList.remove('active');
-                sidebarOverlay.classList.remove('active');
-                mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
-            });
+            mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+            sidebarOverlay.addEventListener('click', toggleMobileMenu);
 
             // Close sidebar when clicking nav items on mobile
             if (window.innerWidth <= 768) {
@@ -738,7 +1028,49 @@ $totalConsults = array_sum($consultationData);
                 element.style.animationDelay = `${index * 0.1}s`;
             });
 
-            // ORIGINAL CHART CODE (PRESERVED)
+            // ENHANCED INTERACTIONS
+            const interactiveElements = document.querySelectorAll('.stats-card, .chart-container');
+            interactiveElements.forEach(element => {
+                element.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(-3px)';
+                });
+            });
+
+            // FOCUS MANAGEMENT FOR ACCESSIBILITY
+            const focusableElements = document.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            focusableElements.forEach(element => {
+                element.addEventListener('focus', function() {
+                    this.classList.add('focus-visible');
+                });
+                
+                element.addEventListener('blur', function() {
+                    this.classList.remove('focus-visible');
+                });
+            });
+
+            // TOUCH DEVICE ENHANCEMENTS
+            if ('ontouchstart' in window) {
+                document.body.classList.add('touch-device');
+                
+                // Increase tap targets
+                const tapTargets = document.querySelectorAll('.nav-item, .stats-card, .chart-container');
+                tapTargets.forEach(target => {
+                    target.style.minHeight = '44px';
+                });
+            }
+
+            // RESIZE HANDLER
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768 && sidebar.classList.contains('active')) {
+                    toggleMobileMenu();
+                }
+            });
+
+            // ORIGINAL CHART CODE (PRESERVED) - ENHANCED
             const consultationData = <?php echo json_encode($consultationData); ?>;
             const numWeeks = consultationData.length;
             const weekLabels = Array.from({length: numWeeks}, (_, i) => `Week ${i + 1}`);
@@ -751,25 +1083,30 @@ $totalConsults = array_sum($consultationData);
                     datasets: [{
                         label: 'Consultations',
                         data: consultationData,
-                        backgroundColor: 'rgba(249, 204, 67, 0.8)',
-                        borderColor: '#f9cc43',
+                        backgroundColor: 'rgba(255, 218, 106, 0.8)',
+                        borderColor: '#ffda6a',
                         borderWidth: 2,
                         borderRadius: 8,
-                        hoverBackgroundColor: '#f6b93b'
+                        hoverBackgroundColor: '#ffd24a',
+                        hoverBorderColor: '#ffc107',
+                        hoverBorderWidth: 3
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: true,
+                    maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false },
+                        legend: { 
+                            display: false 
+                        },
                         tooltip: {
-                            backgroundColor: 'rgba(30, 60, 114, 0.9)',
+                            backgroundColor: 'rgba(44, 62, 80, 0.95)',
                             padding: 12,
                             titleFont: { size: 14, weight: 'bold' },
                             bodyFont: { size: 13 },
-                            borderColor: '#f9cc43',
+                            borderColor: '#ffda6a',
                             borderWidth: 2,
+                            cornerRadius: 8,
                             callbacks: {
                                 label: context => `Consultations: ${context.parsed.y}`
                             }
@@ -782,21 +1119,37 @@ $totalConsults = array_sum($consultationData);
                                 display: true,
                                 text: 'Number of Consultations',
                                 font: { size: 14, weight: 'bold' },
-                                color: '#1e3c72'
+                                color: '#2c3e50'
                             },
-                            ticks: { stepSize: 1, font: { size: 12 }, color: '#666' },
-                            grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false }
+                            ticks: { 
+                                stepSize: 1, 
+                                font: { size: 12 }, 
+                                color: '#6c757d' 
+                            },
+                            grid: { 
+                                color: 'rgba(108, 117, 125, 0.1)', 
+                                drawBorder: false 
+                            }
                         },
                         x: {
                             title: {
                                 display: true,
                                 text: 'Weeks',
                                 font: { size: 14, weight: 'bold' },
-                                color: '#1e3c72'
+                                color: '#2c3e50'
                             },
-                            ticks: { font: { size: 12 }, color: '#666' },
-                            grid: { display: false }
+                            ticks: { 
+                                font: { size: 12 }, 
+                                color: '#6c757d' 
+                            },
+                            grid: { 
+                                display: false 
+                            }
                         }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
                     }
                 }
             });

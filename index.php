@@ -57,6 +57,7 @@ try {
       --white: #ffffff;
       --shadow: 0 8px 32px rgba(0,0,0,0.1);
       --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --border-radius: 20px;
     }
 
     * {
@@ -71,6 +72,8 @@ try {
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       line-height: 1.6;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     /* ========== LAYOUT STYLES ========== */
@@ -91,19 +94,20 @@ try {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem 1.5rem;
+      padding: 1.5rem;
       position: relative;
       overflow: hidden;
+      min-height: 50vh;
     }
 
     .login-section {
       background: linear-gradient(135deg, var(--accent-color), #fff7da);
-      min-height: 50vh;
+      order: 2;
     }
 
     .announcements-section {
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-      min-height: 50vh;
+      order: 1;
       position: relative;
     }
 
@@ -111,40 +115,49 @@ try {
       content: "";
       position: absolute;
       inset: 0;
-      background: #5b5fc7;
+      background: rgba(91, 95, 199, 0.1);
       backdrop-filter: blur(2px);
     }
 
     @media (min-width: 992px) {
       .split-section {
         height: 100vh;
-        padding: 3rem 2rem;
+        padding: 2rem;
+        min-height: 100vh;
       }
       
       .login-section {
-        min-height: 100vh;
+        order: 1;
       }
       
       .announcements-section {
-        min-height: 100vh;
+        order: 2;
       }
     }
 
     /* ========== LOGIN SECTION STYLES ========== */
     .school-brand {
       text-align: center;
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
       animation: fadeInUp 0.8s ease-out;
     }
 
     .logo-img {
-      width: 140px;
-      height: 140px;
+      width: 120px;
+      height: 120px;
       border-radius: 50%;
       object-fit: cover;
       box-shadow: var(--shadow);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
       transition: var(--transition);
+      border: 4px solid var(--white);
+    }
+
+    @media (min-width: 768px) {
+      .logo-img {
+        width: 140px;
+        height: 140px;
+      }
     }
 
     .logo-img:hover {
@@ -153,7 +166,7 @@ try {
     }
 
     .school-title {
-      font-size: 1.4rem;
+      font-size: 1.25rem;
       font-weight: 700;
       color: var(--text-dark);
       line-height: 1.4;
@@ -164,33 +177,57 @@ try {
       background-clip: text;
     }
 
+    @media (min-width: 768px) {
+      .school-title {
+        font-size: 1.4rem;
+      }
+    }
+
     .school-subtitle {
-      font-size: 1.1rem;
+      font-size: 1rem;
       color: var(--text-light);
       font-weight: 600;
       letter-spacing: 0.5px;
     }
 
+    @media (min-width: 768px) {
+      .school-subtitle {
+        font-size: 1.1rem;
+      }
+    }
+
     .login-card {
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.98);
       backdrop-filter: blur(20px);
-      border-radius: 24px;
-      padding: 2.5rem;
+      border-radius: var(--border-radius);
+      padding: 2rem;
       box-shadow: var(--shadow);
       border: 1px solid rgba(255, 255, 255, 0.3);
-      max-width: 450px;
+      max-width: 420px;
       width: 100%;
       animation: slideInLeft 0.8s ease-out;
+    }
+
+    @media (min-width: 768px) {
+      .login-card {
+        padding: 2.5rem;
+      }
     }
 
     .form-label {
       font-weight: 700;
       color: var(--text-dark);
       margin-bottom: 1rem;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .form-label {
+        font-size: 1.2rem;
+      }
     }
 
     .form-label i {
@@ -205,6 +242,7 @@ try {
       font-weight: 500;
       transition: var(--transition);
       background-color: var(--white);
+      cursor: pointer;
     }
 
     .form-select:focus {
@@ -214,9 +252,9 @@ try {
     }
 
     .btn-login {
-      background: #ffda6a;
-      color: #555;
-      font-weight: 600;
+      background: linear-gradient(135deg, var(--accent-color), #ffd24a);
+      color: var(--text-dark);
+      font-weight: 700;
       padding: 1rem 2rem;
       border-radius: 12px;
       border: none;
@@ -228,12 +266,29 @@ try {
       gap: 0.75rem;
       width: 100%;
       margin-top: 1.5rem;
+      box-shadow: 0 4px 15px rgba(255, 218, 106, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-login::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.6s ease;
+    }
+
+    .btn-login:hover::before {
+      left: 100%;
     }
 
     .btn-login:hover {
       transform: translateY(-3px);
-      box-shadow: (110deg, #ffda6a 50%, #fff7da 50%);
-      background: #ffda6a;
+      box-shadow: 0 8px 25px rgba(255, 218, 106, 0.4);
     }
 
     .btn-login:active {
@@ -244,17 +299,24 @@ try {
     .announcements-container {
       position: relative;
       z-index: 10;
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.98);
       backdrop-filter: blur(20px);
-      border-radius: 24px;
-      padding: 2.5rem;
+      border-radius: var(--border-radius);
+      padding: 2rem;
       width: 100%;
-      max-width: 550px;
-      max-height: 85vh;
+      max-width: 500px;
+      max-height: 80vh;
       overflow-y: auto;
       box-shadow: var(--shadow);
       border: 1px solid rgba(255, 255, 255, 0.3);
       animation: slideInRight 0.8s ease-out;
+    }
+
+    @media (min-width: 768px) {
+      .announcements-container {
+        padding: 2.5rem;
+        max-width: 550px;
+      }
     }
 
     .announcements-header {
@@ -271,28 +333,47 @@ try {
     .announcements-header h2 {
       font-weight: 800;
       margin: 0;
-      font-size: 2rem;
+      font-size: 1.6rem;
       margin-bottom: 0.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .announcements-header h2 {
+        font-size: 2rem;
+      }
     }
 
     .announcements-header p {
       color: var(--text-light);
       margin: 0;
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: 500;
+    }
+
+    @media (min-width: 768px) {
+      .announcements-header p {
+        font-size: 1.1rem;
+      }
     }
 
     .announcement-item {
       background: var(--white);
-      border-radius: 20px;
-      padding: 2rem;
-      margin-bottom: 1.5rem;
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
       border-left: 6px solid var(--primary-color);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
       transition: var(--transition);
       border: 1px solid #f0f0f0;
       position: relative;
       overflow: hidden;
+    }
+
+    @media (min-width: 768px) {
+      .announcement-item {
+        padding: 2rem;
+        border-radius: 20px;
+      }
     }
 
     .announcement-item::before {
@@ -311,41 +392,64 @@ try {
     }
 
     .announcement-item:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
     }
 
     .announcement-title {
       font-weight: 700;
       color: var(--text-dark);
       margin-bottom: 1rem;
-      font-size: 1.3rem;
+      font-size: 1.1rem;
       line-height: 1.4;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 0.75rem;
+    }
+
+    @media (min-width: 768px) {
+      .announcement-title {
+        font-size: 1.3rem;
+      }
     }
 
     .announcement-title i {
       color: var(--primary-color);
-      font-size: 1.2rem;
+      font-size: 1.1rem;
+      margin-top: 0.2rem;
+      flex-shrink: 0;
     }
 
     .announcement-content {
       color: var(--text-light);
       margin-bottom: 1.5rem;
       line-height: 1.7;
-      font-size: 1rem;
+      font-size: 0.95rem;
+    }
+
+    @media (min-width: 768px) {
+      .announcement-content {
+        font-size: 1rem;
+      }
     }
 
     .announcement-meta {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.9rem;
+      flex-direction: column;
+      gap: 0.5rem;
+      font-size: 0.85rem;
       color: var(--text-light);
       padding-top: 1.25rem;
       border-top: 2px solid #f8f9fa;
+    }
+
+    @media (min-width: 576px) {
+      .announcement-meta {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.9rem;
+      }
     }
 
     .announcement-sender {
@@ -372,10 +476,17 @@ try {
       transition: var(--transition);
       border: 3px solid #f8f9fa;
       border-radius: 12px;
-      max-height: 300px;
-      width: auto;
+      max-height: 200px;
+      width: 100%;
+      object-fit: cover;
       cursor: pointer;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    @media (min-width: 768px) {
+      .image-attachment img {
+        max-height: 250px;
+      }
     }
 
     .image-attachment img:hover {
@@ -386,8 +497,15 @@ try {
     .video-attachment video {
       background: #000;
       border-radius: 12px;
-      max-height: 300px;
+      max-height: 200px;
+      width: 100%;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    @media (min-width: 768px) {
+      .video-attachment video {
+        max-height: 250px;
+      }
     }
 
     .attachment-indicator {
@@ -403,49 +521,65 @@ try {
       color: var(--text-dark);
       transition: var(--transition);
       cursor: pointer;
+      min-height: 44px;
+      min-width: 44px;
+      text-decoration: none;
     }
 
     .attachment-indicator:hover {
       background: linear-gradient(135deg, #e9ecef, #dee2e6);
       transform: translateX(5px);
       color: var(--primary-color);
+      text-decoration: none;
     }
 
     .attachment-indicator i {
       color: var(--primary-color);
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
 
     /* ========== NO ANNOUNCEMENTS STYLES ========== */
     .no-announcements {
       text-align: center;
-      padding: 3rem 2rem;
+      padding: 2rem 1rem;
       color: var(--text-light);
     }
 
     .no-announcements i {
-      font-size: 4rem;
-      margin-bottom: 1.5rem;
+      font-size: 3rem;
+      margin-bottom: 1rem;
       color: #e9ecef;
       opacity: 0.7;
+    }
+
+    @media (min-width: 768px) {
+      .no-announcements i {
+        font-size: 4rem;
+      }
     }
 
     .no-announcements h4 {
       color: var(--text-light);
       margin-bottom: 1rem;
       font-weight: 600;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
+    }
+
+    @media (min-width: 768px) {
+      .no-announcements h4 {
+        font-size: 1.5rem;
+      }
     }
 
     .no-announcements p {
       color: #999;
-      font-size: 1.1rem;
+      font-size: 1rem;
       line-height: 1.6;
     }
 
     /* ========== MODAL STYLES ========== */
     .modal-content {
-      border-radius: 20px;
+      border-radius: var(--border-radius);
       border: none;
       box-shadow: var(--shadow);
     }
@@ -454,8 +588,8 @@ try {
       background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
       color: var(--white);
       border-bottom: none;
-      border-radius: 20px 20px 0 0;
-      padding: 1.5rem 2rem;
+      border-radius: var(--border-radius) var(--border-radius) 0 0;
+      padding: 1.5rem;
     }
 
     .modal-header .btn-close {
@@ -471,7 +605,7 @@ try {
 
     /* ========== SCROLLBAR STYLING ========== */
     .announcements-container::-webkit-scrollbar {
-      width: 8px;
+      width: 6px;
     }
 
     .announcements-container::-webkit-scrollbar-track {
@@ -503,7 +637,7 @@ try {
     @keyframes slideInLeft {
       from {
         opacity: 0;
-        transform: translateX(-50px);
+        transform: translateX(-30px);
       }
       to {
         opacity: 1;
@@ -514,7 +648,7 @@ try {
     @keyframes slideInRight {
       from {
         opacity: 0;
-        transform: translateX(50px);
+        transform: translateX(30px);
       }
       to {
         opacity: 1;
@@ -525,84 +659,18 @@ try {
     /* ========== RESPONSIVE DESIGN ========== */
     @media (max-width: 768px) {
       .split-section {
-        padding: 1.5rem 1rem;
-        min-height: auto;
+        padding: 1rem;
       }
       
       .login-card {
-        padding: 2rem 1.5rem;
-        margin: 1rem 0;
+        padding: 1.5rem;
+        margin: 0.5rem 0;
       }
       
       .announcements-container {
         padding: 1.5rem;
-        max-height: 70vh;
-        margin: 1rem 0;
-      }
-      
-      .logo-img {
-        width: 120px;
-        height: 120px;
-      }
-      
-      .school-title {
-        font-size: 1.2rem;
-      }
-      
-      .school-subtitle {
-        font-size: 1rem;
-      }
-      
-      .announcements-header h2 {
-        font-size: 1.6rem;
-      }
-      
-      .announcement-item {
-        padding: 1.5rem;
-      }
-      
-      .announcement-title {
-        font-size: 1.1rem;
-      }
-      
-      .form-label {
-        font-size: 1.1rem;
-      }
-      
-      .image-attachment img,
-      .video-attachment video {
-        max-height: 200px;
-      }
-    }
-
-    @media (max-width: 576px) {
-      .split-section {
-        padding: 1rem 0.75rem;
-      }
-      
-      .login-card,
-      .announcements-container {
-        padding: 1.5rem 1rem;
-        border-radius: 20px;
-      }
-      
-      .logo-img {
-        width: 100px;
-        height: 100px;
-      }
-      
-      .school-title {
-        font-size: 1.1rem;
-      }
-      
-      .announcements-header h2 {
-        font-size: 1.4rem;
-      }
-      
-      .announcement-meta {
-        flex-direction: column;
-        gap: 0.5rem;
-        align-items: flex-start;
+        max-height: 60vh;
+        margin: 0.5rem 0;
       }
       
       .announcement-item {
@@ -610,17 +678,33 @@ try {
       }
     }
 
-    @media (max-width: 400px) {
-      .school-title {
-        font-size: 1rem;
+    @media (max-width: 576px) {
+      .split-section {
+        padding: 0.75rem;
       }
       
-      .announcements-header h2 {
-        font-size: 1.3rem;
+      .login-card,
+      .announcements-container {
+        padding: 1.25rem 1rem;
+        border-radius: 16px;
+      }
+      
+      .announcement-item {
+        padding: 1rem;
       }
       
       .announcement-title {
         font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .school-title {
+        font-size: 1.1rem;
+      }
+      
+      .announcements-header h2 {
+        font-size: 1.3rem;
       }
     }
 
@@ -658,6 +742,35 @@ try {
       text-align: center;
       animation: fadeInUp 0.5s ease-out;
     }
+
+    /* Touch device improvements */
+    .touch-device .announcement-item {
+      padding: 1.25rem;
+    }
+    
+    .touch-device .btn-login {
+      min-height: 54px;
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+      :root {
+        --primary-color: #0044cc;
+        --secondary-color: #002266;
+        --accent-color: #ffcc00;
+        --text-dark: #000000;
+        --text-light: #333333;
+      }
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
   </style>
 </head>
 
@@ -692,12 +805,6 @@ try {
                 <span>Continue to Login</span>
                 <i class="fas fa-arrow-right"></i>
               </button>
-              
-              <div>
-                  <i>
-                  </i>                
-                </small>
-              </div>
             </form>
           </div>
         </div>
@@ -770,10 +877,10 @@ try {
                     <?php else: ?>
                       <!-- Display generic file attachment -->
                       <div class="file-attachment">
-                        <div class="attachment-indicator" onclick="downloadFile('<?php echo $file_path; ?>', '<?php echo $announcement['attachment']; ?>')">
+                        <a href="<?php echo $file_path; ?>" download="<?php echo htmlspecialchars($announcement['attachment']); ?>" class="attachment-indicator">
                           <i class="fas fa-paperclip" aria-hidden="true"></i>
                           <span>Download: <?php echo htmlspecialchars($announcement['attachment']); ?></span>
-                        </div>
+                        </a>
                       </div>
                     <?php endif; ?>
                   </div>
@@ -831,25 +938,6 @@ try {
         item.style.animation = 'fadeInUp 0.6s ease-out forwards';
       });
 
-      // Smooth scrolling for announcements container with momentum
-      const announcementsContainer = document.querySelector('.announcements-container');
-      if (announcementsContainer) {
-        let isScrolling = false;
-        
-        announcementsContainer.addEventListener('wheel', function(e) {
-          if (!isScrolling) {
-            isScrolling = true;
-            const delta = e.deltaY * 2; // Increase scroll speed
-            this.scrollBy({ top: delta, behavior: 'smooth' });
-            
-            setTimeout(() => {
-              isScrolling = false;
-            }, 100);
-          }
-          e.preventDefault();
-        }, { passive: false });
-      }
-
       // Enhanced focus management for accessibility
       const focusableElements = document.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
       focusableElements.forEach(element => {
@@ -889,6 +977,37 @@ try {
             modal.hide();
           }
         }
+      });
+
+      // Touch device detection and enhancements
+      if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+        document.documentElement.classList.add('touch-device');
+        
+        // Increase tap targets for mobile
+        const tapTargets = document.querySelectorAll('.attachment-indicator, .btn-login, .form-select');
+        tapTargets.forEach(target => {
+          target.style.minHeight = '44px';
+        });
+      }
+
+      // Lazy loading for images
+      const images = document.querySelectorAll('.image-attachment img');
+      const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.dataset.src;
+            img.classList.remove('lazy');
+            imageObserver.unobserve(img);
+          }
+        });
+      });
+
+      images.forEach(img => {
+        img.classList.add('lazy');
+        img.dataset.src = img.src;
+        img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjhmOWZhIi8+PC9zdmc+';
+        imageObserver.observe(img);
       });
     });
 
@@ -930,15 +1049,21 @@ try {
 
     // Toast notification function
     function showToast(message, type = 'success') {
+      // Remove existing toasts
+      const existingToasts = document.querySelectorAll('.custom-toast');
+      existingToasts.forEach(toast => toast.remove());
+
       // Create toast element
       const toast = document.createElement('div');
-      toast.className = `alert alert-${type === 'error' ? 'danger' : 'success'} position-fixed`;
+      toast.className = `custom-toast alert alert-${type === 'error' ? 'danger' : 'success'} position-fixed`;
       toast.style.cssText = `
         top: 20px;
         right: 20px;
         z-index: 9999;
-        min-width: 300px;
+        min-width: 280px;
         animation: fadeInUp 0.3s ease-out;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
       `;
       toast.innerHTML = `
         <div class="d-flex align-items-center">
@@ -980,23 +1105,34 @@ try {
         // Add error handling for video elements
         video.addEventListener('error', function() {
           console.error('Video loading error:', this.src);
+          showToast('Failed to load video attachment', 'error');
         });
         
         observer.observe(video);
       });
     });
 
-    // Touch device enhancements
-    if ('ontouchstart' in window) {
-      document.documentElement.classList.add('touch-device');
-      
-      // Increase tap targets for mobile
-      const tapTargets = document.querySelectorAll('.attachment-indicator, .btn-login');
-      tapTargets.forEach(target => {
-        target.style.minHeight = '44px';
-        target.style.minWidth = '44px';
+    // Responsive image handling
+    function handleImageResize() {
+      const images = document.querySelectorAll('.image-attachment img');
+      images.forEach(img => {
+        const container = img.closest('.image-attachment');
+        if (container) {
+          const containerWidth = container.offsetWidth;
+          if (containerWidth < 300) {
+            img.style.maxHeight = '150px';
+          } else if (containerWidth < 500) {
+            img.style.maxHeight = '200px';
+          } else {
+            img.style.maxHeight = '250px';
+          }
+        }
       });
     }
+
+    // Initial call and resize listener
+    handleImageResize();
+    window.addEventListener('resize', handleImageResize);
   </script>
 </body>
 </html>

@@ -180,6 +180,13 @@ $current_time = date('H:i');
         --light: #f8f9fa;
         --dark: #343a40;
         --gray: #6c757d;
+        --accent: #ffda6a;
+        --accent-light: #fff7da;
+        --text-dark: #2c3e50;
+        --text-light: #6c757d;
+        --border-radius: 16px;
+        --shadow: 0 8px 32px rgba(0,0,0,0.1);
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     * {
@@ -190,27 +197,27 @@ $current_time = date('H:i');
 
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: #f5f6fa;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
         padding-top: 80px;
         line-height: 1.6;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
 
-    /* Header Styles - SAME AS DASHBOARD */
+    /* Header Styles - ENHANCED */
     .top-header {
-        background: 
-        linear-gradient(90deg, 
-            #ffda6a 0%, 
-            #ffda6a 30%, 
-            #FFF5CC 70%, 
-            #ffffff 100%);
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
         padding: 0.75rem 0;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
         z-index: 1030;
         height: 80px;
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255,255,255,0.2);
     }
 
     .header-content {
@@ -224,6 +231,12 @@ $current_time = date('H:i');
         width: 60px;
         height: 60px;
         object-fit: contain;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        transition: var(--transition);
+    }
+
+    .logo-img:hover {
+        transform: scale(1.05);
     }
 
     .school-info {
@@ -234,25 +247,31 @@ $current_time = date('H:i');
         font-size: 0.7rem;
         opacity: 0.9;
         letter-spacing: 0.5px;
-        color: #555;
+        color: var(--text-dark);
+        font-weight: 600;
     }
 
     .school-name {
         font-size: 1.1rem;
-        font-weight: 700;
+        font-weight: 800;
         margin: 0.1rem 0;
         line-height: 1.2;
-        color: #555;
+        color: var(--text-dark);
+        background: linear-gradient(135deg, var(--text-dark), #495057);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 
     .clinic-title {
         font-size: 0.8rem;
         opacity: 0.9;
-        font-weight: 500;
-        color: #555;
+        font-weight: 600;
+        color: var(--text-dark);
+        letter-spacing: 0.5px;
     }
 
-    /* Mobile Menu Toggle - SAME AS DASHBOARD */
+    /* Mobile Menu Toggle - ENHANCED */
     .mobile-menu-toggle {
         display: none;
         position: fixed;
@@ -265,28 +284,31 @@ $current_time = date('H:i');
         width: 50px;
         height: 50px;
         border-radius: 50%;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        box-shadow: var(--shadow);
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: var(--transition);
+        backdrop-filter: blur(10px);
     }
 
     .mobile-menu-toggle:hover {
         transform: scale(1.05);
         background: var(--primary-dark);
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
     }
 
-    /* Dashboard Container - SAME AS DASHBOARD */
+    /* Dashboard Container - ENHANCED */
     .dashboard-container {
         display: flex;
         min-height: calc(100vh - 80px);
     }
 
-    /* Sidebar Styles - SAME AS DASHBOARD */
+    /* Sidebar Styles - ENHANCED */
     .sidebar {
-        width: 260px;
-        background: white;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-        padding: 1.5rem 0;
+        width: 280px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        box-shadow: 2px 0 20px rgba(0,0,0,0.08);
+        padding: 2rem 0;
         transition: transform 0.3s ease;
         position: fixed;
         top: 80px;
@@ -294,71 +316,101 @@ $current_time = date('H:i');
         bottom: 0;
         overflow-y: auto;
         z-index: 1020;
+        border-right: 1px solid rgba(255,255,255,0.2);
     }
 
     .sidebar-nav {
         display: flex;
         flex-direction: column;
         height: 100%;
+        gap: 0.5rem;
     }
 
     .nav-item {
         display: flex;
         align-items: center;
-        padding: 0.9rem 1.25rem;
-        color: #444;
+        padding: 1rem 1.5rem;
+        color: var(--text-dark);
         text-decoration: none;
-        transition: all 0.3s ease;
+        transition: var(--transition);
         border: none;
         background: none;
         width: 100%;
         text-align: left;
         cursor: pointer;
-        font-weight: 500;
+        font-weight: 600;
+        border-radius: 0 12px 12px 0;
+        margin: 0.25rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .nav-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 0;
+        background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
+        transition: var(--transition);
     }
 
     .nav-item:hover {
-        background: #f8f9fa;
+        background: rgba(255, 255, 255, 0.8);
         color: var(--primary);
+        transform: translateX(5px);
+    }
+
+    .nav-item:hover::before {
+        width: 100%;
     }
 
     .nav-item.active {
-        background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-        color: #555;
-        border-left: 8px solid #ffda6a;
+        background: linear-gradient(90deg, rgba(255,218,106,0.15) 0%, transparent 100%);
+        color: var(--text-dark);
+        border-left: 6px solid var(--accent);
+    }
+
+    .nav-item.active::before {
+        width: 100%;
     }
 
     .nav-item i {
-        width: 22px;
-        margin-right: 0.9rem;
-        font-size: 1.1rem;
-        color: #555;
+        width: 24px;
+        margin-right: 1rem;
+        font-size: 1.2rem;
+        color: inherit;
+        transition: var(--transition);
     }
 
     .nav-item span {
         flex: 1;
-        color: #555;
+        color: inherit;
+        font-size: 0.95rem;
     }
 
     .nav-item.logout {
         color: var(--danger);
         margin-top: auto;
+        border-left: 6px solid transparent;
     }
 
     .nav-item.logout:hover {
         background: rgba(220, 53, 69, 0.1);
+        color: var(--danger);
     }
 
-    /* Main Content - SAME AS DASHBOARD */
+    /* Main Content - ENHANCED */
     .main-content {
         flex: 1;
-        padding: 1.5rem;
+        padding: 2rem;
         overflow-x: hidden;
-        margin-left: 260px;
+        margin-left: 280px;
         margin-top: 0;
     }
 
-    /* Sidebar Overlay for Mobile - SAME AS DASHBOARD */
+    /* Sidebar Overlay for Mobile - ENHANCED */
     .sidebar-overlay {
         display: none;
         position: fixed;
@@ -367,6 +419,7 @@ $current_time = date('H:i');
         right: 0;
         bottom: 0;
         background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(5px);
         z-index: 1019;
     }
 
@@ -374,316 +427,464 @@ $current_time = date('H:i');
         display: block;
     }
 
-    /* WELCOME SECTION - SAME AS DASHBOARD */
-    .welcome-section {
-        background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
-        border-radius: 15px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-        border: 1px solid rgba(206, 224, 144, 0.2);
-        border-left: 10px solid #ffda6a;
-    }
-
-    .welcome-content h1 {
-        color: #555;
-        font-weight: 700;
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .welcome-content p {
-        color: var(--gray);
-        font-size: 1.1rem;
-        margin-bottom: 0;
-    }
-
-    /* KEEPING YOUR ORIGINAL CONSULTATION STYLES */
+    /* HEADER INFO SECTION - ENHANCED */
     .header-info-section {
-        background: linear-gradient(135deg, rgba(255, 218, 106, 0.9) 0%, rgba(255, 247, 222, 0.95) 100%);
-        padding: 25px;
-        border-radius: 15px;
-        margin-bottom: 30px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        border: 1px solid rgba(255,255,255,0.2);
+        background: linear-gradient(135deg, rgba(255, 218, 106, 0.95) 0%, rgba(255, 247, 222, 0.98) 100%);
+        padding: 2.5rem;
+        border-radius: var(--border-radius);
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow);
+        border: 1px solid rgba(255,255,255,0.3);
         text-align: center;
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .header-info-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+        background-size: 20px 20px;
+        opacity: 0.3;
     }
 
     .header-info-section h3 {
-        color: #2c3e50;
+        color: var(--text-dark);
         font-weight: 800;
-        font-size: 2rem;
-        margin-bottom: 10px;
-        background: linear-gradient(135deg, #2c3e50, #3498db);
+        font-size: 2.2rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, var(--text-dark), #495057);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        background-clip: text;
+        position: relative;
+        z-index: 2;
     }
 
     .header-info-section p {
-        color: #7f8c8d;
+        color: var(--text-light);
         font-size: 1.1rem;
         font-weight: 600;
         margin: 0;
+        position: relative;
+        z-index: 2;
+        letter-spacing: 0.5px;
     }
 
-    /* Consultation Form Container */
+    /* Consultation Form Container - ENHANCED */
     .consultation-form-container {
-        background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%);
-        padding: 30px;
-        border-radius: 20px;
-        box-shadow: 0 15px 50px rgba(0,0,0,0.1);
-        margin-bottom: 30px;
-        border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(20px);
+        border-radius: var(--border-radius);
+        padding: 2.5rem;
+        box-shadow: var(--shadow);
+        border: 1px solid rgba(255,255,255,0.3);
+        margin-bottom: 2rem;
         position: relative;
         overflow: hidden;
+        transition: var(--transition);
+    }
+
+    .consultation-form-container:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.15);
     }
 
     .consultation-form-container::before {
         content: '';
         position: absolute;
         top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        transition: left 0.6s ease;
+    }
+
+    .consultation-form-container:hover::before {
+        left: 100%;
+    }
+
+    .consultation-form-container::after {
+        content: '';
+        position: absolute;
+        top: 0;
         left: 0;
         right: 0;
-        height: 4px;
-        background: linear-gradient(135deg, #ffda6a, #ffda6a);
+        height: 5px;
+        background: linear-gradient(135deg, var(--accent), #ffd24a);
+        border-radius: 5px 5px 0 0;
     }
 
     .consultation-form-container h4 {
-        color: #555;
-        font-weight: 700;
-        margin-bottom: 25px;
-        font-size: 1.5rem;
-        border-bottom: 3px solid #ffda6a;
-        padding-bottom: 10px;
+        color: var(--text-dark);
+        font-weight: 800;
+        margin-bottom: 2rem;
+        font-size: 1.6rem;
+        border-bottom: 3px solid var(--accent-light);
+        padding-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
 
-    /* Form Styles */
+    /* Form Styles - ENHANCED */
     .form-label {
         font-weight: 700;
-        color: #555;
-        margin-bottom: 8px;
+        color: var(--text-dark);
+        margin-bottom: 0.75rem;
         font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-label::before {
+        content: '•';
+        color: var(--primary);
+        font-weight: bold;
+        font-size: 1.2rem;
     }
 
     .form-control, .form-select {
         border: 2px solid #e9ecef;
-        border-radius: 10px;
-        padding: 12px 15px;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
         font-size: 1rem;
-        transition: all 0.3s ease;
-        background: rgba(255,255,255,0.8);
+        transition: var(--transition);
+        background: rgba(255,255,255,0.9);
+        font-weight: 500;
     }
 
     .form-control:focus, .form-select:focus {
-        border-color: #3498db;
-        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        border-color: var(--primary);
+        box-shadow: 0 0 0 0.3rem rgba(102, 126, 234, 0.15);
         transform: translateY(-2px);
+        background: rgba(255,255,255,0.95);
     }
 
     .form-text {
         font-size: 0.85rem;
-        color: #6c757d;
+        color: var(--text-light);
+        margin-top: 0.5rem;
+        font-weight: 500;
     }
 
-    /* Button Styles */
+    /* Button Styles - ENHANCED */
     .btn-primary {
-        background: linear-gradient(135deg, #ffda6a, #ffda6a);
+        background: linear-gradient(135deg, var(--accent), #ffd24a);
         border: none;
         border-radius: 25px;
-        padding: 12px 30px;
+        padding: 1.25rem 3rem;
         font-weight: 700;
         font-size: 1.1rem;
-        transition: all 0.3s ease;
+        transition: var(--transition);
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        color: #555;
+        gap: 0.75rem;
+        color: var(--text-dark);
+        box-shadow: 0 6px 20px rgba(255,218,106,0.4);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-primary::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        transition: left 0.6s ease;
+    }
+
+    .btn-primary:hover::before {
+        left: 100%;
     }
 
     .btn-primary:hover {
         transform: translateY(-3px);
-       
+        box-shadow: 0 10px 25px rgba(255,218,106,0.5);
+        color: var(--text-dark);
     }
 
-    /* Consultation Schedule Section */
+    /* Consultation Schedule Section - ENHANCED */
     .consultation-schedule {
-        background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%);
-        padding: 30px;
-        border-radius: 20px;
-        box-shadow: 0 15px 50px rgba(0,0,0,0.1);
-        border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(20px);
+        border-radius: var(--border-radius);
+        padding: 2.5rem;
+        box-shadow: var(--shadow);
+        border: 1px solid rgba(255,255,255,0.3);
         position: relative;
         overflow: hidden;
+        transition: var(--transition);
+    }
+
+    .consultation-schedule:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.15);
     }
 
     .consultation-schedule::before {
         content: '';
         position: absolute;
         top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        transition: left 0.6s ease;
+    }
+
+    .consultation-schedule:hover::before {
+        left: 100%;
+    }
+
+    .consultation-schedule::after {
+        content: '';
+        position: absolute;
+        top: 0;
         left: 0;
         right: 0;
-        height: 4px;
-        background: linear-gradient(135deg, #ffda6a, #ffda6a);
+        height: 5px;
+        background: linear-gradient(135deg, var(--accent), #ffd24a);
+        border-radius: 5px 5px 0 0;
     }
 
     .schedule-title {
-        color: #555;
+        color: var(--text-dark);
         font-weight: 800;
-        font-size: 1.5rem;
-        border-bottom: 3px solid #ffda6a;
-        padding-bottom: 15px;
-        margin-bottom: 25px;
+        font-size: 1.6rem;
+        border-bottom: 3px solid var(--accent-light);
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
 
-    /* Table Styles */
+    /* Table Styles - ENHANCED */
     .table {
-        border-radius: 10px;
+        border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        background: rgba(255,255,255,0.9);
     }
 
     .table-dark {
-        background: linear-gradient(135deg, #2c3e50, #34495e) !important;
+        background: linear-gradient(135deg, var(--text-dark), #34495e) !important;
     }
 
     .table th {
         border: none;
         font-weight: 700;
-        padding: 15px;
+        padding: 1.25rem 1rem;
+        background: linear-gradient(135deg, var(--text-dark), #34495e);
+        color: white;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .table td {
-        padding: 15px;
+        padding: 1.25rem 1rem;
         vertical-align: middle;
-        border-color: #e9ecef;
+        border-color: rgba(233, 236, 239, 0.8);
+        color: var(--text-dark);
+        font-weight: 500;
+        transition: var(--transition);
     }
 
     .table-striped tbody tr:nth-of-type(odd) {
-        background-color: rgba(248, 249, 250, 0.5);
+        background-color: rgba(248, 249, 250, 0.7);
     }
 
     .table-hover tbody tr:hover {
-        background-color: rgba(52, 152, 219, 0.1);
+        background-color: rgba(102, 126, 234, 0.08);
         transform: translateX(5px);
-        transition: all 0.3s ease;
     }
 
-    /* Status Badges */
+    /* Status Badges - ENHANCED */
     .status-pending { 
         background: linear-gradient(135deg, #fff3cd, #ffeaa7); 
         color: #856404; 
-        padding: 8px 12px; 
-        border-radius: 20px; 
+        padding: 0.75rem 1.25rem; 
+        border-radius: 25px; 
         font-size: 0.85rem; 
-        font-weight: bold;
+        font-weight: 700;
         box-shadow: 0 2px 8px rgba(133, 100, 4, 0.2);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     .status-approved { 
         background: linear-gradient(135deg, #d4edda, #c3e6cb); 
         color: #155724; 
-        padding: 8px 12px; 
-        border-radius: 20px; 
+        padding: 0.75rem 1.25rem; 
+        border-radius: 25px; 
         font-size: 0.85rem; 
-        font-weight: bold;
+        font-weight: 700;
         box-shadow: 0 2px 8px rgba(21, 87, 36, 0.2);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     .status-rejected { 
         background: linear-gradient(135deg, #f8d7da, #f5c6cb); 
         color: #721c24; 
-        padding: 8px 12px; 
-        border-radius: 20px; 
+        padding: 0.75rem 1.25rem; 
+        border-radius: 25px; 
         font-size: 0.85rem; 
-        font-weight: bold;
+        font-weight: 700;
         box-shadow: 0 2px 8px rgba(114, 28, 36, 0.2);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     .status-completed { 
         background: linear-gradient(135deg, #cce7ff, #b3d9ff); 
         color: #004085; 
-        padding: 8px 12px; 
-        border-radius: 20px; 
+        padding: 0.75rem 1.25rem; 
+        border-radius: 25px; 
         font-size: 0.85rem; 
-        font-weight: bold;
+        font-weight: 700;
         box-shadow: 0 2px 8px rgba(0, 64, 133, 0.2);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    /* Action Buttons */
+    /* Action Buttons - ENHANCED */
     .btn-action {
         border: none;
-        background: rgba(255,255,255,0.8);
-        padding: 8px 12px;
-        margin: 0 3px;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        background: rgba(255,255,255,0.9);
+        padding: 0.75rem;
+        margin: 0 0.25rem;
+        border-radius: 10px;
+        transition: var(--transition);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
     
-    .btn-view { color: #17a2b8; }
-    .btn-edit { color: #ffc107; }
-    .btn-cancel { color: #dc3545; }
+    .btn-view { color: var(--info); }
+    .btn-edit { color: var(--warning); }
+    .btn-cancel { color: var(--danger); }
     
     .btn-action:hover {
         transform: scale(1.1);
         background: white;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
-    /* Modal Styles */
+    /* Modal Styles - ENHANCED */
     .modal-content {
-        border-radius: 15px;
+        border-radius: var(--border-radius);
         border: none;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        box-shadow: var(--shadow);
         overflow: hidden;
+        backdrop-filter: blur(20px);
+        background: rgba(255,255,255,0.95);
     }
 
     .modal-header {
         border-bottom: 2px solid rgba(0,0,0,0.1);
-        padding: 20px 25px;
+        padding: 1.5rem 2rem;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+    }
+
+    .modal-header .modal-title {
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
 
     .modal-body {
-        padding: 25px;
+        padding: 2rem;
     }
 
     .modal-footer {
         border-top: 2px solid rgba(0,0,0,0.1);
-        padding: 20px 25px;
-    }
-
-    .bg-primary {
-        background: linear-gradient(135deg, #3498db, #2980b9) !important;
+        padding: 1.5rem 2rem;
     }
 
     .bg-warning {
-        background: linear-gradient(135deg, #ffc107, #e0a800) !important;
+        background: linear-gradient(135deg, var(--warning), #e0a800) !important;
     }
 
-    /* Alert Styles */
+    /* Alert Styles - ENHANCED */
     .alert {
         border-radius: 12px;
         border: none;
-        margin: 15px 0;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-        padding: 15px 20px;
+        margin: 1rem 0;
+        box-shadow: var(--shadow);
+        padding: 1.25rem 1.5rem;
+        backdrop-filter: blur(10px);
+        border-left: 6px solid;
     }
 
     .alert-success {
-        background: linear-gradient(135deg, rgba(39, 174, 96, 0.9) 0%, rgba(33, 154, 82, 0.95) 100%);
+        background: linear-gradient(135deg, rgba(39, 174, 96, 0.95) 0%, rgba(33, 154, 82, 0.98) 100%);
         color: white;
+        border-left-color: #27ae60;
     }
 
     .alert-danger {
-        background: linear-gradient(135deg, rgba(231, 76, 60, 0.9) 0%, rgba(192, 57, 43, 0.95) 100%);
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.95) 0%, rgba(192, 57, 43, 0.98) 100%);
         color: white;
+        border-left-color: #e74c3c;
     }
 
-    /* Responsive Design - COMBINED FROM BOTH */
+    .alert i {
+        margin-right: 0.75rem;
+        font-size: 1.2rem;
+    }
+
+    /* Empty State - ENHANCED */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: var(--text-light);
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        color: #dee2e6;
+        opacity: 0.7;
+        display: block;
+    }
+
+    .empty-state h5 {
+        color: var(--text-light);
+        margin-bottom: 1rem;
+        font-weight: 600;
+        font-size: 1.3rem;
+    }
+
+    .empty-state p {
+        color: #999;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Responsive Design - ENHANCED */
     @media (max-width: 1200px) {
         .sidebar {
-            width: 240px;
+            width: 260px;
         }
         
         .main-content {
-            margin-left: 240px;
+            margin-left: 260px;
         }
     }
 
@@ -699,7 +900,15 @@ $current_time = date('H:i');
 
         .consultation-form-container,
         .consultation-schedule {
-            padding: 25px;
+            padding: 2rem;
+        }
+
+        .header-info-section {
+            padding: 2rem;
+        }
+
+        .header-info-section h3 {
+            font-size: 1.8rem;
         }
     }
 
@@ -714,7 +923,9 @@ $current_time = date('H:i');
         }
         
         .mobile-menu-toggle {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             top: 85px;
             left: 20px;
         }
@@ -727,7 +938,9 @@ $current_time = date('H:i');
             z-index: 1020;
             transform: translateX(-100%);
             overflow-y: auto;
-            width: 280px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(30px);
         }
 
         .sidebar.active {
@@ -743,7 +956,7 @@ $current_time = date('H:i');
         }
 
         .main-content {
-            padding: 2rem 1.25rem 1.25rem;
+            padding: 1.5rem;
             width: 100%;
             margin-left: 0;
         }
@@ -762,24 +975,31 @@ $current_time = date('H:i');
 
         .consultation-form-container,
         .consultation-schedule {
-            padding: 20px;
+            padding: 1.5rem;
         }
 
         .header-info-section {
-            padding: 20px;
+            padding: 1.5rem;
         }
 
         .header-info-section h3 {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
         }
 
         .btn-action {
-            padding: 6px 10px;
-            margin: 0 2px;
+            padding: 0.5rem;
+            margin: 0 0.125rem;
+            width: 38px;
+            height: 38px;
         }
 
         .table-responsive {
             font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            width: 100%;
+            justify-content: center;
         }
     }
 
@@ -790,32 +1010,41 @@ $current_time = date('H:i');
 
         .consultation-form-container,
         .consultation-schedule {
-            padding: 15px;
+            padding: 1.25rem;
         }
 
         .btn-primary {
-            width: 100%;
-            justify-content: center;
+            padding: 1rem 2rem;
+            font-size: 1rem;
         }
 
         .table td, .table th {
-            padding: 10px 8px;
+            padding: 1rem 0.75rem;
         }
 
         .status-pending, .status-approved, 
         .status-rejected, .status-completed {
             font-size: 0.75rem;
-            padding: 6px 10px;
+            padding: 0.5rem 1rem;
         }
 
         .main-content {
-            padding: 1.75rem 1rem 1rem;
+            padding: 1.25rem;
         }
         
         .mobile-menu-toggle {
             top: 80px;
             width: 45px;
             height: 45px;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-header,
+        .modal-footer {
+            padding: 1.25rem 1.5rem;
         }
     }
     
@@ -841,7 +1070,16 @@ $current_time = date('H:i');
         }
         
         .main-content {
-            padding: 1.5rem 1rem 1rem;
+            padding: 1rem;
+        }
+
+        .consultation-form-container,
+        .consultation-schedule {
+            padding: 1rem;
+        }
+
+        .header-info-section {
+            padding: 1.25rem;
         }
     }
 
@@ -854,11 +1092,20 @@ $current_time = date('H:i');
         }
         
         .main-content {
-            padding: 1.25rem 0.75rem 0.75rem;
+            padding: 0.75rem;
+        }
+
+        .consultation-form-container,
+        .consultation-schedule {
+            padding: 0.75rem;
+        }
+
+        .table-responsive {
+            font-size: 0.8rem;
         }
     }
 
-    /* Animations */
+    /* Animations - ENHANCED */
     @keyframes fadeInUp {
         from {
             opacity: 0;
@@ -870,21 +1117,88 @@ $current_time = date('H:i');
         }
     }
 
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
     .fade-in {
-        animation: fadeInUp 0.6s ease-out;
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    .slide-in-left {
+        animation: slideInLeft 0.6s ease-out;
+    }
+
+    /* Loading States */
+    .loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    /* Focus States for Accessibility */
+    .focus-visible {
+        outline: 3px solid var(--primary);
+        outline-offset: 2px;
+    }
+
+    /* Scrollbar Styling */
+    .sidebar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .sidebar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 10px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, var(--primary-dark), #6a4a9a);
+    }
+
+    /* Form Row Enhancements */
+    .form-row-enhanced {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-row-enhanced .form-control:focus,
+    .form-row-enhanced .form-select:focus {
+        transform: translateY(-2px);
+    }
+
+    /* Touch Device Improvements */
+    .touch-device .btn-action {
+        padding: 1rem;
+        width: 44px;
+        height: 44px;
+    }
+
+    .touch-device .btn-primary {
+        min-height: 54px;
     }
   </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - SAME AS DASHBOARD -->
-    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+    <!-- Mobile Menu Toggle Button - ENHANCED -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - SAME AS DASHBOARD -->
+    <!-- Sidebar Overlay for Mobile - ENHANCED -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - SAME AS DASHBOARD -->
+    <!-- Header - ENHANCED -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -899,7 +1213,7 @@ $current_time = date('H:i');
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar - SAME AS DASHBOARD -->
+        <!-- Sidebar - ENHANCED -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="student_dashboard.php" class="nav-item">
@@ -941,14 +1255,7 @@ $current_time = date('H:i');
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- WELCOME SECTION - SAME AS DASHBOARD -->
-            <div>
-                <div>
-                    
-                </div>
-            </div>
-
-            <!-- Alerts - FIXED: Using properly initialized variables -->
+            <!-- Alerts - ENHANCED -->
             <div id="alertContainer" class="alert-container fade-in">
                 <?php if (!empty($success_message)): ?>
                     <div class="alert alert-success alert-dismissible fade show">
@@ -963,27 +1270,33 @@ $current_time = date('H:i');
                 <?php endif; ?>
             </div>
 
-            <!-- Consultation Form -->
+            <!-- HEADER INFO SECTION - ENHANCED -->
+            <div class="header-info-section fade-in">
+                <h3><i class="fas fa-calendar-plus me-3"></i>Schedule Consultation</h3>
+                <p>Book your medical consultation with our healthcare professionals</p>
+            </div>
+
+            <!-- Consultation Form - ENHANCED -->
             <div class="consultation-form-container fade-in">
-                <h4 class="mb-4"><i class="fas fa-calendar-plus me-2"></i>New Consultation Request</h4>
+                <h4><i class="fas fa-calendar-plus me-2"></i>New Consultation Request</h4>
                 <form method="POST" action="" id="consultationForm">
                     <input type="hidden" name="action" value="create">
                     
-                    <div class="row mb-4">
-                        <div class="col-md-6 mb-3">
+                    <div class="row form-row-enhanced">
+                        <div class="col-md-6 mb-4">
                             <div class="form-group">
                                 <label class="form-label"><strong>Date:</strong></label>
                                 <input type="date" name="date" class="form-control" 
                                        min="<?= $current_date; ?>" 
                                        value="<?= $current_date; ?>" 
                                        required>
-                                <small class="form-text text-muted">Select your preferred date</small>
+                                <small class="form-text">Select your preferred date</small>
                             </div>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6 mb-4">
                             <div class="form-group">
                                 <label class="form-label"><strong>Time:</strong></label>
-                                <select name="time" class="form-control" id="timeSelect" required>
+                                <select name="time" class="form-select" id="timeSelect" required>
                                     <option value="">Select Time</option>
                                     <option value="08:00">8:00 AM</option>
                                     <option value="08:30">8:30 AM</option>
@@ -998,14 +1311,14 @@ $current_time = date('H:i');
                                     <option value="15:00">3:00 PM</option>
                                     <option value="15:30">3:30 PM</option>
                                 </select>
-                                <small class="form-text text-muted">Choose your preferred time</small>
+                                <small class="form-text">Choose your preferred time</small>
                             </div>
                         </div>
                     </div>
                     
                     <div class="form-group mb-4">
                         <label class="form-label"><strong>Reason/Concern:</strong></label>
-                        <select name="concern" class="form-control" id="concernSelect" required>
+                        <select name="concern" class="form-select" id="concernSelect" required>
                             <option value="">Select Concern</option>
                             <option value="Medicine">Medicine</option>
                             <option value="Medical Clearance">Medical Clearance</option>
@@ -1018,14 +1331,14 @@ $current_time = date('H:i');
                             <option value="Vaccination">Vaccination</option>
                             <option value="Other">Other</option>
                         </select>
-                        <small class="form-text text-muted">What is the reason for your consultation?</small>
+                        <small class="form-text">What is the reason for your consultation?</small>
                         
                         <!-- Other Concern Textbox (Hidden by default) -->
                         <div id="otherConcernContainer" class="mt-3" style="display: none;">
                             <label class="form-label"><strong>Please specify your concern:</strong></label>
                             <input type="text" name="other_concern" id="otherConcern" class="form-control" 
                                    placeholder="Please describe your specific concern...">
-                            <small class="form-text text-muted">Type your specific reason for consultation</small>
+                            <small class="form-text">Type your specific reason for consultation</small>
                         </div>
                     </div>
                     
@@ -1033,26 +1346,26 @@ $current_time = date('H:i');
                         <label class="form-label"><strong>Additional Notes (Optional):</strong></label>
                         <textarea name="notes" class="form-control" rows="4" 
                                   placeholder="Please provide any additional information about your condition or concerns..."></textarea>
-                        <small class="form-text text-muted">Any details that might help the medical staff</small>
+                        <small class="form-text">Any details that might help the medical staff</small>
                     </div>
                     
                     <div class="form-actions text-center">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-paper-plane"></i> SUBMIT CONSULTATION REQUEST
+                            <i class="fas fa-paper-plane me-2"></i> SUBMIT CONSULTATION REQUEST
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- Consultation Table -->
+            <!-- Consultation Table - ENHANCED -->
             <div class="consultation-schedule fade-in">
                 <h3 class="schedule-title"><i class="fas fa-calendar-alt me-2"></i>YOUR CONSULTATION SCHEDULE</h3>
                 
                 <?php if (empty($consultations)): ?>
-                    <div class="text-center py-5">
-                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No consultation requests yet</h5>
-                        <p class="text-muted">Schedule your first consultation using the form above.</p>
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-times"></i>
+                        <h5>No consultation requests yet</h5>
+                        <p>Schedule your first consultation using the form above.</p>
                     </div>
                 <?php else: ?>
                     <div class="schedule-table-container">
@@ -1113,13 +1426,13 @@ $current_time = date('H:i');
         </main>
     </div>
 
-    <!-- View Modal -->
+    <!-- View Modal - ENHANCED -->
     <div class="modal fade" id="viewModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header">
                     <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Consultation Details</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="viewBody">
                     <!-- Content will be loaded by JavaScript -->
@@ -1131,7 +1444,7 @@ $current_time = date('H:i');
         </div>
     </div>
 
-    <!-- Edit Modal -->
+    <!-- Edit Modal - ENHANCED -->
     <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <form method="POST" class="modal-content">
@@ -1236,24 +1549,28 @@ $current_time = date('H:i');
                 }
             });
 
-            // MOBILE MENU FUNCTIONALITY - SAME AS DASHBOARD
+            // MOBILE MENU FUNCTIONALITY - ENHANCED
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-            mobileMenuToggle.addEventListener('click', function() {
+            function toggleMobileMenu() {
                 sidebar.classList.toggle('active');
                 sidebarOverlay.classList.toggle('active');
-                const icon = this.querySelector('i');
+                const icon = mobileMenuToggle.querySelector('i');
                 icon.classList.toggle('fa-bars');
                 icon.classList.toggle('fa-times');
-            });
+                
+                // Add animation class
+                if (sidebar.classList.contains('active')) {
+                    sidebar.classList.add('slide-in-left');
+                } else {
+                    sidebar.classList.remove('slide-in-left');
+                }
+            }
 
-            sidebarOverlay.addEventListener('click', function() {
-                sidebar.classList.remove('active');
-                sidebarOverlay.classList.remove('active');
-                mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
-            });
+            mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+            sidebarOverlay.addEventListener('click', toggleMobileMenu);
 
             // Close sidebar when clicking nav items on mobile
             if (window.innerWidth <= 768) {
@@ -1281,6 +1598,48 @@ $current_time = date('H:i');
             const fadeElements = document.querySelectorAll('.fade-in');
             fadeElements.forEach((element, index) => {
                 element.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // ENHANCED INTERACTIONS
+            const formContainers = document.querySelectorAll('.consultation-form-container, .consultation-schedule');
+            formContainers.forEach(container => {
+                container.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px)';
+                });
+                
+                container.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(-2px)';
+                });
+            });
+
+            // FOCUS MANAGEMENT FOR ACCESSIBILITY
+            const focusableElements = document.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            focusableElements.forEach(element => {
+                element.addEventListener('focus', function() {
+                    this.classList.add('focus-visible');
+                });
+                
+                element.addEventListener('blur', function() {
+                    this.classList.remove('focus-visible');
+                });
+            });
+
+            // TOUCH DEVICE ENHANCEMENTS
+            if ('ontouchstart' in window) {
+                document.body.classList.add('touch-device');
+                
+                // Increase tap targets
+                const tapTargets = document.querySelectorAll('.btn-action, .btn-primary, .nav-item');
+                tapTargets.forEach(target => {
+                    target.style.minHeight = '44px';
+                });
+            }
+
+            // RESIZE HANDLER
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768 && sidebar.classList.contains('active')) {
+                    toggleMobileMenu();
+                }
             });
         });
 

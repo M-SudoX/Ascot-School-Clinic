@@ -186,6 +186,13 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         --light: #f8f9fa;
         --dark: #343a40;
         --gray: #6c757d;
+        --accent: #ffda6a;
+        --accent-light: #fff7da;
+        --text-dark: #2c3e50;
+        --text-light: #6c757d;
+        --border-radius: 16px;
+        --shadow: 0 8px 32px rgba(0,0,0,0.1);
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     * {
@@ -196,27 +203,27 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
 
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: #f5f6fa;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
         padding-top: 80px;
         line-height: 1.6;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
 
-    /* Header Styles - SAME AS DASHBOARD */
+    /* Header Styles - ENHANCED */
     .top-header {
-        background: 
-        linear-gradient(90deg, 
-            #ffda6a 0%, 
-            #ffda6a 30%, 
-            #FFF5CC 70%, 
-            #ffffff 100%);
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
         padding: 0.75rem 0;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
         z-index: 1030;
         height: 80px;
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255,255,255,0.2);
     }
 
     .header-content {
@@ -230,6 +237,12 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         width: 60px;
         height: 60px;
         object-fit: contain;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        transition: var(--transition);
+    }
+
+    .logo-img:hover {
+        transform: scale(1.05);
     }
 
     .school-info {
@@ -240,25 +253,31 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         font-size: 0.7rem;
         opacity: 0.9;
         letter-spacing: 0.5px;
-        color: #555;
+        color: var(--text-dark);
+        font-weight: 600;
     }
 
     .school-name {
         font-size: 1.1rem;
-        font-weight: 700;
+        font-weight: 800;
         margin: 0.1rem 0;
         line-height: 1.2;
-        color: #555;
+        color: var(--text-dark);
+        background: linear-gradient(135deg, var(--text-dark), #495057);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 
     .clinic-title {
         font-size: 0.8rem;
         opacity: 0.9;
-        font-weight: 500;
-        color: #555;
+        font-weight: 600;
+        color: var(--text-dark);
+        letter-spacing: 0.5px;
     }
 
-    /* Mobile Menu Toggle - SAME AS DASHBOARD */
+    /* Mobile Menu Toggle - ENHANCED */
     .mobile-menu-toggle {
         display: none;
         position: fixed;
@@ -271,28 +290,31 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         width: 50px;
         height: 50px;
         border-radius: 50%;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        box-shadow: var(--shadow);
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: var(--transition);
+        backdrop-filter: blur(10px);
     }
 
     .mobile-menu-toggle:hover {
         transform: scale(1.05);
         background: var(--primary-dark);
+        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
     }
 
-    /* Dashboard Container - SAME AS DASHBOARD */
+    /* Dashboard Container - ENHANCED */
     .dashboard-container {
         display: flex;
         min-height: calc(100vh - 80px);
     }
 
-    /* Sidebar Styles - SAME AS DASHBOARD */
+    /* Sidebar Styles - ENHANCED */
     .sidebar {
-        width: 260px;
-        background: white;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-        padding: 1.5rem 0;
+        width: 280px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        box-shadow: 2px 0 20px rgba(0,0,0,0.08);
+        padding: 2rem 0;
         transition: transform 0.3s ease;
         position: fixed;
         top: 80px;
@@ -300,71 +322,101 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         bottom: 0;
         overflow-y: auto;
         z-index: 1020;
+        border-right: 1px solid rgba(255,255,255,0.2);
     }
 
     .sidebar-nav {
         display: flex;
         flex-direction: column;
         height: 100%;
+        gap: 0.5rem;
     }
 
     .nav-item {
         display: flex;
         align-items: center;
-        padding: 0.9rem 1.25rem;
-        color: #444;
+        padding: 1rem 1.5rem;
+        color: var(--text-dark);
         text-decoration: none;
-        transition: all 0.3s ease;
+        transition: var(--transition);
         border: none;
         background: none;
         width: 100%;
         text-align: left;
         cursor: pointer;
-        font-weight: 500;
+        font-weight: 600;
+        border-radius: 0 12px 12px 0;
+        margin: 0.25rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .nav-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 0;
+        background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
+        transition: var(--transition);
     }
 
     .nav-item:hover {
-        background: #f8f9fa;
+        background: rgba(255, 255, 255, 0.8);
         color: var(--primary);
+        transform: translateX(5px);
+    }
+
+    .nav-item:hover::before {
+        width: 100%;
     }
 
     .nav-item.active {
-        background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-        color: #555;
-        border-left: 8px solid #ffda6a;
+        background: linear-gradient(90deg, rgba(255,218,106,0.15) 0%, transparent 100%);
+        color: var(--text-dark);
+        border-left: 6px solid var(--accent);
+    }
+
+    .nav-item.active::before {
+        width: 100%;
     }
 
     .nav-item i {
-        width: 22px;
-        margin-right: 0.9rem;
-        font-size: 1.1rem;
-        color: #555;
+        width: 24px;
+        margin-right: 1rem;
+        font-size: 1.2rem;
+        color: inherit;
+        transition: var(--transition);
     }
 
     .nav-item span {
         flex: 1;
-        color:#555;
+        color: inherit;
+        font-size: 0.95rem;
     }
 
     .nav-item.logout {
         color: var(--danger);
         margin-top: auto;
+        border-left: 6px solid transparent;
     }
 
     .nav-item.logout:hover {
         background: rgba(220, 53, 69, 0.1);
+        color: var(--danger);
     }
 
-    /* Main Content - SAME AS DASHBOARD */
+    /* Main Content - ENHANCED */
     .main-content {
         flex: 1;
-        padding: 1.5rem;
+        padding: 2rem;
         overflow-x: hidden;
-        margin-left: 260px;
+        margin-left: 280px;
         margin-top: 0;
     }
 
-    /* Sidebar Overlay for Mobile - SAME AS DASHBOARD */
+    /* Sidebar Overlay for Mobile - ENHANCED */
     .sidebar-overlay {
         display: none;
         position: fixed;
@@ -373,6 +425,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         right: 0;
         bottom: 0;
         background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(5px);
         z-index: 1019;
     }
 
@@ -380,114 +433,152 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         display: block;
     }
 
-    /* WELCOME SECTION - SAME AS DASHBOARD */
-    .welcome-section {
-        background: linear-gradient(110deg, #fff7da 50%, #fff7da 50%);
-        border-radius: 15px;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-        border: 1px solid rgba(206, 224, 144, 0.2);
-        border-left: 10px solid #ffda6a;
-    }
-
-    .welcome-content h1 {
-        color: #555;
-        font-weight: 700;
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .welcome-content p {
-        color: var(--gray);
-        font-size: 1.1rem;
-        margin-bottom: 0;
-    }
-
-    /* FORM STYLES - KEEPING YOUR ORIGINAL STYLES */
+    /* FORM HEADER WITH LOGO - ENHANCED */
     .form-header-with-logo {
-        background: linear-gradient(135deg, rgba(255, 218, 106, 0.9) 0%, rgba(255, 247, 222, 0.95) 100%);
-        padding: 10px;
-        border-radius: 15px;
-        margin-bottom: 30px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        border: 1px solid rgba(255,255,255,0.2);
-        color: #555;
+        background: linear-gradient(135deg, rgba(255, 218, 106, 0.95) 0%, rgba(255, 247, 222, 0.98) 100%);
+        padding: 2rem;
+        border-radius: var(--border-radius);
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: var(--text-dark);
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .form-header-with-logo::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+        background-size: 20px 20px;
+        opacity: 0.3;
     }
 
     .form-header-with-logo .logo-section {
         display: flex;
         align-items: center;
-        gap: 25px;
+        gap: 2rem;
+        position: relative;
+        z-index: 2;
     }
 
     .form-header-with-logo .logo-img {
-        height: 80px;
+        height: 90px;
         width: auto;
-        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+        transition: var(--transition);
+    }
+
+    .form-header-with-logo .logo-img:hover {
+        transform: scale(1.05) rotate(5deg);
     }
 
     .form-header-with-logo .college-info h4 {
         margin: 0;
-        color: #555;
-        font-weight: 600;
-        font-size: 1.1rem;
+        color: var(--text-dark);
+        font-weight: 700;
+        font-size: 1rem;
+        letter-spacing: 0.5px;
     }
 
     .form-header-with-logo .college-info h3 {
-        margin: 5px 0;
-        color: #555;
-        font-weight: 700;
-        font-size: 1.4rem;
+        margin: 0.5rem 0;
+        color: var(--text-dark);
+        font-weight: 800;
+        font-size: 1.5rem;
+        background: linear-gradient(135deg, var(--text-dark), #495057);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 
     .form-header-with-logo .college-info p {
         margin: 0;
-        color: #555;
+        color: var(--text-dark);
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+        opacity: 0.9;
     }
 
-    /* Health Form Container */
+    /* Health Form Container - ENHANCED */
     .health-form-container {
         background: rgba(255,255,255,0.95);
-        border-radius: 20px;
-        padding: 30px;
-        box-shadow: 0 15px 50px rgba(0,0,0,0.1);
-        border: 1px solid rgba(255,255,255,0.2);
+        backdrop-filter: blur(20px);
+        border-radius: var(--border-radius);
+        padding: 2.5rem;
+        box-shadow: var(--shadow);
+        border: 1px solid rgba(255,255,255,0.3);
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+        transition: var(--transition);
+    }
+
+    .health-form-container:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    }
+
+    .health-form-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        transition: left 0.6s ease;
+    }
+
+    .health-form-container:hover::before {
+        left: 100%;
     }
 
     .form-title {
         text-align: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
+        margin-bottom: 2.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 3px solid var(--accent-light);
     }
 
     .form-title h3 {
-        color: #555;
+        color: var(--text-dark);
         font-weight: 800;
-        font-size: 1rem;
-        margin-bottom: 10px;
-        background: linear-gradient(135deg, #555, #555);
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, var(--text-dark), #495057);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 
     .form-subtitle {
-        color: #7f8c8d;
+        color: var(--text-light);
         font-size: 1.1rem;
         font-weight: 600;
+        letter-spacing: 0.5px;
     }
 
     .form-section {
         background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.95) 100%);
-        padding: 30px;
-        border-radius: 15px;
+        padding: 2.5rem;
+        border-radius: var(--border-radius);
         box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-        margin-bottom: 30px;
+        margin-bottom: 2rem;
         border: 1px solid rgba(255,255,255,0.2);
         position: relative;
         overflow: hidden;
+        transition: var(--transition);
+    }
+
+    .form-section:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.12);
     }
 
     .form-section::before {
@@ -496,198 +587,309 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         top: 0;
         left: 0;
         right: 0;
-        height: 4px;
-        background: linear-gradient(135deg, #ffda6a, #ffda6a);
+        height: 5px;
+        background: linear-gradient(135deg, var(--accent), #ffd24a);
+        border-radius: 5px 5px 0 0;
     }
 
     .section-title {
-        background: linear-gradient(135deg, #fff7da, #fff7da);
-        color: #555;
-        padding: 15px 25px;
-        border-radius: 10px;
-        font-weight: 700;
-        margin-bottom: 25px;
-        font-size: 1.2rem;
+        background: linear-gradient(135deg, var(--accent-light), #fff9e6);
+        color: var(--text-dark);
+        padding: 1.25rem 2rem;
+        border-radius: 12px;
+        font-weight: 800;
+        margin-bottom: 2rem;
+        font-size: 1.3rem;
         text-transform: uppercase;
         letter-spacing: 1px;
-        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        box-shadow: 0 4px 15px rgba(255,218,106,0.3);
+        border-left: 6px solid var(--accent);
     }
 
     .form-label {
         font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 10px;
+        color: var(--text-dark);
+        margin-bottom: 0.75rem;
         font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-label::before {
+        content: '•';
+        color: var(--primary);
+        font-weight: bold;
+        font-size: 1.2rem;
     }
 
     .form-control.underlined, .form-select.underlined {
         border: none;
         border-bottom: 2px solid #e9ecef;
         border-radius: 0;
-        padding: 10px 0;
+        padding: 0.75rem 0;
         background: transparent;
         font-size: 1rem;
-        transition: all 0.3s ease;
+        transition: var(--transition);
+        font-weight: 500;
     }
 
     .form-control.underlined:focus, .form-select.underlined:focus {
         box-shadow: none;
-        border-bottom-color: #3498db;
+        border-bottom-color: var(--primary);
         background: transparent;
         transform: translateY(-2px);
     }
 
     .form-control:read-only, .form-select:disabled {
         background-color: rgba(248, 249, 250, 0.7);
-        color: #6c757d;
+        color: var(--text-light);
     }
 
-    /* Medical Questions Enhancement */
+    /* Medical Questions Enhancement - ENHANCED */
     .medical-question {
-        background: linear-gradient(135deg, rgba(248, 249, 250, 0.8) 0%, rgba(233, 236, 239, 0.9) 100%);
-        padding: 25px;
+        background: linear-gradient(135deg, rgba(248, 249, 250, 0.9) 0%, rgba(233, 236, 239, 0.95) 100%);
+        padding: 2rem;
         border-radius: 12px;
-        margin-bottom: 25px;
-        border-left: 4px solid #ffda6a;
+        margin-bottom: 2rem;
+        border-left: 6px solid var(--accent);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        transition: var(--transition);
+    }
+
+    .medical-question:hover {
+        transform: translateX(5px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
     }
 
     .question-text {
         font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 15px;
+        color: var(--text-dark);
+        margin-bottom: 1rem;
         font-size: 1.1rem;
+        line-height: 1.5;
     }
 
     .instruction-text {
         font-style: italic;
-        color: #7f8c8d;
-        margin-bottom: 20px;
+        color: var(--text-light);
+        margin-bottom: 1.5rem;
         font-size: 0.95rem;
+        line-height: 1.4;
     }
 
     .radio-options {
-        margin-bottom: 20px;
+        margin-bottom: 1.5rem;
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
     }
 
     .form-check-inline {
-        margin-right: 20px;
+        margin-right: 0;
     }
 
     .form-check-input {
         transform: scale(1.2);
-        margin-right: 8px;
+        margin-right: 0.5rem;
+        cursor: pointer;
+    }
+
+    .form-check-input:checked {
+        background-color: var(--primary);
+        border-color: var(--primary);
     }
 
     .form-check-label {
         font-weight: 600;
-        color: #2c3e50;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .form-check-label:hover {
+        color: var(--primary);
     }
 
     .conditions-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 12px;
-        margin-bottom: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
     }
 
     .form-check-custom {
-        padding: 8px 0;
-        background: rgba(255,255,255,0.7);
-        padding: 10px 15px;
-        border-radius: 8px;
-        transition: all 0.3s ease;
+        padding: 1rem 1.25rem;
+        background: rgba(255,255,255,0.8);
+        border-radius: 10px;
+        transition: var(--transition);
+        border: 1px solid rgba(0,0,0,0.05);
+        cursor: pointer;
     }
 
     .form-check-custom:hover {
-        background: rgba(52, 152, 219, 0.1);
-        transform: translateX(5px);
+        background: rgba(102, 126, 234, 0.1);
+        transform: translateX(8px);
+        border-color: rgba(102, 126, 234, 0.2);
     }
 
-    /* Buttons Enhancement */
+    .form-check-custom .form-check-input {
+        margin-right: 0.75rem;
+    }
+
+    /* Buttons Enhancement - ENHANCED */
     .action-buttons {
-        padding: 30px 0;
+        padding: 2.5rem 0;
         border-top: 2px solid rgba(233, 236, 239, 0.8);
         text-align: center;
+        background: linear-gradient(135deg, rgba(248, 249, 250, 0.9) 0%, rgba(233, 236, 239, 0.95) 100%);
+        border-radius: 12px;
+        margin-top: 2rem;
     }
 
     .btn-edit {
         background: linear-gradient(135deg, #27ae60, #219a52);
         color: white;
-        padding: 12px 35px;
+        padding: 1rem 2.5rem;
         border: none;
         border-radius: 25px;
         font-weight: 700;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 0.75rem;
         box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
-        transition: all 0.3s ease;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-edit::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        transition: left 0.6s ease;
+    }
+
+    .btn-edit:hover::before {
+        left: 100%;
     }
 
     .btn-save {
-        background: linear-gradient(135deg, #3498db, #2980b9);
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
         color: white;
-        padding: 12px 35px;
+        padding: 1rem 2.5rem;
         border: none;
         border-radius: 25px;
         font-weight: 700;
-        margin-right: 15px;
+        margin-right: 1rem;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-        transition: all 0.3s ease;
+        gap: 0.75rem;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-save::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        transition: left 0.6s ease;
+    }
+
+    .btn-save:hover::before {
+        left: 100%;
     }
 
     .btn-cancel {
         background: linear-gradient(135deg, #95a5a6, #7f8c8d);
         color: white;
-        padding: 12px 35px;
+        padding: 1rem 2.5rem;
         border: none;
         border-radius: 25px;
         font-weight: 700;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 0.75rem;
         box-shadow: 0 6px 20px rgba(149, 165, 166, 0.4);
-        transition: all 0.3s ease;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-cancel::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        transition: left 0.6s ease;
+    }
+
+    .btn-cancel:hover::before {
+        left: 100%;
     }
 
     .btn-edit:hover, .btn-save:hover, .btn-cancel:hover {
         transform: translateY(-3px);
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         color: white;
+        text-decoration: none;
     }
 
-    /* Alerts Enhancement */
+    /* Alerts Enhancement - ENHANCED */
     .alert {
         border-radius: 12px;
         border: none;
-        margin: 15px 0;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-        padding: 15px 20px;
+        margin: 1rem 0;
+        box-shadow: var(--shadow);
+        padding: 1.25rem 1.5rem;
+        backdrop-filter: blur(10px);
+        border-left: 6px solid;
     }
 
     .alert-success {
-        background: linear-gradient(135deg, rgba(39, 174, 96, 0.9) 0%, rgba(33, 154, 82, 0.95) 100%);
+        background: linear-gradient(135deg, rgba(39, 174, 96, 0.95) 0%, rgba(33, 154, 82, 0.98) 100%);
         color: white;
+        border-left-color: #27ae60;
     }
 
     .alert-danger {
-        background: linear-gradient(135deg, rgba(231, 76, 60, 0.9) 0%, rgba(192, 57, 43, 0.95) 100%);
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.95) 0%, rgba(192, 57, 43, 0.98) 100%);
         color: white;
+        border-left-color: #e74c3c;
     }
 
-    /* Responsive Design - COMBINED FROM BOTH */
+    .alert i {
+        margin-right: 0.75rem;
+        font-size: 1.2rem;
+    }
+
+    /* Responsive Design - ENHANCED */
     @media (max-width: 1200px) {
         .sidebar {
-            width: 240px;
+            width: 260px;
         }
         
         .main-content {
-            margin-left: 240px;
+            margin-left: 260px;
+        }
+        
+        .conditions-grid {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         }
     }
 
@@ -704,11 +906,19 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         .form-header-with-logo .logo-section {
             flex-direction: column;
             text-align: center;
-            gap: 15px;
+            gap: 1.5rem;
         }
 
         .form-header-with-logo .logo-img {
-            height: 60px;
+            height: 70px;
+        }
+
+        .form-title h3 {
+            font-size: 1.6rem;
+        }
+
+        .conditions-grid {
+            grid-template-columns: repeat(2, 1fr);
         }
     }
 
@@ -723,7 +933,9 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         }
         
         .mobile-menu-toggle {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             top: 85px;
             left: 20px;
         }
@@ -736,7 +948,9 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
             z-index: 1020;
             transform: translateX(-100%);
             overflow-y: auto;
-            width: 280px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(30px);
         }
 
         .sidebar.active {
@@ -752,7 +966,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         }
 
         .main-content {
-            padding: 2rem 1.25rem 1.25rem;
+            padding: 1.5rem;
             width: 100%;
             margin-left: 0;
         }
@@ -770,47 +984,51 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         }
 
         .health-form-container {
-            padding: 20px;
+            padding: 2rem;
         }
 
         .form-section {
-            padding: 20px;
+            padding: 2rem;
         }
 
         .form-title h3 {
-            font-size: 1.6rem;
+            font-size: 1.4rem;
         }
 
         .conditions-grid {
             grid-template-columns: 1fr;
         }
 
+        .form-header-with-logo {
+            padding: 1.5rem;
+        }
+
+        .radio-options {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
         .btn-edit, .btn-save, .btn-cancel {
-            padding: 10px 25px;
-            font-size: 0.9rem;
+            padding: 0.875rem 2rem;
+            font-size: 0.95rem;
         }
     }
 
     @media (max-width: 576px) {
-        .action-btn {
-            padding: 1rem 1.25rem;
-            font-size: 0.9rem;
-        }
-
         .health-form-container {
-            padding: 15px;
+            padding: 1.5rem;
         }
 
         .form-section {
-            padding: 15px;
+            padding: 1.5rem;
         }
 
         .form-header-with-logo {
-            padding: 15px;
+            padding: 1.25rem;
         }
 
         .form-header-with-logo .college-info h3 {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
         }
 
         .form-header-with-logo .college-info h4 {
@@ -818,8 +1036,8 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         }
 
         .section-title {
-            font-size: 1rem;
-            padding: 12px 20px;
+            font-size: 1.1rem;
+            padding: 1rem 1.5rem;
         }
 
         .action-buttons {
@@ -829,17 +1047,25 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         .btn-save, .btn-cancel {
             display: block;
             width: 100%;
-            margin: 10px 0;
+            margin: 0.75rem 0;
         }
 
         .main-content {
-            padding: 1.75rem 1rem 1rem;
+            padding: 1.25rem;
         }
         
         .mobile-menu-toggle {
             top: 80px;
             width: 45px;
             height: 45px;
+        }
+
+        .form-title h3 {
+            font-size: 1.2rem;
+        }
+
+        .medical-question {
+            padding: 1.5rem;
         }
     }
     
@@ -865,7 +1091,19 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         }
         
         .main-content {
-            padding: 1.5rem 1rem 1rem;
+            padding: 1rem;
+        }
+
+        .health-form-container {
+            padding: 1.25rem;
+        }
+
+        .form-section {
+            padding: 1.25rem;
+        }
+
+        .form-header-with-logo .logo-img {
+            height: 60px;
         }
     }
 
@@ -878,11 +1116,19 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         }
         
         .main-content {
-            padding: 1.25rem 0.75rem 0.75rem;
+            padding: 0.75rem;
+        }
+
+        .health-form-container {
+            padding: 1rem;
+        }
+
+        .form-section {
+            padding: 1rem;
         }
     }
 
-    /* Animations */
+    /* Animations - ENHANCED */
     @keyframes fadeInUp {
         from {
             opacity: 0;
@@ -894,21 +1140,88 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         }
     }
 
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
     .fade-in {
-        animation: fadeInUp 0.6s ease-out;
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    .slide-in-left {
+        animation: slideInLeft 0.6s ease-out;
+    }
+
+    /* Loading States */
+    .loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    /* Focus States for Accessibility */
+    .focus-visible {
+        outline: 3px solid var(--primary);
+        outline-offset: 2px;
+    }
+
+    /* Scrollbar Styling */
+    .sidebar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .sidebar::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 10px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, var(--primary-dark), #6a4a9a);
+    }
+
+    /* Form Row Enhancements */
+    .form-row-enhanced {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-row-enhanced .form-control.underlined:focus,
+    .form-row-enhanced .form-select.underlined:focus {
+        transform: translateY(-2px);
+    }
+
+    /* Touch Device Improvements */
+    .touch-device .form-check-custom {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .touch-device .btn-edit,
+    .touch-device .btn-save,
+    .touch-device .btn-cancel {
+        min-height: 54px;
     }
   </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - SAME AS DASHBOARD -->
-    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+    <!-- Mobile Menu Toggle Button - ENHANCED -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - SAME AS DASHBOARD -->
+    <!-- Sidebar Overlay for Mobile - ENHANCED -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - SAME AS DASHBOARD -->
+    <!-- Header - ENHANCED -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -923,7 +1236,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar - SAME AS DASHBOARD -->
+        <!-- Sidebar - ENHANCED -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="student_dashboard.php" class="nav-item">
@@ -965,13 +1278,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
 
         <!-- Main Content -->
         <main class="main-content">
-            <!-- WELCOME SECTION - SAME AS DASHBOARD -->
-            <div>
-                <div class="welcome-content">
-
-                </div>
-            </div>
-
             <!-- ERROR MESSAGE DISPLAY -->
             <?php if (isset($update_error)): ?>
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -988,7 +1294,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 </div>
             <?php endif; ?>
 
-            <!-- FORM HEADER WITH LOGO -->
+            <!-- FORM HEADER WITH LOGO - ENHANCED -->
             <div class="form-header-with-logo fade-in">
                 <div class="container">
                     <div class="row align-items-center">
@@ -1006,7 +1312,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 </div>
             </div>
 
-            <!-- HEALTH INFORMATION FORM -->
+            <!-- HEALTH INFORMATION FORM - ENHANCED -->
             <div class="health-form-container fade-in">
                 <div class="form-title">
                     <h3>HEALTH INFORMATION FORM</h3>
@@ -1022,15 +1328,15 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                         <div class="section-title">PART I: STUDENT INFORMATION</div>
                         
                         <!-- Name and Address Row -->
-                        <div class="row mb-4">
-                            <div class="col-md-6 mb-3">
+                        <div class="row form-row-enhanced">
+                            <div class="col-md-6 mb-4">
                                 <label class="form-label">Name:</label>
                                 <input type="text" name="fullname" class="form-control underlined"
                                        value="<?php echo htmlspecialchars($display_fullname); ?>"
                                        <?php echo !$edit_mode ? 'readonly' : ''; ?>
                                        placeholder="Enter your full name" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-4">
                                 <label class="form-label">Address:</label>
                                 <input type="text" name="address" class="form-control underlined"
                                        value="<?php echo htmlspecialchars($student_info['address'] ?? ''); ?>"
@@ -1040,15 +1346,15 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                         </div>
 
                         <!-- Personal Details Row -->
-                        <div class="row mb-4">
-                            <div class="col-md-6 col-lg-2 mb-3">
+                        <div class="row form-row-enhanced">
+                            <div class="col-md-6 col-lg-2 mb-4">
                                 <label class="form-label">Age:</label>
                                 <input type="number" name="age" class="form-control underlined"
                                        value="<?php echo htmlspecialchars($student_info['age'] ?? ''); ?>"
                                        <?php echo !$edit_mode ? 'readonly' : ''; ?>
                                        placeholder="Age" min="1" max="100" required>
                             </div>
-                            <div class="col-md-6 col-lg-2 mb-3">
+                            <div class="col-md-6 col-lg-2 mb-4">
                                 <label class="form-label">Sex:</label>
                                 <select name="sex" class="form-select underlined" <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
                                     <option value="">Select</option>
@@ -1056,7 +1362,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                                     <option value="Female" <?php echo (($student_info['sex'] ?? '') == 'Female') ? 'selected' : ''; ?>>Female</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 col-lg-3 mb-3">
+                            <div class="col-md-6 col-lg-3 mb-4">
                                 <label class="form-label">Civil Status:</label>
                                 <select name="civil_status" class="form-select underlined" <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
                                     <option value="">Select</option>
@@ -1066,7 +1372,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                                     <option value="Separated" <?php echo (($student_info['civil_status'] ?? '') == 'Separated') ? 'selected' : ''; ?>>Separated</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 col-lg-2 mb-3">
+                            <div class="col-md-6 col-lg-2 mb-4">
                                 <label class="form-label">Blood Type:</label>
                                 <select name="blood_type" class="form-select underlined" <?php echo !$edit_mode ? 'disabled' : ''; ?>>
                                     <option value="">Select</option>
@@ -1080,7 +1386,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                                     <option value="O-" <?php echo (($student_info['blood_type'] ?? '') == 'O-') ? 'selected' : ''; ?>>O-</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 col-lg-3 mb-3">
+                            <div class="col-md-6 col-lg-3 mb-4">
                                 <label class="form-label">Student Number:</label>
                                 <input type="text" class="form-control underlined" 
                                        value="<?php echo htmlspecialchars($student_number); ?>" readonly>
@@ -1088,21 +1394,21 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                         </div>
 
                         <!-- Family and School Details Row -->
-                        <div class="row mb-4">
-                            <div class="col-md-6 mb-3">
+                        <div class="row form-row-enhanced">
+                            <div class="col-md-6 mb-4">
                                 <label class="form-label">Parent's Name/Guardian:</label>
                                 <input type="text" name="father_name" class="form-control underlined"
                                        value="<?php echo htmlspecialchars($student_info['father_name'] ?? ''); ?>"
                                        <?php echo !$edit_mode ? 'readonly' : ''; ?>
                                        placeholder="Parent/Guardian name" required>
                             </div>
-                            <div class="col-md-6 col-lg-3 mb-3">
+                            <div class="col-md-6 col-lg-3 mb-4">
                                 <label class="form-label">Date:</label>
                                 <input type="date" name="date" class="form-control underlined"
                                        value="<?php echo htmlspecialchars($student_info['date'] ?? date('Y-m-d')); ?>"
                                        <?php echo !$edit_mode ? 'readonly' : ''; ?> required>
                             </div>
-                            <div class="col-md-6 col-lg-3 mb-3">
+                            <div class="col-md-6 col-lg-3 mb-4">
                                 <label class="form-label">School Year:</label>
                                 <input type="text" name="school_year" class="form-control underlined"
                                        value="<?php echo htmlspecialchars($student_info['school_year'] ?? ''); ?>"
@@ -1112,15 +1418,15 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                         </div>
 
                         <!-- Course and Contact Details Row -->
-                        <div class="row mb-3">
-                            <div class="col-md-6 mb-3">
+                        <div class="row form-row-enhanced">
+                            <div class="col-md-6 mb-4">
                                 <label class="form-label">Course/Year:</label>
                                 <input type="text" name="course_year" class="form-control underlined"
                                        value="<?php echo htmlspecialchars($student_info['course_year'] ?? ''); ?>"
                                        <?php echo !$edit_mode ? 'readonly' : ''; ?>
                                        placeholder="e.g. BSIT-3" required>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-4">
                                 <label class="form-label">Cellphone Number:</label>
                                 <input type="tel" name="cellphone_number" class="form-control underlined"
                                        value="<?php echo htmlspecialchars($student_info['cellphone_number'] ?? ''); ?>"
@@ -1179,7 +1485,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                             </div>
 
                             <!-- Other Conditions Field -->
-                            <div class="row mt-3">
+                            <div class="row mt-4">
                                 <div class="col-md-6">
                                     <label class="form-label">Others:</label>
                                     <input type="text" name="other_conditions" class="form-control underlined"
@@ -1191,8 +1497,8 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                         </div>
 
                         <!-- Previous Hospitalization Section -->
-                        <div class="row mb-4">
-                            <div class="col-md-6 mb-3">
+                        <div class="row form-row-enhanced">
+                            <div class="col-md-6 mb-4">
                                 <label class="form-label">Previous Hospitalization</label>
                                 <div class="radio-options">
                                     <div class="form-check form-check-inline">
@@ -1209,7 +1515,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-4">
                                 <label class="form-label">If yes, Year:</label>
                                 <input type="text" name="hosp_year" class="form-control underlined"
                                        value="<?php echo htmlspecialchars($medical_info['hosp_year'] ?? ''); ?>"
@@ -1219,8 +1525,8 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                         </div>
 
                         <!-- Operation/Surgery Section -->
-                        <div class="row mb-4">
-                            <div class="col-md-6 mb-3">
+                        <div class="row form-row-enhanced">
+                            <div class="col-md-6 mb-4">
                                 <label class="form-label">Operation/Surgery</label>
                                 <div class="radio-options">
                                     <div class="form-check form-check-inline">
@@ -1237,7 +1543,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-4">
                                 <label class="form-label">If yes, details:</label>
                                 <input type="text" name="surgery_details" class="form-control underlined"
                                        value="<?php echo htmlspecialchars($medical_info['surgery_details'] ?? ''); ?>"
@@ -1252,15 +1558,15 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                             <p class="instruction-text">The history of allergies to the following:</p>
                             
                             <!-- Allergies Information -->
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
+                            <div class="row form-row-enhanced">
+                                <div class="col-md-6 mb-4">
                                     <label class="form-label">Food:</label>
                                     <input type="text" name="food_allergies" class="form-control underlined"
                                            value="<?php echo htmlspecialchars($medical_info['food_allergies'] ?? ''); ?>"
                                            <?php echo !$edit_mode ? 'readonly' : ''; ?>
                                            placeholder="Food allergies">
                                 </div>
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-6 mb-4">
                                     <label class="form-label">Medicine:</label>
                                     <input type="text" name="medicine_allergies" class="form-control underlined"
                                            value="<?php echo htmlspecialchars($medical_info['medicine_allergies'] ?? ''); ?>"
@@ -1270,7 +1576,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                             </div>
 
                             <!-- EDIT AND SAVE BUTTONS SECTION -->
-                            <div class="action-buttons mt-5">
+                            <div class="action-buttons">
                                 <?php if (!$edit_mode): ?>
                                     <!-- EDIT BUTTON -->
                                     <a href="update_profile.php?edit=true" class="btn btn-edit">
@@ -1307,24 +1613,28 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 }, 5000);
             }
 
-            // MOBILE MENU FUNCTIONALITY - SAME AS DASHBOARD
+            // MOBILE MENU FUNCTIONALITY - ENHANCED
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-            mobileMenuToggle.addEventListener('click', function() {
+            function toggleMobileMenu() {
                 sidebar.classList.toggle('active');
                 sidebarOverlay.classList.toggle('active');
-                const icon = this.querySelector('i');
+                const icon = mobileMenuToggle.querySelector('i');
                 icon.classList.toggle('fa-bars');
                 icon.classList.toggle('fa-times');
-            });
+                
+                // Add animation class
+                if (sidebar.classList.contains('active')) {
+                    sidebar.classList.add('slide-in-left');
+                } else {
+                    sidebar.classList.remove('slide-in-left');
+                }
+            }
 
-            sidebarOverlay.addEventListener('click', function() {
-                sidebar.classList.remove('active');
-                sidebarOverlay.classList.remove('active');
-                mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
-            });
+            mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+            sidebarOverlay.addEventListener('click', toggleMobileMenu);
 
             // Close sidebar when clicking nav items on mobile
             if (window.innerWidth <= 768) {
@@ -1391,6 +1701,62 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
             const fadeElements = document.querySelectorAll('.fade-in');
             fadeElements.forEach((element, index) => {
                 element.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // ENHANCED INTERACTIONS
+            const formSections = document.querySelectorAll('.form-section');
+            formSections.forEach(section => {
+                section.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px)';
+                });
+                
+                section.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(-2px)';
+                });
+            });
+
+            // FOCUS MANAGEMENT FOR ACCESSIBILITY
+            const focusableElements = document.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            focusableElements.forEach(element => {
+                element.addEventListener('focus', function() {
+                    this.classList.add('focus-visible');
+                });
+                
+                element.addEventListener('blur', function() {
+                    this.classList.remove('focus-visible');
+                });
+            });
+
+            // TOUCH DEVICE ENHANCEMENTS
+            if ('ontouchstart' in window) {
+                document.body.classList.add('touch-device');
+                
+                // Increase tap targets
+                const tapTargets = document.querySelectorAll('.form-check-custom, .btn-edit, .btn-save, .btn-cancel, .nav-item');
+                tapTargets.forEach(target => {
+                    target.style.minHeight = '44px';
+                });
+            }
+
+            // RESIZE HANDLER
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768 && sidebar.classList.contains('active')) {
+                    toggleMobileMenu();
+                }
+            });
+
+            // FORM VALIDATION ENHANCEMENT
+            const requiredFields = form.querySelectorAll('[required]');
+            requiredFields.forEach(field => {
+                field.addEventListener('invalid', function() {
+                    this.style.borderBottomColor = 'var(--danger)';
+                });
+                
+                field.addEventListener('input', function() {
+                    if (this.checkValidity()) {
+                        this.style.borderBottomColor = 'var(--success)';
+                    }
+                });
             });
         });
     </script>
