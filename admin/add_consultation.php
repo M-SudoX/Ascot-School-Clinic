@@ -76,15 +76,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $physician_notes
         ]);
         
-        $success = "Consultation record saved successfully!";
+        // Store success message in session and redirect
+        $_SESSION['success_message'] = "Consultation record saved successfully!";
         
-        // Clear form after successful submission
-        $_POST = array();
+        // Redirect to prevent form resubmission
+        header("Location: add_consultation.php?id=" . $student_id);
+        exit();
         
     } catch (Exception $e) {
         $error = "Error: " . $e->getMessage();
         error_log("Consultation save error: " . $e->getMessage());
     }
+}
+
+// Check for success message in session
+if (isset($_SESSION['success_message'])) {
+    $success = $_SESSION['success_message'];
+    unset($_SESSION['success_message']); // Clear the message after displaying
 }
 ?>
 
@@ -899,7 +907,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label for="symptoms" class="required-field">Symptoms:</label>
                                     <input type="text" id="symptoms" name="symptoms" class="form-control" 
                                            placeholder="Enter symptoms" 
-                                           value="<?php echo htmlspecialchars($_POST['symptoms'] ?? ''); ?>" 
+                                           value="" 
                                            required>
                                     <div class="error-message" id="symptomsError">Please enter symptoms</div>
                                 </div>
@@ -907,7 +915,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label for="temperature">Temperature:</label>
                                     <input type="text" id="temperature" name="temperature" class="form-control" 
                                            placeholder="e.g., 36.5°C" 
-                                           value="<?php echo htmlspecialchars($_POST['temperature'] ?? ''); ?>">
+                                           value="">
                                 </div>
                             </div>
 
@@ -916,7 +924,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label for="diagnosis" class="required-field">Diagnosis:</label>
                                     <input type="text" id="diagnosis" name="diagnosis" class="form-control" 
                                            placeholder="Enter diagnosis" 
-                                           value="<?php echo htmlspecialchars($_POST['diagnosis'] ?? ''); ?>" 
+                                           value="" 
                                            required>
                                     <div class="error-message" id="diagnosisError">Please enter diagnosis</div>
                                 </div>
@@ -924,7 +932,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label for="blood_pressure">Blood Pressure:</label>
                                     <input type="text" id="blood_pressure" name="blood_pressure" class="form-control" 
                                            placeholder="e.g., 120/80 mmHg" 
-                                           value="<?php echo htmlspecialchars($_POST['blood_pressure'] ?? ''); ?>">
+                                           value="">
                                 </div>
                             </div>
 
@@ -933,13 +941,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label for="treatment">Treatment Given:</label>
                                     <input type="text" id="treatment" name="treatment" class="form-control" 
                                            placeholder="Enter treatment" 
-                                           value="<?php echo htmlspecialchars($_POST['treatment'] ?? ''); ?>">
+                                           value="">
                                 </div>
                                 <div class="form-group">
                                     <label for="heart_rate">Heart Rate:</label>
                                     <input type="text" id="heart_rate" name="heart_rate" class="form-control" 
                                            placeholder="e.g., 72 bpm" 
-                                           value="<?php echo htmlspecialchars($_POST['heart_rate'] ?? ''); ?>">
+                                           value="">
                                 </div>
                             </div>
                         </div>
@@ -954,14 +962,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <label for="attending_staff" class="required-field">Attending Staff:</label>
                                     <input type="text" id="attending_staff" name="attending_staff" class="form-control" 
                                            placeholder="Enter staff name" 
-                                           value="<?php echo htmlspecialchars($_POST['attending_staff'] ?? ''); ?>" 
+                                           value="" 
                                            required>
                                     <div class="error-message" id="staffError">Please enter attending staff name</div>
                                 </div>
                                 <div class="form-group">
                                     <label for="consultation_date" class="required-field">Consultation Date:</label>
                                     <input type="date" id="consultation_date" name="consultation_date" class="form-control" 
-                                           value="<?php echo htmlspecialchars($_POST['consultation_date'] ?? date('Y-m-d')); ?>" 
+                                           value="<?php echo date('Y-m-d'); ?>" 
                                            required>
                                     <div class="error-message" id="dateError">Please select consultation date</div>
                                 </div>
@@ -970,7 +978,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="form-group">
                                     <label for="consultation_time" class="required-field">Consultation Time:</label>
                                     <input type="time" id="consultation_time" name="consultation_time" class="form-control" 
-                                           value="<?php echo htmlspecialchars($_POST['consultation_time'] ?? date('H:i')); ?>" 
+                                           value="<?php echo date('H:i'); ?>" 
                                            required>
                                     <div class="error-message" id="timeError">Please select consultation time</div>
                                 </div>
@@ -988,7 +996,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="form-group">
                                 <label for="physician_notes">Physician's notes:</label>
                                 <textarea id="physician_notes" name="physician_notes" class="form-control" rows="4" 
-                                          placeholder="Enter additional notes..."><?php echo htmlspecialchars($_POST['physician_notes'] ?? ''); ?></textarea>
+                                          placeholder="Enter additional notes..."></textarea>
                             </div>
                         </div>
 

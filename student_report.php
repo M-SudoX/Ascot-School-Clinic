@@ -60,6 +60,12 @@ foreach ($consultations as $consultDate) {
 }
 
 $totalConsults = array_sum($consultationData);
+
+// ✅ Generate week labels (Week 1, Week 2, Week 3, Week 4, Week 5)
+$weekLabels = [];
+for ($i = 1; $i <= $numWeeks; $i++) {
+    $weekLabels[] = "Week $i";
+}
 ?>
 
 <!DOCTYPE html>
@@ -1070,18 +1076,17 @@ $totalConsults = array_sum($consultationData);
                 }
             });
 
-            // ORIGINAL CHART CODE (PRESERVED) - ENHANCED
+            // CHART CONFIGURATION - UPDATED WITH WEEK LABELS
             const consultationData = <?php echo json_encode($consultationData); ?>;
-            const numWeeks = consultationData.length;
-            const weekLabels = Array.from({length: numWeeks}, (_, i) => `Week ${i + 1}`);
+            const weekLabels = <?php echo json_encode($weekLabels); ?>;
 
             const ctx = document.getElementById('consultChart').getContext('2d');
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: weekLabels,
+                    labels: weekLabels, // Week 1, Week 2, Week 3, Week 4, Week 5
                     datasets: [{
-                        label: 'Consultations',
+                        label: 'Number of Consultations',
                         data: consultationData,
                         backgroundColor: 'rgba(255, 218, 106, 0.8)',
                         borderColor: '#ffda6a',
