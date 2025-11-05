@@ -571,6 +571,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             border-radius: 10px;
             border: none;
             margin-bottom: 2rem;
+            color: white;
         }
 
         /* Responsive Design - SAME AS ADMIN DASHBOARD */
