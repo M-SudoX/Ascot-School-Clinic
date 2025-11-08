@@ -85,12 +85,12 @@ function sendActivationEmail($email, $fullname, $activation_code) {
         $mail->isSMTP();
         $mail->Host = 'smtp.gmail.com';
         $mail->SMTPAuth = true;
-        $mail->Username = 'ascotclinic750@gmail.com'; 
-        $mail->Password = 'ukbhtxlpahhfqqvy'; 
+        $mail->Username = 'bihasamaynard070@gmail.com'; 
+        $mail->Password = 'zjopucbvhzfcuosv'; 
         $mail->SMTPSecure = 'tls';
         $mail->Port = 587;
 
-        $mail->setFrom('ascotclinic750@gmail.com', 'ASCOT Online Clinic');
+        $mail->setFrom('bihasamaynard070@gmail.com', 'ASCOT Online Clinic');
         $mail->addAddress($email, $fullname);
 
         $mail->isHTML(true);

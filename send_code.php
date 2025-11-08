@@ -52,12 +52,12 @@ if ($user) {
         $mail->isSMTP();
         $mail->Host = 'smtp.gmail.com';
         $mail->SMTPAuth = true;
-        $mail->Username = 'ascotclinic750@gmail.com'; 
-        $mail->Password = 'ukbhtxlpahhfqqvy';    
+        $mail->Username = 'bihasamaynard070@gmail.com'; 
+        $mail->Password = 'zjopucbvhzfcuosv';    
         $mail->SMTPSecure = 'tls';
         $mail->Port = 587;
 
-        $mail->setFrom('ascotclinic750@gmail.com', 'ASCOT Online School Clinic');
+        $mail->setFrom('bihasamaynard070@gmail.com', 'ASCOT Online School Clinic');
         $mail->addAddress($user['email']);
         $mail->isHTML(true);
         $mail->Subject = 'Your Password Reset Code';
