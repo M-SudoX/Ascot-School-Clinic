@@ -66,8 +66,13 @@ try {
         }
 
         /* Header Styles - FIXED */
-        .top-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+         .top-header {
+            background: 
+                linear-gradient(90deg, 
+                    #ffda6a 0%, 
+                    #ffda6a 30%, 
+                    #FFF5CC 70%, 
+                    #ffffff 100%);
             color: white;
             padding: 1rem 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -98,17 +103,20 @@ try {
         .republic {
             font-size: 0.75rem;
             opacity: 0.9;
+             color: #555;
         }
 
         .school-name {
             font-size: 1.2rem;
             font-weight: bold;
             margin: 0.2rem 0;
+             color: #555;
         }
 
         .clinic-title {
             font-size: 0.85rem;
             opacity: 0.9;
+             color: #555;
         }
 
         /* Mobile Menu Toggle - FIXED */
