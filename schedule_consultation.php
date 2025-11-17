@@ -12,19 +12,51 @@ $student_id = $_SESSION['student_id'];
 $success_message = '';
 $error_message = '';
 
+// ✅ FIX #1: CSRF TOKEN GENERATION
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 /* ===============================
    ✅ CREATE NEW CONSULTATION
 ================================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create') {
+    
+    // ✅ FIX #2: CSRF TOKEN VALIDATION
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $_SESSION['error_message'] = 'Invalid security token. Please try again.';
+        header("Location: schedule_consultation.php");
+        exit();
+    }
+    
     $student_id = $_SESSION['student_id'];
     $date = $_POST['date'] ?? '';
     $time = $_POST['time'] ?? '';
     $concern = $_POST['concern'] ?? '';
     $notes = $_POST['notes'] ?? '';
     
+    // ✅ FIX #3: INPUT LENGTH VALIDATION
+    if (strlen($concern) > 255) {
+        $_SESSION['error_message'] = 'Concern is too long. Maximum 255 characters allowed.';
+        header("Location: schedule_consultation.php");
+        exit();
+    }
+    
+    if (strlen($notes) > 1000) {
+        $_SESSION['error_message'] = 'Notes are too long. Maximum 1000 characters allowed.';
+        header("Location: schedule_consultation.php");
+        exit();
+    }
+    
     // Handle "Other" concern
     if ($concern === 'Other' && !empty($_POST['other_concern'])) {
         $concern = $_POST['other_concern'];
+        // Validate other concern length too
+        if (strlen($concern) > 255) {
+            $_SESSION['error_message'] = 'Other concern is too long. Maximum 255 characters allowed.';
+            header("Location: schedule_consultation.php");
+            exit();
+        }
     }
 
     // ✅ VALIDATION: Check if the selected date/time is in the past
@@ -37,7 +69,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         exit();
     }
 
-    try {
+   // ✅ FIX #5: CONSULTATION LIMIT CHECK (MAX 3)
+  try {
+    $limit_stmt = $pdo->prepare("SELECT COUNT(*) as consultation_count FROM consultation_requests WHERE student_id = ? AND status IN ('Pending', 'Approved')");
+    $limit_stmt->execute([$student_id]);
+    $consultation_count = $limit_stmt->fetch(PDO::FETCH_ASSOC)['consultation_count'];
+    
+    if ($consultation_count >= 3) {
+        $_SESSION['error_message'] = 'You have reached the maximum limit of 3 active consultations. Please wait for some to be completed or cancel existing ones.';
+        header("Location: schedule_consultation.php");
+        exit();
+    }
+        
         $stmt = $pdo->prepare("INSERT INTO consultation_requests (student_id, date, time, requested, notes, status) VALUES (?, ?, ?, ?, ?, 'Pending')");
         $stmt->execute([$student_id, $date, $time, $concern, $notes]);
         
@@ -57,11 +100,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
    ✅ EDIT CONSULTATION
 ================================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit') {
+    
+    // ✅ FIX #2: CSRF TOKEN VALIDATION
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $_SESSION['error_message'] = 'Invalid security token. Please try again.';
+        header("Location: schedule_consultation.php");
+        exit();
+    }
+    
     $id = $_POST['consultation_id'];
     $date = $_POST['edit_date'];
     $time = $_POST['edit_time'];
     $concern = $_POST['edit_concern'];
     $notes = $_POST['edit_notes'];
+
+    // ✅ FIX #3: INPUT LENGTH VALIDATION
+    if (strlen($concern) > 255) {
+        $_SESSION['error_message'] = 'Concern is too long. Maximum 255 characters allowed.';
+        header("Location: schedule_consultation.php");
+        exit();
+    }
+    
+    if (strlen($notes) > 1000) {
+        $_SESSION['error_message'] = 'Notes are too long. Maximum 1000 characters allowed.';
+        header("Location: schedule_consultation.php");
+        exit();
+    }
 
     // ✅ VALIDATION: Check if the selected date/time is in the past
     $selected_datetime = strtotime($date . ' ' . $time);
@@ -74,6 +138,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     try {
+        // ✅ FIX #4: VERIFY OWNERSHIP BEFORE EDITING
+        $check_stmt = $pdo->prepare("SELECT id FROM consultation_requests WHERE id = ? AND student_id = ? AND status IN ('Pending', 'Approved')");
+        $check_stmt->execute([$id, $student_id]);
+        
+        if (!$check_stmt->fetch()) {
+            $_SESSION['error_message'] = 'Consultation not found or you are not authorized to edit it.';
+            header("Location: schedule_consultation.php");
+            exit();
+        }
+        
         $stmt = $pdo->prepare("UPDATE consultation_requests SET date = ?, time = ?, requested = ?, notes = ? WHERE id = ? AND status IN ('Pending', 'Approved')");
         $stmt->execute([$date, $time, $concern, $notes, $id]);
         
@@ -94,19 +168,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 ================================= */
 if (isset($_GET['cancel'])) {
     $id = $_GET['cancel'];
+    
     try {
-        // Kunin muna ang consultation details bago i-delete
-        $get_stmt = $pdo->prepare("SELECT requested FROM consultation_requests WHERE id = ?");
-        $get_stmt->execute([$id]);
-        $consultation = $get_stmt->fetch();
+        // ✅ FIX #4: VERIFY OWNERSHIP BEFORE CANCELLING
+        $check_stmt = $pdo->prepare("SELECT requested FROM consultation_requests WHERE id = ? AND student_id = ? AND status = 'Pending'");
+        $check_stmt->execute([$id, $student_id]);
+        $consultation = $check_stmt->fetch();
+        
+        if (!$consultation) {
+            $_SESSION['error_message'] = 'Consultation not found or you are not authorized to cancel it.';
+            header("Location: schedule_consultation.php");
+            exit();
+        }
         
         $stmt = $pdo->prepare("DELETE FROM consultation_requests WHERE id = ? AND status = 'Pending'");
         $stmt->execute([$id]);
         
         // ✅ SPECIFIC ACTION: Consultation Cancelled
-        if ($consultation) {
-            logActivity($pdo, $student_id, "Cancelled consultation: " . $consultation['requested']);
-        }
+        logActivity($pdo, $student_id, "Cancelled consultation: " . $consultation['requested']);
         
         $_SESSION['success_message'] = 'Consultation cancelled and deleted successfully!';
     } catch (PDOException $e) {
@@ -137,8 +216,16 @@ try {
     $stmt = $pdo->prepare("SELECT * FROM consultation_requests WHERE student_id = ? ORDER BY date DESC");
     $stmt->execute([$student_id]);
     $consultations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // ✅ Get consultation count for display
+    $active_consultations = array_filter($consultations, function($c) {
+        return in_array($c['status'], ['Pending', 'Approved']);
+    });
+    $consultation_count = count($active_consultations);
+    
 } catch (PDOException $e) {
     $consultations = [];
+    $consultation_count = 0;
     $error_message = "Error fetching consultations: " . $e->getMessage();
 }
 
@@ -476,6 +563,29 @@ $current_time = date('H:i');
         letter-spacing: 0.5px;
     }
 
+    /* Consultation Limit Badge */
+    .consultation-limit-badge {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .consultation-limit-badge.warning {
+        background: linear-gradient(135deg, var(--warning), #e0a800);
+    }
+
+    .consultation-limit-badge.danger {
+        background: linear-gradient(135deg, var(--danger), #c82333);
+    }
+
     /* Consultation Form Container - ENHANCED */
     .consultation-form-container {
         background: rgba(255,255,255,0.95);
@@ -612,6 +722,19 @@ $current_time = date('H:i');
         transform: translateY(-3px);
         box-shadow: 0 10px 25px rgba(255,218,106,0.5);
         color: var(--text-dark);
+    }
+
+    .btn-primary:disabled {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
+        color: white;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .btn-primary:disabled:hover {
+        transform: none;
+        box-shadow: none;
     }
 
     /* Consultation Schedule Section - ENHANCED */
@@ -1274,6 +1397,15 @@ $current_time = date('H:i');
             <div class="header-info-section fade-in">
                 <h3><i class="fas fa-calendar-plus me-3"></i>Schedule Consultation</h3>
                 <p>Book your medical consultation with our healthcare professionals</p>
+                
+                <!-- Consultation Limit Badge -->
+                <div class="consultation-limit-badge <?= $consultation_count >= 4 ? 'warning' : '' ?> <?= $consultation_count >= 5 ? 'danger' : '' ?>">
+                    <i class="fas fa-chart-line"></i>
+                    Active Consultations: <?= $consultation_count ?>/3
+                    <?php if ($consultation_count >= 3): ?>
+                        <i class="fas fa-exclamation-triangle ms-1"></i>
+                    <?php endif; ?>
+                </div>
             </div>
 
             <!-- Consultation Form - ENHANCED -->
@@ -1281,6 +1413,8 @@ $current_time = date('H:i');
                 <h4><i class="fas fa-calendar-plus me-2"></i>New Consultation Request</h4>
                 <form method="POST" action="" id="consultationForm">
                     <input type="hidden" name="action" value="create">
+                    <!-- ✅ CSRF TOKEN FIELD -->
+                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                     
                     <div class="row form-row-enhanced">
                         <div class="col-md-6 mb-4">
@@ -1350,9 +1484,16 @@ $current_time = date('H:i');
                     </div>
                     
                     <div class="form-actions text-center">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-paper-plane me-2"></i> SUBMIT CONSULTATION REQUEST
+                        <button type="submit" class="btn btn-primary btn-lg" <?= $consultation_count >= 5 ? 'disabled' : '' ?>>
+                            <i class="fas fa-paper-plane me-2"></i> 
+                            <?= $consultation_count >= 5 ? 'CONSULTATION LIMIT REACHED' : 'SUBMIT CONSULTATION REQUEST' ?>
                         </button>
+                        <?php if ($consultation_count >= 5): ?>
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                <strong>Limit Reached:</strong> You have reached the maximum of 5 active consultations. Please wait for some to be completed or cancel existing ones.
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </form>
             </div>
@@ -1450,6 +1591,9 @@ $current_time = date('H:i');
             <form method="POST" class="modal-content">
                 <input type="hidden" name="action" value="edit">
                 <input type="hidden" name="consultation_id" id="edit_consultation_id">
+                <!-- ✅ CSRF TOKEN FIELD -->
+                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                
                 <div class="modal-header bg-warning">
                     <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Consultation</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
