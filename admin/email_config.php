@@ -4,7 +4,7 @@ return [
     'smtp' => [
         'host' => 'smtp.gmail.com',
         'username' => 'bihasamaynard070@gmail.com',
-        'password' => 'zjopucbvhzfcuosv',
+        'password' => 'zjop ucbv hzfc uosv',
         'port' => 587,
         'encryption' => 'tls'
     ],

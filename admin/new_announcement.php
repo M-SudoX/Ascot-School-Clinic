@@ -175,8 +175,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $mail->isSMTP();
                         $mail->Host = 'smtp.gmail.com';
                         $mail->SMTPAuth = true;
-                        $mail->Username = 'zayantomara@gmail.com';
-                        $mail->Password = 'zjaoodlqbdtknyno';
+                        $mail->Username = 'bihasamaynard070@gmail.com';
+                        $mail->Password = 'zjop ucbv hzfc uosv';
                         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                         $mail->Port = 587;
                         $mail->SMTPOptions = array(
@@ -188,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         );
                         
                         // Recipients
-                        $mail->setFrom('zayantomara@gmail.com', 'ASCOT Clinic');
+                        $mail->setFrom('bihasamaynard070@gmail.com', 'ASCOT Clinic');
                         $mail->addAddress($to, $name);
                         
                         // Content

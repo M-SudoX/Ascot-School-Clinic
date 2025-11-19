@@ -156,7 +156,7 @@ function sendActivationEmail($email, $fullname, $activation_code) {
         $mail->Host = 'smtp.gmail.com';
         $mail->SMTPAuth = true;
         $mail->Username = 'bihasamaynard070@gmail.com'; 
-        $mail->Password = 'zjopucbvhzfcuosv'; 
+        $mail->Password = 'zjop ucbv hzfc uosv'; 
         $mail->SMTPSecure = 'tls';
         $mail->Port = 587;
 
@@ -166,7 +166,7 @@ function sendActivationEmail($email, $fullname, $activation_code) {
         $mail->isHTML(true);
         $mail->Subject = 'Activate Your ASCOT Online Clinic Account - CODE EXPIRES IN 60 SECONDS';
 
-        $activation_link = "https://10.187.177.129:8080/ascot-school-clinic/activate.php?code=$activation_code";
+        $activation_link = "https://ascot-onlineservices.net:81/activate.php?code=$activation_code";
 
         $mail->Body = "
             <div style='font-family: Arial, sans-serif;'>

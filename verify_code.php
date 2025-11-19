@@ -31,7 +31,7 @@ if (isset($_POST['resend']) && isset($_SESSION['pending_reset_user'])) {
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
             $mail->Username = 'bihasamaynard070@gmail.com'; 
-            $mail->Password = 'zjopucbvhzfcuosv';
+            $mail->Password = 'zjop ucbv hzfc uosv';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
             

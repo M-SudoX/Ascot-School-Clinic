@@ -2,7 +2,7 @@
 // Email Configuration for ASCOT Online Clinic
 define('EMAIL_HOST', 'smtp.gmail.com'); // Your SMTP host
 define('EMAIL_USERNAME', 'bihasamaynard070@gmail.com'); // Your email
-define('EMAIL_PASSWORD', 'zjopucbvhzfcuosv'); // Your app password
+define('EMAIL_PASSWORD', 'zjop ucbv hzfc uosv'); // Your app password
 define('EMAIL_PORT', 587); // SMTP port
 define('EMAIL_ENCRYPTION', 'tls'); // Encryption type
 define('EMAIL_FROM', 'noreply@ascot.edu.ph'); // From email address
