@@ -18,6 +18,9 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 
 $student_id = $_GET['id'];
 
+// Define edit mode
+$edit_mode = isset($_GET['edit']) && $_GET['edit'] === 'true';
+
 // Fetch student information
 try {
     // Get student information from student_information table
@@ -45,6 +48,88 @@ try {
 
 } catch (PDOException $e) {
     die("Database error: " . $e->getMessage());
+}
+
+// Handle form submission for admin editing
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $edit_mode) {
+    try {
+        // Get form data for student information
+        $fullname = $_POST['fullname'] ?? '';
+        $address = $_POST['address'] ?? '';
+        $age = $_POST['age'] ?? '';
+        $sex = $_POST['sex'] ?? '';
+        $civil_status = $_POST['civil_status'] ?? '';
+        $blood_type = $_POST['blood_type'] ?? '';
+        $father_name = $_POST['father_name'] ?? '';
+        $course_year = $_POST['course_year'] ?? '';
+        $date = $_POST['date'] ?? '';
+        $school_year = $_POST['school_year'] ?? '';
+        $cellphone_number = $_POST['cellphone_number'] ?? '';
+        
+        // Update student information
+        $update_stmt = $pdo->prepare("
+            UPDATE student_information SET 
+            fullname = ?, address = ?, age = ?, sex = ?, civil_status = ?, 
+            blood_type = ?, father_name = ?, course_year = ?, date = ?, 
+            school_year = ?, cellphone_number = ?
+            WHERE id = ?
+        ");
+        $update_stmt->execute([
+            $fullname, $address, $age, $sex, $civil_status, $blood_type,
+            $father_name, $course_year, $date, $school_year, $cellphone_number,
+            $student_id
+        ]);
+        
+        // Process medical history
+        $medical_attention = $_POST['medical_attention'] ?? '';
+        $conditions = isset($_POST['conditions']) ? implode(',', $_POST['conditions']) : '';
+        $other_conditions = $_POST['other_conditions'] ?? '';
+        $previous_hospitalization = $_POST['previous_hospitalization'] ?? '';
+        $hosp_year = $_POST['hosp_year'] ?? '';
+        $surgery = $_POST['surgery'] ?? '';
+        $surgery_details = $_POST['surgery_details'] ?? '';
+        $food_allergies = $_POST['food_allergies'] ?? '';
+        $medicine_allergies = $_POST['medicine_allergies'] ?? '';
+        
+        // Check if medical history exists
+        $check_medical = $pdo->prepare("SELECT id FROM medical_history WHERE student_number = ?");
+        $check_medical->execute([$student_info['student_number']]);
+        $existing_medical = $check_medical->fetch();
+        
+        if ($existing_medical) {
+            // UPDATE medical history
+            $stmt_medical = $pdo->prepare("
+                UPDATE medical_history SET 
+                medical_attention = ?, medical_conditions = ?, other_conditions = ?,
+                previous_hospitalization = ?, hosp_year = ?, surgery = ?, surgery_details = ?, 
+                food_allergies = ?, medicine_allergies = ?
+                WHERE student_number = ?
+            ");
+            $stmt_medical->execute([
+                $medical_attention, $conditions, $other_conditions, $previous_hospitalization, 
+                $hosp_year, $surgery, $surgery_details, $food_allergies, $medicine_allergies,
+                $student_info['student_number']
+            ]);
+        } else {
+            // INSERT medical history
+            $stmt_medical = $pdo->prepare("
+                INSERT INTO medical_history 
+                (student_number, medical_attention, medical_conditions, other_conditions, previous_hospitalization, hosp_year, surgery, surgery_details, food_allergies, medicine_allergies) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt_medical->execute([
+                $student_info['student_number'], $medical_attention, $conditions, $other_conditions, $previous_hospitalization, 
+                $hosp_year, $surgery, $surgery_details, $food_allergies, $medicine_allergies
+            ]);
+        }
+        
+        // Redirect to view mode with success message
+        header("Location: view_student.php?id=" . $student_id . "&success=1");
+        exit();
+        
+    } catch (PDOException $e) {
+        $update_error = "There was an error updating the student profile. Please try again.";
+    }
 }
 
 // FUNCTION TO CHECK IF PROFILE IS COMPLETE (BOTH PART 1 AND PART 2)
@@ -93,6 +178,9 @@ function getProfileStatus($student_info, $medical_info) {
 // Get profile status
 $profile_status = getProfileStatus($student_info, $medical_info);
 $isComplete = $profile_status['is_complete'];
+
+// Check for success message
+$success = isset($_GET['success']) ? true : false;
 ?>
 
 <!DOCTYPE html>
@@ -456,7 +544,7 @@ $isComplete = $profile_status['is_complete'];
             background: #fff5f5;
         }
 
-        .info-label {
+        .form-label {
             font-weight: 600;
             color: #555;
             margin-bottom: 0.5rem;
@@ -466,6 +554,29 @@ $isComplete = $profile_status['is_complete'];
         .info-value {
             color: #333;
             font-size: 1rem;
+        }
+
+        .form-control.underlined, .form-select.underlined {
+            border: none;
+            border-bottom: 2px solid #e9ecef;
+            border-radius: 0;
+            padding: 0.75rem 0;
+            background: transparent;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .form-control.underlined:focus, .form-select.underlined:focus {
+            box-shadow: none;
+            border-bottom-color: var(--primary);
+            background: transparent;
+            transform: translateY(-2px);
+        }
+
+        .form-control:read-only, .form-select:disabled {
+            background-color: rgba(248, 249, 250, 0.7);
+            color: var(--gray);
         }
 
         .conditions-grid {
@@ -482,6 +593,25 @@ $isComplete = $profile_status['is_complete'];
             background: white;
             border-radius: 5px;
             border: 1px solid #e9ecef;
+        }
+
+        .form-check-custom {
+            padding: 1rem 1.25rem;
+            background: rgba(255,255,255,0.8);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+
+        .form-check-custom:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateX(8px);
+            border-color: rgba(102, 126, 234, 0.2);
+        }
+
+        .form-check-custom .form-check-input {
+            margin-right: 0.75rem;
         }
 
         /* Status Badges */
@@ -522,12 +652,42 @@ $isComplete = $profile_status['is_complete'];
         }
 
         /* Action Buttons */
+                /* Action Buttons */
         .action-buttons {
             display: flex;
-            gap: 1rem;
+            justify-content: center;
+            gap: 2rem;
             margin-top: 2rem;
             padding-top: 1.5rem;
             border-top: 1px solid #e9ecef;
+        }
+
+        .action-buttons .text-center {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+                gap: 1.5rem;
+            }
+            
+            .action-buttons .text-center {
+                flex-direction: column;
+                align-items: center;
+                gap: 1.5rem;
+            }
+            
+            .btn-edit, .btn-save, .btn-cancel, .back-btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
         }
 
         .btn-edit {
@@ -541,11 +701,53 @@ $isComplete = $profile_status['is_complete'];
             align-items: center;
             gap: 0.5rem;
             transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
         }
 
         .btn-edit:hover {
             background: #ffd24c;
             color: #555;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+        .btn-save {
+            background: #28a745;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-save:hover {
+            background: #218838;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+            color: white;
             text-decoration: none;
             transform: translateY(-2px);
         }
@@ -568,6 +770,80 @@ $isComplete = $profile_status['is_complete'];
             color: white;
             text-decoration: none;
             transform: translateY(-2px);
+        }
+
+        /* Alerts */
+        .alert {
+            border-radius: 12px;
+            border: none;
+            margin: 1rem 0;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            padding: 1.25rem 1.5rem;
+            border-left: 6px solid;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, rgba(39, 174, 96, 0.95) 0%, rgba(33, 154, 82, 0.98) 100%);
+            color: white;
+            border-left-color: #27ae60;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.95) 0%, rgba(192, 57, 43, 0.98) 100%);
+            color: white;
+            border-left-color: #e74c3c;
+        }
+
+        /* Medical Questions */
+        .medical-question {
+            background: linear-gradient(135deg, rgba(248, 249, 250, 0.9) 0%, rgba(233, 236, 239, 0.95) 100%);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border-left: 6px solid #ffda6a;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .question-text {
+            font-weight: 700;
+            color: #555;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .instruction-text {
+            font-style: italic;
+            color: var(--gray);
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .radio-options {
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .form-check-inline {
+            margin-right: 0;
+        }
+
+        .form-check-input {
+            transform: scale(1.2);
+            margin-right: 0.5rem;
+            cursor: pointer;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .form-check-label {
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
         }
 
         /* Responsive Design - SAME AS STUDENT */
@@ -656,6 +932,10 @@ $isComplete = $profile_status['is_complete'];
             .action-buttons {
                 flex-direction: column;
             }
+
+            .conditions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 576px) {
@@ -683,6 +963,11 @@ $isComplete = $profile_status['is_complete'];
 
             .conditions-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .radio-options {
+                flex-direction: column;
+                gap: 1rem;
             }
         }
         
@@ -891,6 +1176,22 @@ $isComplete = $profile_status['is_complete'];
                 </div>
             </div>
 
+            <!-- ERROR MESSAGE DISPLAY -->
+            <?php if (isset($update_error)): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i> <?php echo $update_error; ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
+            
+            <!-- SUCCESS MESSAGE DISPLAY -->
+            <?php if ($success): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i> Student profile updated successfully!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
+
             <!-- STUDENT STATUS CARD -->
             <div class="dashboard-card fade-in">
                 <div class="card-header">
@@ -931,274 +1232,319 @@ $isComplete = $profile_status['is_complete'];
                             <?php endif; ?>
                         </div>
                     </div>
-                    <div>
+                </div>
+            </div>
+
+            <!-- MAIN FORM -->
+            <form id="studentForm" action="view_student.php?id=<?php echo $student_id; ?>&edit=true" method="POST">
+                <!-- PART I: STUDENT INFORMATION -->
+                <div class="form-section fade-in">
+                    <div class="section-title">PART I: STUDENT INFORMATION</div>
+                    
+                    <!-- Personal Information -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" name="fullname" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['fullname'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="Enter full name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label class="form-label">Address</label>
+                                <input type="text" name="address" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['address'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="Enter complete address" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group mb-4">
+                                <label class="form-label">Age</label>
+                                <input type="number" name="age" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['age'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="Age" min="1" max="100" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group mb-4">
+                                <label class="form-label">Sex</label>
+                                <select name="sex" class="form-select underlined" <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                    <option value="">Select</option>
+                                    <option value="Male" <?php echo (($student_info['sex'] ?? '') == 'Male') ? 'selected' : ''; ?>>Male</option>
+                                    <option value="Female" <?php echo (($student_info['sex'] ?? '') == 'Female') ? 'selected' : ''; ?>>Female</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group mb-4">
+                                <label class="form-label">Civil Status</label>
+                                <select name="civil_status" class="form-select underlined" <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                    <option value="">Select</option>
+                                    <option value="Single" <?php echo (($student_info['civil_status'] ?? '') == 'Single') ? 'selected' : ''; ?>>Single</option>
+                                    <option value="Married" <?php echo (($student_info['civil_status'] ?? '') == 'Married') ? 'selected' : ''; ?>>Married</option>
+                                    <option value="Widowed" <?php echo (($student_info['civil_status'] ?? '') == 'Widowed') ? 'selected' : ''; ?>>Widowed</option>
+                                    <option value="Separated" <?php echo (($student_info['civil_status'] ?? '') == 'Separated') ? 'selected' : ''; ?>>Separated</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group mb-4">
+                                <label class="form-label">Blood Type</label>
+                                <select name="blood_type" class="form-select underlined" <?php echo !$edit_mode ? 'disabled' : ''; ?>>
+                                    <option value="">Select</option>
+                                    <option value="A+" <?php echo (($student_info['blood_type'] ?? '') == 'A+') ? 'selected' : ''; ?>>A+</option>
+                                    <option value="A-" <?php echo (($student_info['blood_type'] ?? '') == 'A-') ? 'selected' : ''; ?>>A-</option>
+                                    <option value="B+" <?php echo (($student_info['blood_type'] ?? '') == 'B+') ? 'selected' : ''; ?>>B+</option>
+                                    <option value="B-" <?php echo (($student_info['blood_type'] ?? '') == 'B-') ? 'selected' : ''; ?>>B-</option>
+                                    <option value="AB+" <?php echo (($student_info['blood_type'] ?? '') == 'AB+') ? 'selected' : ''; ?>>AB+</option>
+                                    <option value="AB-" <?php echo (($student_info['blood_type'] ?? '') == 'AB-') ? 'selected' : ''; ?>>AB-</option>
+                                    <option value="O+" <?php echo (($student_info['blood_type'] ?? '') == 'O+') ? 'selected' : ''; ?>>O+</option>
+                                    <option value="O-" <?php echo (($student_info['blood_type'] ?? '') == 'O-') ? 'selected' : ''; ?>>O-</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label class="form-label">Parent/Guardian Name</label>
+                                <input type="text" name="father_name" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['father_name'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="Parent/Guardian name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group mb-4">
+                                <label class="form-label">Date Registered</label>
+                                <input type="date" name="date" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['date'] ?? date('Y-m-d')); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?> required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group mb-4">
+                                <label class="form-label">School Year</label>
+                                <input type="text" name="school_year" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['school_year'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="e.g. 2023-2024" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label class="form-label">Course/Year</label>
+                                <input type="text" name="course_year" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['course_year'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="e.g. BSIT-3" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label class="form-label">Cellphone Number</label>
+                                <input type="tel" name="cellphone_number" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['cellphone_number'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="+63" 
+                                       pattern="[0-9]{4} [0-9]{3} [0-9]{4}" 
+                                       title="Please enter phone number in 4-3-4 format (e.g., 0917 123 4567)" 
+                                       required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label class="form-label">Email</label>
+                                <input type="text" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['email'] ?? 'Not set'); ?>" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label class="form-label">Account Created</label>
+                                <input type="text" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($student_info['user_created'] ?? 'Not set'); ?>" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PART II: MEDICAL HISTORY -->
+                <div class="form-section fade-in">
+                    <div class="section-title">PART II: MEDICAL HISTORY</div>
+                    
+                    <!-- Medical Attention -->
+                    <div class="medical-question mb-4">
+                        <p class="question-text">1. Do you need medical attention or has known medical illness?</p>
+                        <div class="radio-options">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="medical_attention" id="medical_no" value="No" 
+                                       <?php echo (($medical_info['medical_attention'] ?? '') == 'No') ? 'checked' : ''; ?>
+                                       <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                <label class="form-check-label" for="medical_no">No</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="medical_attention" id="medical_yes" value="Yes"
+                                       <?php echo (($medical_info['medical_attention'] ?? '') == 'Yes') ? 'checked' : ''; ?>
+                                       <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                <label class="form-check-label" for="medical_yes">Yes</label>
+                            </div>
+                        </div>
                         
-                        </a>
-                    </div>
-                </div>
-            </div>
+                        <p class="instruction-text">Please check the following that apply and give more information as needed</p>
+                        
+                        <!-- Medical Conditions Checkboxes -->
+                        <div class="conditions-grid">
+                            <?php
+                            $conditions_saved = explode(',', $medical_info['medical_conditions'] ?? '');
+                            $options = [
+                                "Asthma", "Fainting", "Diabetes", "Heart Condition", 
+                                "Seizure Disorder", "Hyperventilation", "Vision Problem", 
+                                "Kidney Disease", "Migraine"
+                            ];
+                            
+                            foreach ($options as $opt) {
+                                $checked = in_array($opt, $conditions_saved) ? 'checked' : '';
+                                $disabled = !$edit_mode ? 'disabled' : '';
+                                echo "<div class='form-check-custom'>
+                                        <input class='form-check-input' type='checkbox' name='conditions[]' value='$opt' id='condition_$opt' $checked $disabled>
+                                        <label class='form-check-label' for='condition_$opt'>$opt</label>
+                                    </div>";
+                            }
+                            ?>
+                        </div>
 
-            <!-- PART I: STUDENT INFORMATION -->
-            <div class="form-section fade-in">
-                <div class="section-title">PART I: STUDENT INFORMATION</div>
-                
-                <!-- Personal Information -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="info-group <?php echo empty($student_info['fullname']) ? 'missing-field' : ''; ?>">
-                            <div class="info-label">Full Name</div>
-                            <div class="info-value">
-                                <?php echo htmlspecialchars($student_info['fullname'] ?? 'Not set'); ?>
-                                <?php if (empty($student_info['fullname'])): ?>
-                                    <small class="text-danger">(Required)</small>
-                                <?php endif; ?>
+                        <!-- Other Conditions Field -->
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Others:</label>
+                                <input type="text" name="other_conditions" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($medical_info['other_conditions'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="Other medical conditions">
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="info-group <?php echo empty($student_info['address']) ? 'missing-field' : ''; ?>">
-                            <div class="info-label">Address</div>
-                            <div class="info-value">
-                                <?php echo htmlspecialchars($student_info['address'] ?? 'Not set'); ?>
-                                <?php if (empty($student_info['address'])): ?>
-                                    <small class="text-danger">(Required)</small>
-                                <?php endif; ?>
+
+                    <!-- Previous Hospitalization Section -->
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label">Previous Hospitalization</label>
+                            <div class="radio-options">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="previous_hospitalization" id="hosp_no" value="No"
+                                           <?php echo (($medical_info['previous_hospitalization'] ?? '') == 'No') ? 'checked' : ''; ?>
+                                           <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                    <label class="form-check-label" for="hosp_no">No</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="previous_hospitalization" id="hosp_yes" value="Yes"
+                                           <?php echo (($medical_info['previous_hospitalization'] ?? '') == 'Yes') ? 'checked' : ''; ?>
+                                           <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                    <label class="form-check-label" for="hosp_yes">Yes</label>
+                                </div>
                             </div>
                         </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label">If yes, Year:</label>
+                            <input type="text" name="hosp_year" class="form-control underlined"
+                                   value="<?php echo htmlspecialchars($medical_info['hosp_year'] ?? ''); ?>"
+                                   <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                   placeholder="Year of hospitalization">
+                        </div>
                     </div>
-                </div>
 
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="info-group <?php echo empty($student_info['age']) ? 'missing-field' : ''; ?>">
-                            <div class="info-label">Age</div>
-                            <div class="info-value">
-                                <?php echo htmlspecialchars($student_info['age'] ?? 'Not set'); ?>
-                                <?php if (empty($student_info['age'])): ?>
-                                    <small class="text-danger">(Required)</small>
-                                <?php endif; ?>
+                    <!-- Operation/Surgery Section -->
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label">Operation/Surgery</label>
+                            <div class="radio-options">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="surgery" id="surgery_no" value="No"
+                                           <?php echo (($medical_info['surgery'] ?? '') == 'No') ? 'checked' : ''; ?>
+                                           <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                    <label class="form-check-label" for="surgery_no">No</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="surgery" id="surgery_yes" value="Yes"
+                                           <?php echo (($medical_info['surgery'] ?? '') == 'Yes') ? 'checked' : ''; ?>
+                                           <?php echo !$edit_mode ? 'disabled' : ''; ?> required>
+                                    <label class="form-check-label" for="surgery_yes">Yes</label>
+                                </div>
                             </div>
                         </div>
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label">If yes, details:</label>
+                            <input type="text" name="surgery_details" class="form-control underlined"
+                                   value="<?php echo htmlspecialchars($medical_info['surgery_details'] ?? ''); ?>"
+                                   <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                   placeholder="Surgery details">
+                        </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="info-group <?php echo empty($student_info['sex']) ? 'missing-field' : ''; ?>">
-                            <div class="info-label">Sex</div>
-                            <div class="info-value">
-                                <?php echo htmlspecialchars($student_info['sex'] ?? 'Not set'); ?>
-                                <?php if (empty($student_info['sex'])): ?>
-                                    <small class="text-danger">(Required)</small>
-                                <?php endif; ?>
+
+                    <!-- Question 2: Allergies Information -->
+                    <div class="medical-question">
+                        <p class="question-text">2. Additional Information for Student with medical information</p>
+                        <p class="instruction-text">The history of allergies to the following:</p>
+                        
+                        <!-- Allergies Information -->
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label">Food:</label>
+                                <input type="text" name="food_allergies" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($medical_info['food_allergies'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="Food allergies">
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-group">
-                            <div class="info-label">Civil Status</div>
-                            <div class="info-value"><?php echo htmlspecialchars($student_info['civil_status'] ?? 'Not set'); ?></div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-group">
-                            <div class="info-label">Blood Type</div>
-                            <div class="info-value"><?php echo htmlspecialchars($student_info['blood_type'] ?? 'Not set'); ?></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="info-group">
-                            <div class="info-label">Parent/Guardian Name</div>
-                            <div class="info-value"><?php echo htmlspecialchars($student_info['father_name'] ?? 'Not set'); ?></div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-group">
-                            <div class="info-label">Date Registered</div>
-                            <div class="info-value"><?php echo htmlspecialchars($student_info['date'] ?? 'Not set'); ?></div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="info-group">
-                            <div class="info-label">School Year</div>
-                            <div class="info-value"><?php echo htmlspecialchars($student_info['school_year'] ?? 'Not set'); ?></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="info-group <?php echo empty($student_info['course_year']) ? 'missing-field' : ''; ?>">
-                            <div class="info-label">Course/Year</div>
-                            <div class="info-value">
-                                <?php echo htmlspecialchars($student_info['course_year'] ?? 'Not set'); ?>
-                                <?php if (empty($student_info['course_year'])): ?>
-                                    <small class="text-danger">(Required)</small>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="info-group <?php echo empty($student_info['cellphone_number']) ? 'missing-field' : ''; ?>">
-                            <div class="info-label">Cellphone Number</div>
-                            <div class="info-value">
-                                <?php echo htmlspecialchars($student_info['cellphone_number'] ?? 'Not set'); ?>
-                                <?php if (empty($student_info['cellphone_number'])): ?>
-                                    <small class="text-danger">(Required)</small>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="info-group">
-                            <div class="info-label">Email</div>
-                            <div class="info-value"><?php echo htmlspecialchars($student_info['email'] ?? 'Not set'); ?></div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="info-group">
-                            <div class="info-label">Account Created</div>
-                            <div class="info-value"><?php echo htmlspecialchars($student_info['user_created'] ?? 'Not set'); ?></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PART II: MEDICAL HISTORY -->
-            <div class="form-section fade-in">
-                <div class="section-title">PART II: MEDICAL HISTORY</div>
-                
-                <!-- Medical Attention -->
-                <div class="info-group <?php echo empty($medical_info['medical_attention']) ? 'missing-field' : ''; ?>">
-                    <div class="info-label">1. Do you need medical attention or has known medical illness?</div>
-                    <div class="info-value">
-                        <?php if (!empty($medical_info['medical_attention'])): ?>
-                            <span class="badge <?php echo $medical_info['medical_attention'] == 'Yes' ? 'bg-warning' : 'bg-success'; ?>">
-                                <?php echo htmlspecialchars($medical_info['medical_attention']); ?>
-                            </span>
-                        <?php else: ?>
-                            <span class="text-muted">Not specified</span>
-                            <small class="text-danger">(Required)</small>
-                        <?php endif; ?>
-                    </div>
-                </div>
-
-                <!-- Medical Conditions -->
-                <?php if (!empty($medical_info['medical_conditions'])): ?>
-                <div class="info-group">
-                    <div class="info-label">Medical Conditions</div>
-                    <div class="conditions-grid">
-                        <?php
-                        $conditions = explode(',', $medical_info['medical_conditions']);
-                        foreach ($conditions as $condition):
-                            if (!empty(trim($condition))):
-                        ?>
-                            <div class="condition-item">
-                                <i class="fas fa-check-circle text-success me-2"></i>
-                                <?php echo htmlspecialchars(trim($condition)); ?>
-                            </div>
-                        <?php 
-                            endif;
-                        endforeach; 
-                        ?>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <!-- Other Conditions -->
-                <?php if (!empty($medical_info['other_conditions'])): ?>
-                <div class="info-group">
-                    <div class="info-label">Other Conditions</div>
-                    <div class="info-value"><?php echo htmlspecialchars($medical_info['other_conditions']); ?></div>
-                </div>
-                <?php endif; ?>
-
-                <!-- Previous Hospitalization -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="info-group <?php echo empty($medical_info['previous_hospitalization']) ? 'missing-field' : ''; ?>">
-                            <div class="info-label">Previous Hospitalization</div>
-                            <div class="info-value">
-                                <?php if (!empty($medical_info['previous_hospitalization'])): ?>
-                                    <span class="badge <?php echo $medical_info['previous_hospitalization'] == 'Yes' ? 'bg-warning' : 'bg-success'; ?>">
-                                        <?php echo htmlspecialchars($medical_info['previous_hospitalization']); ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span class="text-muted">Not specified</span>
-                                    <small class="text-danger">(Required)</small>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <?php if (!empty($medical_info['hosp_year'])): ?>
-                        <div class="info-group">
-                            <div class="info-label">Year of Hospitalization</div>
-                            <div class="info-value"><?php echo htmlspecialchars($medical_info['hosp_year']); ?></div>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-
-                <!-- Surgery Information -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="info-group <?php echo empty($medical_info['surgery']) ? 'missing-field' : ''; ?>">
-                            <div class="info-label">Operation/Surgery</div>
-                            <div class="info-value">
-                                <?php if (!empty($medical_info['surgery'])): ?>
-                                    <span class="badge <?php echo $medical_info['surgery'] == 'Yes' ? 'bg-warning' : 'bg-success'; ?>">
-                                        <?php echo htmlspecialchars($medical_info['surgery']); ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span class="text-muted">Not specified</span>
-                                    <small class="text-danger">(Required)</small>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <?php if (!empty($medical_info['surgery_details'])): ?>
-                        <div class="info-group">
-                            <div class="info-label">Surgery Details</div>
-                            <div class="info-value"><?php echo htmlspecialchars($medical_info['surgery_details']); ?></div>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-
-                <!-- Allergies -->
-                <div class="info-group">
-                    <div class="info-label">2. Additional Information - Allergies</div>
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <div class="info-label">Food Allergies</div>
-                            <div class="info-value">
-                                <?php echo !empty($medical_info['food_allergies']) ? htmlspecialchars($medical_info['food_allergies']) : '<span class="text-muted">None specified</span>'; ?>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-label">Medicine Allergies</div>
-                            <div class="info-value">
-                                <?php echo !empty($medical_info['medicine_allergies']) ? htmlspecialchars($medical_info['medicine_allergies']) : '<span class="text-muted">None specified</span>'; ?>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label">Medicine:</label>
+                                <input type="text" name="medicine_allergies" class="form-control underlined"
+                                       value="<?php echo htmlspecialchars($medical_info['medicine_allergies'] ?? ''); ?>"
+                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                       placeholder="Medicine allergies">
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Action Buttons -->
+                            <!-- Action Buttons -->
             <div class="action-buttons">
-                </a>
-                <a href="students.php" class="back-btn">
-                    <i class="fas fa-arrow-left"></i> Back to Students List
-                </a>
+                <div class="text-center w-100">
+                    <?php if (!$edit_mode): ?>
+                        <!-- EDIT BUTTON -->
+                        <a href="view_student.php?id=<?php echo $student_id; ?>&edit=true" class="btn-edit">
+                            <i class="fas fa-edit"></i> Edit Student Profile
+                        </a>
+                    <?php else: ?>
+                        <!-- SAVE BUTTON -->
+                        <button type="submit" class="btn-save">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <!-- CANCEL BUTTON -->
+                        <a href="view_student.php?id=<?php echo $student_id; ?>" class="btn-cancel">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    <?php endif; ?>
+                    <a href="students.php" class="back-btn">
+                        <i class="fas fa-arrow-left"></i> Back to Students List
+                    </a>
+                </div>
             </div>
-        </main>
-    </div>
 
     <!-- JS -->
     <script src="../assets/js/bootstrap.bundle.min.js"></script>
@@ -1261,6 +1607,65 @@ $isComplete = $profile_status['is_complete'];
             const fadeElements = document.querySelectorAll('.fade-in');
             fadeElements.forEach((element, index) => {
                 element.style.animationDelay = `${index * 0.2}s`;
+            });
+
+            // Enable disabled elements when in edit mode during form submission
+            const form = document.getElementById('studentForm');
+            if (form) {
+                form.addEventListener('submit', function() {
+                    const disabledElements = form.querySelectorAll('select:disabled, input:disabled');
+                    disabledElements.forEach(element => {
+                        element.disabled = false;
+                    });
+                });
+            }
+
+            // Auto-format phone number to 4-3-4 format
+            const phoneInput = document.querySelector('input[name="cellphone_number"]');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    
+                    if (value.length > 11) {
+                        value = value.substring(0, 11);
+                    }
+                    
+                    if (value.length > 0) {
+                        if (value.length <= 4) {
+                            value = value;
+                        } else if (value.length <= 7) {
+                            value = value.replace(/(\d{4})(\d{0,3})/, '$1 $2');
+                        } else {
+                            value = value.replace(/(\d{4})(\d{3})(\d{0,4})/, '$1 $2 $3');
+                        }
+                    }
+                    e.target.value = value;
+                });
+
+                phoneInput.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                    const cleaned = pastedText.replace(/\D/g, '').substring(0, 11);
+                    
+                    if (cleaned.length > 0) {
+                        if (cleaned.length <= 4) {
+                            this.value = cleaned;
+                        } else if (cleaned.length <= 7) {
+                            this.value = cleaned.replace(/(\d{4})(\d{0,3})/, '$1 $2');
+                        } else {
+                            this.value = cleaned.replace(/(\d{4})(\d{3})(\d{0,4})/, '$1 $2 $3');
+                        }
+                    }
+                });
+            }
+
+            // Auto-hide alerts after 5 seconds
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
             });
         });
     </script>

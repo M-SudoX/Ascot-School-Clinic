@@ -469,23 +469,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             margin: 0;
         }
 
-        .card-icon {
-            width: 45px;
-            height: 45px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            color: #555;
-            background: #fff7da;
-            transition: all 0.3s ease;
-        }
-
-        .card-icon:hover {
-            transform: scale(1.1);
-        }
-
         /* STATS CARD STYLES */
         .stats-grid {
             display: grid;
@@ -946,9 +929,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="dashboard-card fade-in">
                     <div class="card-header">
                         <h3 class="card-title">Create Database Backup</h3>
-                        <div class="card-icon">
-                            <i class="fas fa-download"></i>
-                        </div>
                     </div>
                     
                     <?php if ($success_message): ?>
@@ -984,9 +964,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="dashboard-card fade-in">
                     <div class="card-header">
                         <h3 class="card-title">Restore Database</h3>
-                        <div class="card-icon">
-                            <i class="fas fa-upload"></i>
-                        </div>
                     </div>
 
                     <div class="alert alert-warning">

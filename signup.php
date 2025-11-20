@@ -202,6 +202,26 @@ session_start();
       visibility: hidden;
     }
 
+    /* Name Validation */
+    .name-validation {
+      font-size: 0.8rem;
+      margin: -10px 0 12px 0;
+      font-weight: 500;
+      display: none;
+    }
+
+    .name-validation.show {
+      display: block;
+    }
+
+    .name-validation.valid {
+      color: #27ae60;
+    }
+
+    .name-validation.invalid {
+      color: #e74c3c;
+    }
+
     /* Compact Resend Section */
     .resend-section {
       background: #fff9e6;
@@ -457,7 +477,18 @@ session_start();
     ?>
 
     <form method="POST" action="process_signup.php" onsubmit="return validateForm()">
-      <input type="text" name="fullname" id="fullname" class="form-control" placeholder="Full Name:" required onkeyup="checkFormComplete()" />
+      <!-- Full Name Field with Validation -->
+      <input type="text" name="fullname" id="fullname" class="form-control" 
+             placeholder="Full Name:" required 
+             pattern="[A-Za-z\s\-\.\,]+"
+             title="Letters, spaces, hyphens, commas, and periods only"
+             onkeyup="validateName(); checkFormComplete();" 
+             oninput="this.value = this.value.replace(/[^A-Za-z\s\-\.\,]/g, '')" />
+      
+      <div id="name-validation" class="name-validation">
+        ✓ Letters, spaces, hyphens, commas, and periods only
+      </div>
+
       <input type="text" name="student_number" id="student_number" class="form-control" placeholder="Student Number:" required onkeyup="checkFormComplete()" />
       <input type="email" name="email" id="email" class="form-control" placeholder="Email Address:" required onkeyup="checkFormComplete()" />
 
@@ -536,6 +567,33 @@ session_start();
 
   <!-- JavaScript -->
   <script>
+    // Name Validation Function
+    function validateName() {
+      const nameInput = document.getElementById('fullname');
+      const nameValidation = document.getElementById('name-validation');
+      const name = nameInput.value.trim();
+      
+      // Regex pattern for letters, spaces, hyphens, commas, and periods only
+      const nameRegex = /^[A-Za-z\s\-\.\,]+$/;
+      
+      if (name === '') {
+        nameValidation.style.display = 'none';
+        return false;
+      }
+      
+      nameValidation.style.display = 'block';
+      
+      if (nameRegex.test(name)) {
+        nameValidation.textContent = '✓ Valid name format';
+        nameValidation.className = 'name-validation valid show';
+        return true;
+      } else {
+        nameValidation.textContent = '✗ Only letters, spaces, hyphens, commas, and periods allowed';
+        nameValidation.className = 'name-validation invalid show';
+        return false;
+      }
+    }
+
     function showPasswordRequirements() {
       const box = document.getElementById('password-requirements');
       box.classList.add('show');
@@ -600,8 +658,10 @@ session_start();
       const hasNumber = /\d/.test(password);
       const hasSymbol = /[!@#$%^&*]/.test(password);
       const hasLetter = /[A-Za-z]/.test(password);
+      const isValidName = validateName();
 
       const allValid = fullname && student_number && email &&
+                      isValidName &&
                       hasLength && hasNumber && hasSymbol && hasLetter &&
                       password === confirmPassword;
 
@@ -631,9 +691,15 @@ session_start();
       const hasNumber = /\d/.test(password);
       const hasSymbol = /[!@#$%^&*]/.test(password);
       const hasLetter = /[A-Za-z]/.test(password);
+      const isValidName = validateName();
 
       if (!fullname || !student_number || !email || !password || !confirmPassword) {
         alert('Please fill out all fields.');
+        return false;
+      }
+
+      if (!isValidName) {
+        alert('Full name can only contain letters, spaces, hyphens, commas, and periods.');
         return false;
       }
 

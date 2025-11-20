@@ -938,53 +938,6 @@ try {
             background: #5a6268;
         }
 
-        .email-preview {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 0;
-            margin-top: 10px;
-            display: none;
-            overflow: hidden;
-        }
-
-        .email-preview.active {
-            display: block;
-        }
-
-        .preview-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px 20px;
-            text-align: center;
-            margin: 0;
-        }
-
-        .preview-content {
-            padding: 20px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .recipient-count {
-            background: #e9ecef;
-            padding: 10px 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-weight: 500;
-            border-left: 4px solid #667eea;
-        }
-
-        .email-warning {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-        }
-
         .student-selection {
             display: none;
             margin-top: 15px;
@@ -1762,26 +1715,6 @@ try {
                         </div>
                     </div>
 
-                    <!-- Email Preview -->
-                    <div class="form-section">
-                        <h3 class="form-section-title">
-                            <i class="fas fa-envelope"></i>
-                            Email Preview
-                        </h3>
-                        <button type="button" class="btn action-btn" id="previewEmailBtn" style="background: #fff59d; color: #555; border: none; width: 100%; margin-bottom: 15px;">
-                            <i class="fas fa-eye me-2"></i> Preview Email
-                        </button>
-                        <div class="email-preview" id="emailPreview">
-                            <div class="preview-header">
-                                <h4 class="mb-1">Email Preview</h4>
-                                <small class="opacity-75">This is how your email will look to recipients</small>
-                            </div>
-                            <div class="preview-content" id="previewContent">
-                                <p class="text-muted">Fill out the subject and content to see preview...</p>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Form Actions -->
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" id="cancelBtn">
@@ -1904,35 +1837,6 @@ try {
             if (timeInput) timeInput.addEventListener('change', updateExpiryPreview);
             
             updateExpiryPreview();
-
-            // Email preview functionality
-            const previewEmailBtn = document.getElementById('previewEmailBtn');
-            const emailPreview = document.getElementById('emailPreview');
-            const subjectInput = document.getElementById('subject');
-            const contentInput = document.getElementById('content');
-            const sentBySelect = document.getElementById('sentBy');
-            const expiryDateInput = document.getElementById('expiryDate');
-            const expiryTimeInput = document.getElementById('expiryTime');
-
-            if (subjectInput) subjectInput.addEventListener('input', updateEmailPreview);
-            if (contentInput) contentInput.addEventListener('input', updateEmailPreview);
-            if (sentBySelect) sentBySelect.addEventListener('change', updateEmailPreview);
-            if (expiryDateInput) expiryDateInput.addEventListener('change', updateEmailPreview);
-            if (expiryTimeInput) expiryTimeInput.addEventListener('change', updateEmailPreview);
-
-            if (previewEmailBtn) {
-                previewEmailBtn.addEventListener('click', function() {
-                    if (emailPreview) {
-                        emailPreview.classList.toggle('active');
-                        if (emailPreview.classList.contains('active')) {
-                            updateEmailPreview();
-                            this.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Preview';
-                        } else {
-                            this.innerHTML = '<i class="fas fa-eye"></i> Preview Email';
-                        }
-                    }
-                });
-            }
 
             // Form submission
             const announcementForm = document.getElementById('announcementForm');
@@ -2191,72 +2095,6 @@ try {
                     checkbox.style.display = isVisible ? 'block' : 'none';
                 });
             });
-        }
-
-        function updateEmailPreview() {
-            const subject = document.getElementById('subject').value || 'Announcement Subject';
-            const content = document.getElementById('content').value || 'Announcement content will appear here...';
-            const sentBy = document.getElementById('sentBy').value || 'Administrator';
-            const expiryDate = document.getElementById('expiryDate').value;
-            const expiryTime = document.getElementById('expiryTime').value;
-            const previewContent = document.getElementById('previewContent');
-            
-            if (!previewContent) return;
-            
-            const currentDate = new Date();
-            const formattedDate = currentDate.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            
-            let emailContent = content;
-            let expiryNotice = '';
-            
-            if (expiryDate && expiryTime) {
-                const expiryDateTime = new Date(expiryDate + 'T' + expiryTime);
-                const expiryFormatted = expiryDateTime.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                emailContent += "\n\nThis announcement will expire on: " + expiryFormatted;
-                expiryNotice = `
-                    <div style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 12px 15px; border-radius: 8px; margin-top: 15px; font-size: 14px;">
-                        <strong>⚠️ Expiry Notice:</strong> This announcement will expire on ${expiryFormatted}
-                    </div>
-                `;
-            }
-            
-            const previewHTML = `
-                <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 100%;">
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center;">
-                        <h2 style="margin: 0; font-size: 20px;">AURORA STATE COLLEGE OF TECHNOLOGY</h2>
-                        <p style="margin: 5px 0 0 0; opacity: 0.9;">Online School Clinic</p>
-                    </div>
-                    <div style="padding: 20px; background: #f8f9fa;">
-                        <h3 style="color: #1a3a5f; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #e9ecef; padding-bottom: 10px;">${subject}</h3>
-                        <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; margin-bottom: 15px;">
-                            ${emailContent.replace(/\n/g, '<br>')}
-                        </div>
-                        ${expiryNotice}
-                        <div style="background: #e9ecef; padding: 12px; border-radius: 8px; font-size: 14px;">
-                            <p style="margin: 0;"><strong>Sent by:</strong> ${sentBy}</p>
-                            <p style="margin: 5px 0 0 0;"><strong>Date:</strong> ${formattedDate}</p>
-                        </div>
-                    </div>
-                    <div style="text-align: center; padding: 15px; color: #666; font-size: 12px; background: white; border-top: 1px solid #e9ecef;">
-                        <p style="margin: 0;">This is an automated message from ASCOT Online Clinic System.</p>
-                        <p style="margin: 5px 0 0 0;">Please do not reply to this email.</p>
-                    </div>
-                </div>
-            `;
-            
-            previewContent.innerHTML = previewHTML;
         }
 
         function updateExpiryPreview() {

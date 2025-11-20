@@ -384,58 +384,6 @@
             background-color: #5a6268;
         }
 
-        /* Bulk Actions Styles */
-        .bulk-actions {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .select-all-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .select-all-checkbox {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .select-all-label {
-            font-size: 14px;
-            color: #666;
-            cursor: pointer;
-        }
-
-        .bulk-delete-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .bulk-delete-btn:hover {
-            background-color: #c82333;
-            transform: translateY(-2px);
-        }
-
-        .bulk-delete-btn:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-            transform: none;
-        }
-
         /* Table Styles */
         .table-container {
             overflow-x: auto;
@@ -489,31 +437,6 @@
         .user-type.student {
             background-color: #f0f9ff;
             color: #0c6;
-        }
-
-        .delete-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .delete-btn:hover {
-            background-color: #c82333;
-            transform: scale(1.05);
-        }
-
-        .row-checkbox {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
         }
 
         .pagination {
@@ -644,11 +567,6 @@
 
             .search-input {
                 min-width: 100%;
-            }
-
-            .bulk-actions {
-                flex-direction: column;
-                align-items: flex-start;
             }
 
             .pagination {
@@ -912,29 +830,16 @@
                         <i class="fas fa-times"></i> Clear
                     </button>
                 </div>
-
-                <!-- Bulk Actions -->
-                <div class="bulk-actions">
-                    <div class="select-all-container">
-                        <input type="checkbox" class="select-all-checkbox" id="selectAll">
-                        <label for="selectAll" class="select-all-label">Select All</label>
-                    </div>
-                    <button class="bulk-delete-btn" id="bulkDeleteBtn" disabled>
-                        <i class="fas fa-trash"></i> Delete Selected
-                    </button>
-                </div>
                 
                 <div class="table-container">
                     <table id="userLogsTable">
                         <thead>
                             <tr>
-                                <th width="50">Select</th>
                                 <th>Student ID</th>
                                 <th>Name</th>
                                 <th>User Type</th>
                                 <th>Date & Time</th>
                                 <th>Action</th>
-                                <th width="100">Delete</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody">
@@ -966,60 +871,6 @@
                             
                             if (!$conn->query($create_admin_logs_table)) {
                                 echo "<!-- Error creating admin_logs table: " . $conn->error . " -->";
-                            }
-
-                            // Check if delete action is requested
-                            if (isset($_GET['delete_id']) && isset($_GET['type'])) {
-                                $delete_id = $_GET['delete_id'];
-                                $type = $_GET['type'];
-                                
-                                if ($type == 'student') {
-                                    $delete_sql = "DELETE FROM activity_logs WHERE id = ?";
-                                } else {
-                                    $delete_sql = "DELETE FROM admin_logs WHERE id = ?";
-                                }
-                                
-                                $stmt = $conn->prepare($delete_sql);
-                                $stmt->bind_param("i", $delete_id);
-                                if ($stmt->execute()) {
-                                    echo "<script>alert('Log deleted successfully');</script>";
-                                } else {
-                                    echo "<script>alert('Error deleting log');</script>";
-                                }
-                                $stmt->close();
-                                
-                                // Redirect to avoid duplicate deletion on refresh
-                                echo "<script>window.location.href = 'users_logs.php';</script>";
-                                exit();
-                            }
-
-                            // Check if bulk delete is requested
-                            if (isset($_POST['bulk_delete']) && isset($_POST['selected_logs'])) {
-                                $selected_logs = $_POST['selected_logs'];
-                                $deleted_count = 0;
-                                
-                                foreach ($selected_logs as $log) {
-                                    list($type, $id) = explode('_', $log);
-                                    
-                                    if ($type == 'student') {
-                                        $delete_sql = "DELETE FROM activity_logs WHERE id = ?";
-                                    } else {
-                                        $delete_sql = "DELETE FROM admin_logs WHERE id = ?";
-                                    }
-                                    
-                                    $stmt = $conn->prepare($delete_sql);
-                                    $stmt->bind_param("i", $id);
-                                    if ($stmt->execute()) {
-                                        $deleted_count++;
-                                    }
-                                    $stmt->close();
-                                }
-                                
-                                if ($deleted_count > 0) {
-                                    echo "<script>alert('Successfully deleted " . $deleted_count . " logs');</script>";
-                                    echo "<script>window.location.href = 'users_logs.php';</script>";
-                                    exit();
-                                }
                             }
 
                             // Student logs query - FILTER OUT UNWANTED ACTIONS
@@ -1087,7 +938,7 @@
 
                             // Display logs
                             if (empty($all_logs)) {
-                                echo '<tr><td colspan="7" class="no-results">No user logs available</td></tr>';
+                                echo '<tr><td colspan="5" class="no-results">No user logs available</td></tr>';
                             } else {
                                 foreach ($all_logs as $log) {
                                     $student_id = $log['student_id'];
@@ -1095,25 +946,14 @@
                                     $name = $log['name'];
                                     $action = $log['action'];
                                     $date_time = $log['date_time'];
-                                    $id = $log['id'];
-                                    $log_type = ($user_type == 'student') ? 'student' : 'admin';
-                                    $checkbox_value = $log_type . '_' . $id;
                                     
                                     echo "
                                     <tr>
-                                        <td>
-                                            <input type='checkbox' class='row-checkbox' name='selected_logs[]' value='{$checkbox_value}'>
-                                        </td>
                                         <td>{$student_id}</td>
                                         <td>{$name}</td>
                                         <td><span class='user-type {$user_type}'>" . ucfirst($user_type) . "</span></td>
                                         <td>{$date_time}</td>
                                         <td>{$action}</td>
-                                        <td>
-                                            <button class='delete-btn' onclick=\"deleteLog({$id}, '{$log_type}')\">
-                                                <i class='fas fa-trash'></i> Delete
-                                            </button>
-                                        </td>
                                     </tr>
                                     ";
                                 }
@@ -1140,41 +980,7 @@
         </main>
     </div>
 
-    <!-- Bulk Delete Form -->
-    <form method="POST" id="bulkDeleteForm" style="display: none;">
-        <input type="hidden" name="bulk_delete" value="1">
-    </form>
-
     <script>
-        function deleteLog(id, type) {
-            if (confirm('Are you sure you want to delete this log?')) {
-                window.location.href = 'users_logs.php?delete_id=' + id + '&type=' + type;
-            }
-        }
-
-        function bulkDelete() {
-            const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
-            if (selectedCheckboxes.length === 0) {
-                alert('Please select at least one log to delete.');
-                return;
-            }
-
-            if (confirm(`Are you sure you want to delete ${selectedCheckboxes.length} selected logs?`)) {
-                // Add selected checkboxes to form
-                const form = document.getElementById('bulkDeleteForm');
-                selectedCheckboxes.forEach(checkbox => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'selected_logs[]';
-                    input.value = checkbox.value;
-                    form.appendChild(input);
-                });
-                
-                // Submit form
-                form.submit();
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('searchInput');
             const searchBtn = document.getElementById('searchBtn');
@@ -1182,9 +988,6 @@
             const tableBody = document.getElementById('tableBody');
             const rows = tableBody.getElementsByTagName('tr');
             const paginationInfo = document.getElementById('paginationInfo');
-            const selectAllCheckbox = document.getElementById('selectAll');
-            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
-            const rowCheckboxes = document.querySelectorAll('.row-checkbox');
             
             // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - SAME AS ADMIN DASHBOARD
             document.querySelectorAll('.dropdown-btn').forEach(button => {
@@ -1238,40 +1041,6 @@
                 });
             }
 
-            // Select All functionality
-            selectAllCheckbox.addEventListener('change', function() {
-                const isChecked = this.checked;
-                document.querySelectorAll('.row-checkbox').forEach(checkbox => {
-                    checkbox.checked = isChecked;
-                });
-                updateBulkDeleteButton();
-            });
-
-            // Update bulk delete button state
-            function updateBulkDeleteButton() {
-                const selectedCount = document.querySelectorAll('.row-checkbox:checked').length;
-                bulkDeleteBtn.disabled = selectedCount === 0;
-                if (selectedCount > 0) {
-                    bulkDeleteBtn.innerHTML = `<i class="fas fa-trash"></i> Delete Selected (${selectedCount})`;
-                } else {
-                    bulkDeleteBtn.innerHTML = `<i class="fas fa-trash"></i> Delete Selected`;
-                }
-            }
-
-            // Add event listeners to row checkboxes
-            document.querySelectorAll('.row-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    // If any checkbox is unchecked, uncheck select all
-                    if (!this.checked && selectAllCheckbox.checked) {
-                        selectAllCheckbox.checked = false;
-                    }
-                    updateBulkDeleteButton();
-                });
-            });
-
-            // Bulk delete button event
-            bulkDeleteBtn.addEventListener('click', bulkDelete);
-
             // Search function
             function searchLogs() {
                 const searchTerm = searchInput.value.toLowerCase().trim();
@@ -1310,7 +1079,7 @@
                 if (visibleCount === 0 && rows.length > 0) {
                     const firstRow = rows[0];
                     if (!firstRow.querySelector('.no-results')) {
-                        tableBody.innerHTML = '<tr><td colspan="7" class="no-results">No matching records found</td></tr>';
+                        tableBody.innerHTML = '<tr><td colspan="5" class="no-results">No matching records found</td></tr>';
                     }
                 }
             }

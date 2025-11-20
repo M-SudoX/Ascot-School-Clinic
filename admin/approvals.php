@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ✅ FETCH ONLY PENDING CONSULTATION REQUESTS
 // ===============================
 $stmt = $pdo->prepare("
-    SELECT c.id, u.fullname, c.requested, c.date, c.time, c.status
+    SELECT c.id, u.fullname, c.requested, c.date, c.time, c.status, c.notes, c.created_at
     FROM consultation_requests c
     JOIN users u ON c.student_id = u.id
     WHERE c.status = 'Pending'
@@ -438,7 +438,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             gap: 8px;
         }
 
-        .btn-approve, .btn-decline, .btn-reschedule, .btn-delete {
+        .btn-approve, .btn-decline, .btn-reschedule, .btn-view {
             border: none;
             border-radius: 8px;
             width: 40px;
@@ -481,13 +481,13 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             transform: scale(1.1);
         }
 
-        .btn-delete {
-            background: #f8d7da;
-            color: #721c24;
+        .btn-view {
+            background: #e2e3e5;
+            color: #383d41;
         }
 
-        .btn-delete:hover {
-            background: #f1b0b7;
+        .btn-view:hover {
+            background: #d6d8db;
             transform: scale(1.1);
         }
 
@@ -572,6 +572,44 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             border: none;
             margin-bottom: 2rem;
             color: white;
+        }
+
+        /* Consultation Details Styles */
+        .consultation-details {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .detail-item {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .detail-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-value {
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .notes-container {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            border-left: 4px solid #667eea;
         }
 
         /* Responsive Design - SAME AS ADMIN DASHBOARD */
@@ -671,7 +709,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 gap: 5px;
             }
 
-            .btn-approve, .btn-decline, .btn-reschedule, .btn-delete {
+            .btn-approve, .btn-decline, .btn-reschedule, .btn-view {
                 width: 35px;
                 height: 35px;
                 font-size: 0.9rem;
@@ -710,7 +748,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 gap: 5px;
             }
 
-            .btn-approve, .btn-decline, .btn-reschedule, .btn-delete {
+            .btn-approve, .btn-decline, .btn-reschedule, .btn-view {
                 width: 32px;
                 height: 32px;
                 font-size: 0.8rem;
@@ -956,14 +994,15 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                     View Pending Requests
                 </a>
                 <a href="rejected_consultations.php" class="action-btn rejected">
-    <i class="fas fa-times-circle"></i>
-    View Rejected
-</a>
-<a href="rescheduled_consultations.php" class="action-btn rescheduled">
-        <i class="fas fa-calendar-alt"></i>
-        View Rescheduled
-    </a>
-</div>
+                    <i class="fas fa-times-circle"></i>
+                    View Rejected
+                </a>
+                <a href="rescheduled_consultations.php" class="action-btn rescheduled">
+                    <i class="fas fa-calendar-alt"></i>
+                    View Rescheduled
+                </a>
+            </div>
+
             <!-- Approvals Container -->
             <div class="dashboard-card fade-in">
                 <div class="card-header">
@@ -1005,6 +1044,21 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                                             </span>
                                         </td>
                                         <td class="action-buttons">
+                                            <!-- View Button -->
+                                            <button class="btn-view" title="View Details"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#viewModal"
+                                                data-id="<?= $c['id']; ?>"
+                                                data-name="<?= htmlspecialchars($c['fullname']); ?>"
+                                                data-concern="<?= htmlspecialchars($c['requested']); ?>"
+                                                data-date="<?= htmlspecialchars($c['date']); ?>"
+                                                data-time="<?= htmlspecialchars($c['time']); ?>"
+                                                data-notes="<?= htmlspecialchars($c['notes'] ?? ''); ?>"
+                                                data-created="<?= htmlspecialchars($c['created_at']); ?>">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+
+                                            <!-- Approve Button -->
                                             <form method="POST" class="d-inline">
                                                 <input type="hidden" name="consultation_id" value="<?= $c['id']; ?>">
                                                 <input type="hidden" name="action" value="approve">
@@ -1013,6 +1067,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                                                 </button>
                                             </form>
 
+                                            <!-- Reject Button -->
                                             <form method="POST" class="d-inline">
                                                 <input type="hidden" name="consultation_id" value="<?= $c['id']; ?>">
                                                 <input type="hidden" name="action" value="reject">
@@ -1021,7 +1076,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                                                 </button>
                                             </form>
 
-                                            <!-- Reschedule -->
+                                            <!-- Reschedule Button -->
                                             <button class="btn-reschedule" title="Reschedule"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#rescheduleModal"
@@ -1029,15 +1084,6 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                                                 data-name="<?= htmlspecialchars($c['fullname']); ?>">
                                                 <i class="fas fa-calendar-alt"></i>
                                             </button>
-
-                                            <!-- DELETE BUTTON -->
-                                            <form method="POST" class="d-inline" onsubmit="return confirmDelete()">
-                                                <input type="hidden" name="consultation_id" value="<?= $c['id']; ?>">
-                                                <input type="hidden" name="action" value="delete">
-                                                <button type="submit" class="btn-delete" title="Delete">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -1047,6 +1093,65 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 </div>
             </div>
         </main>
+    </div>
+
+        <!-- VIEW MODAL -->
+    <div class="modal fade" id="viewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-eye me-2"></i>Consultation Request Details
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="consultation-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Student Name</div>
+                            <div class="detail-value" id="viewStudentName"></div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Concern / Reason</div>
+                            <div class="detail-value" id="viewConcern"></div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <div class="detail-label">Requested Date</div>
+                                    <div class="detail-value" id="viewDate"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <div class="detail-label">Requested Time</div>
+                                    <div class="detail-value" id="viewTime"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Status</div>
+                            <div class="detail-value">
+                                <span class="badge bg-warning">Pending</span>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-item" id="notesContainer" style="display: none;">
+                            <div class="detail-label">Additional Notes</div>
+                            <div class="notes-container">
+                                <div class="detail-value" id="viewNotes"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- RESCHEDULE MODAL -->
@@ -1124,6 +1229,49 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
         });
 
+                // View Modal functionality
+        const viewModal = document.getElementById('viewModal');
+        viewModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            
+            // Extract data from button attributes
+            const studentName = button.getAttribute('data-name');
+            const concern = button.getAttribute('data-concern');
+            const date = button.getAttribute('data-date');
+            const time = button.getAttribute('data-time');
+            const notes = button.getAttribute('data-notes');
+            
+            // Format dates
+            const formattedDate = new Date(date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            const formattedTime = new Date('1970-01-01T' + time + 'Z').toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            // Update modal content
+            document.getElementById('viewStudentName').textContent = studentName;
+            document.getElementById('viewConcern').textContent = concern;
+            document.getElementById('viewDate').textContent = formattedDate;
+            document.getElementById('viewTime').textContent = formattedTime;
+            
+            // Handle notes
+            const notesContainer = document.getElementById('notesContainer');
+            const viewNotes = document.getElementById('viewNotes');
+            
+            if (notes && notes.trim() !== '') {
+                viewNotes.textContent = notes;
+                notesContainer.style.display = 'block';
+            } else {
+                notesContainer.style.display = 'none';
+            }
+        });
+
         // Reschedule Modal functionality
         const rescheduleModal = document.getElementById('rescheduleModal');
         rescheduleModal.addEventListener('show.bs.modal', function (event) {
@@ -1132,10 +1280,27 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             document.getElementById('reschedule_id').value = id;
         });
 
-        // Delete confirmation function
-        function confirmDelete() {
-            return confirm('Are you sure you want to delete this consultation request? This action cannot be undone.');
+        // Close sidebar when clicking submenu items on mobile
+        if (window.innerWidth <= 768) {
+            document.querySelectorAll('.submenu-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    sidebarOverlay.classList.remove('active');
+                    mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+                });
+            });
         }
+
+        // Auto-hide alerts after 5 seconds
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        });
     </script>
 </body>
 </html>

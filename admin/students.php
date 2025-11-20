@@ -93,12 +93,14 @@ if (isset($_POST['bulk_archive']) && isset($_POST['selected_students'])) {
 $filter = $_GET['filter'] ?? 'all';
 $search = $_GET['search'] ?? '';
 
-// Fetch all students with medical history check - UPDATED QUERY TO INCLUDE SEARCH AND EXCLUDE ARCHIVED
+// Fetch all students with medical history check - UPDATED QUERY TO INCLUDE VERIFICATION CHECK
 $students = [];
+$complete_students = [];
+$incomplete_students = [];
 $params = [];
 
 try {
-    // UPDATED QUERY: Added search functionality AND filter for non-archived students
+    // UPDATED QUERY: Added verification check - only show verified students (is_verified = 1)
     $query = "
         SELECT 
             si.id,
@@ -112,6 +114,7 @@ try {
             si.created_at,
             u.email,
             u.created_at as user_created,
+            u.is_verified,
             mh.medical_attention,
             mh.medical_conditions,
             mh.other_conditions,
@@ -134,6 +137,7 @@ try {
         ) si ON u.student_number = si.student_number 
         LEFT JOIN medical_history mh ON u.student_number = mh.student_number
         WHERE (si.archived = 0 OR si.archived IS NULL)
+        AND u.is_verified = 1  -- CRITICAL: Only show verified/activated accounts
     ";
 
     // Apply status filter
@@ -149,6 +153,18 @@ try {
             mh.medical_conditions IS NULL OR mh.medical_conditions = '' OR
             mh.previous_hospitalization IS NULL OR mh.previous_hospitalization = '' OR
             mh.surgery IS NULL OR mh.surgery = ''
+        )";
+    } elseif ($filter === 'complete') {
+        $query .= " AND (
+            si.course_year IS NOT NULL AND si.course_year != '' AND 
+            si.cellphone_number IS NOT NULL AND si.cellphone_number != '' AND
+            si.fullname IS NOT NULL AND si.fullname != '' AND
+            si.address IS NOT NULL AND si.address != '' AND
+            si.age IS NOT NULL AND si.age != '' AND
+            si.sex IS NOT NULL AND si.sex != '' AND
+            mh.medical_attention IS NOT NULL AND mh.medical_attention != '' AND
+            mh.previous_hospitalization IS NOT NULL AND mh.previous_hospitalization != '' AND
+            mh.surgery IS NOT NULL AND mh.surgery != ''
         )";
     }
 
@@ -175,16 +191,18 @@ try {
 
 // Calculate statistics - UPDATED TO INCLUDE PART 2
 $total_students = count($students);
-$complete_profiles = 0;
-$incomplete_profiles = 0;
 
+// Separate complete and incomplete students for statistics
 foreach ($students as $student) {
     if (isProfileComplete($student)) {
-        $complete_profiles++;
+        $complete_students[] = $student;
     } else {
-        $incomplete_profiles++;
+        $incomplete_students[] = $student;
     }
 }
+
+$complete_profiles = count($complete_students);
+$incomplete_profiles = count($incomplete_students);
 
 // FUNCTION TO CHECK IF PROFILE IS COMPLETE (BOTH PART 1 AND PART 2)
 function isProfileComplete($student) {
@@ -1097,6 +1115,11 @@ function getProfileStatus($student) {
                                 All Students
                                 <span class="badge bg-secondary filter-badge"><?php echo $total_students; ?></span>
                             </a>
+                            <a href="students.php?filter=complete<?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" 
+                               class="btn btn-outline-success <?php echo $filter === 'complete' ? 'filter-active' : ''; ?>">
+                                Complete Profiles
+                                <span class="badge bg-success filter-badge"><?php echo $complete_profiles; ?></span>
+                            </a>
                             <a href="students.php?filter=incomplete<?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?>" 
                                class="btn btn-outline-warning <?php echo $filter === 'incomplete' ? 'filter-active' : ''; ?>">
                                 Incomplete Profiles
@@ -1131,10 +1154,6 @@ function getProfileStatus($student) {
                 <div class="stat-card">
                     <div class="stat-value"><?php echo $incomplete_profiles; ?></div>
                     <div class="stat-label">Incomplete Profiles</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value"><?php echo $total_students > 0 ? round(($complete_profiles / $total_students) * 100) : 0; ?>%</div>
-                    <div class="stat-label">Completion Rate</div>
                 </div>
             </div>
 
@@ -1260,7 +1279,7 @@ function getProfileStatus($student) {
                                                     <?php else: ?>
                                                         <span class="text-muted small">Edit via Search</span>
                                                     <?php endif; ?>
-                                                </div>
+                                                    </div>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

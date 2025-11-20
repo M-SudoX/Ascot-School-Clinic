@@ -13,6 +13,7 @@ $student_id = $_GET['id'] ?? 0;
 
 // Fetch student information
 $student = [];
+$consultation_request = [];
 try {
     $student_stmt = $pdo->prepare("
         SELECT si.*, u.email 
@@ -22,6 +23,21 @@ try {
     ");
     $student_stmt->execute([$student_id]);
     $student = $student_stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Fetch the latest consultation request for this student
+    if ($student) {
+        $consultation_stmt = $pdo->prepare("
+            SELECT cr.id, cr.requested, cr.notes, cr.date, cr.time, cr.status
+            FROM consultation_requests cr
+            JOIN users u ON cr.student_id = u.id
+            JOIN student_information si ON u.student_number = si.student_number
+            WHERE si.id = ? AND cr.status = 'Approved'
+            ORDER BY cr.created_at DESC
+            LIMIT 1
+        ");
+        $consultation_stmt->execute([$student_id]);
+        $consultation_request = $consultation_stmt->fetch(PDO::FETCH_ASSOC);
+    }
 } catch (PDOException $e) {
     error_log("Student fetch error: " . $e->getMessage());
 }
@@ -57,6 +73,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("Student information not found.");
         }
         
+        // Start transaction
+        $pdo->beginTransaction();
+        
         // Insert consultation record
         $insert_stmt = $pdo->prepare("
             INSERT INTO consultations (
@@ -80,14 +99,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $physician_notes
         ]);
         
+        // Update consultation request status to 'Completed' if it exists
+        if ($consultation_request && isset($consultation_request['id'])) {
+            $update_stmt = $pdo->prepare("
+                UPDATE consultation_requests 
+                SET status = 'Completed' 
+                WHERE id = ?
+            ");
+            $update_stmt->execute([$consultation_request['id']]);
+        }
+        
+        // Commit transaction
+        $pdo->commit();
+        
         // Store success message in session and redirect
-        $_SESSION['success_message'] = "Consultation record saved successfully!";
+        $_SESSION['success_message'] = "Consultation record saved successfully and consultation marked as completed!";
         
         // Redirect to prevent form resubmission
         header("Location: add_consultation.php?id=" . $student_id);
         exit();
         
     } catch (Exception $e) {
+        // Rollback transaction on error
+        $pdo->rollBack();
         $error = "Error: " . $e->getMessage();
         error_log("Consultation save error: " . $e->getMessage());
     }
@@ -385,6 +419,7 @@ if (isset($_SESSION['success_message'])) {
             text-decoration: none;
         }
 
+        /* Student Information Card - UPDATED */
         .student-info-card {
             background: white;
             border-radius: 15px;
@@ -405,6 +440,7 @@ if (isset($_SESSION['success_message'])) {
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
+            margin-bottom: 1.5rem;
         }
 
         .student-details span {
@@ -413,6 +449,61 @@ if (isset($_SESSION['success_message'])) {
             border-radius: 8px;
             font-size: 0.9rem;
             color: #6c757d;
+        }
+
+        /* Consultation Request Info - NEW */
+        .consultation-request-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            border-left: 4px solid #28a745;
+        }
+
+        .consultation-request-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .request-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .request-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .request-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .request-value {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .notes-container {
+            grid-column: 1 / -1;
+            margin-top: 1rem;
+        }
+
+        .notes-content {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 8px;
         }
 
         .consultation-form {
@@ -582,6 +673,27 @@ if (isset($_SESSION['success_message'])) {
             }
         }
 
+        /* Custom styles for datalist dropdown */
+        .staff-datalist-container {
+            position: relative;
+        }
+
+        .staff-datalist-container input {
+            width: 100%;
+        }
+
+        .staff-datalist-container::after {
+            content: '\f0d7';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            pointer-events: none;
+        }
+
         /* Responsive Design - FIXED */
         @media (max-width: 992px) {
             .school-name {
@@ -659,6 +771,11 @@ if (isset($_SESSION['success_message'])) {
             .student-details {
                 flex-direction: column;
                 gap: 10px;
+            }
+
+            .request-details {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
             }
 
             .form-actions {
@@ -778,6 +895,10 @@ if (isset($_SESSION['success_message'])) {
                             <i class="fas fa-check-circle"></i>
                             Approvals
                         </a>
+                        <a href="approved_consultations.php" class="submenu-item">
+                            <i class="fas fa-check-circle"></i>
+                            Approved Consultations
+                        </a>
                     </div>
                 </div>
 
@@ -844,8 +965,8 @@ if (isset($_SESSION['success_message'])) {
                 <h1><i class="fas fa-plus-circle"></i> Add New Consultation</h1>
                 <div class="header-buttons">
                     <?php if ($student): ?>
-                        <a href="consultation_history.php?id=<?php echo $student_id; ?>" class="back-btn">
-                            <i class="fas fa-arrow-left"></i> Back to Consultation History
+                        <a href="approved_consultations.php" class="back-btn">
+                            <i class="fas fa-arrow-left"></i> Back to Approved Consultations
                         </a>
                     <?php else: ?>
                         <a href="students.php" class="back-btn">
@@ -899,6 +1020,47 @@ if (isset($_SESSION['success_message'])) {
                         <span>Course: <?php echo htmlspecialchars($student['course_year']); ?></span>
                         <span>Age/Sex: <?php echo htmlspecialchars($student['age']); ?>/<?php echo htmlspecialchars($student['sex']); ?></span>
                     </div>
+
+                    <!-- Consultation Request Information - NEW -->
+                    <?php if ($consultation_request): ?>
+                        <div class="consultation-request-info">
+                            <div class="consultation-request-title">
+                                <i class="fas fa-info-circle"></i>
+                                Student's Consultation Request
+                            </div>
+                            <div class="request-details">
+                                <div class="request-item">
+                                    <span class="request-label">Reason/Concern:</span>
+                                    <span class="request-value"><?php echo htmlspecialchars($consultation_request['requested']); ?></span>
+                                </div>
+                                <div class="request-item">
+                                    <span class="request-label">Scheduled Date:</span>
+                                    <span class="request-value"><?php echo date('M d, Y', strtotime($consultation_request['date'])); ?></span>
+                                </div>
+                                <div class="request-item">
+                                    <span class="request-label">Scheduled Time:</span>
+                                    <span class="request-value"><?php echo date('g:i A', strtotime($consultation_request['time'])); ?></span>
+                                </div>
+                                <div class="request-item">
+                                    <span class="request-label">Status:</span>
+                                    <span class="request-value badge bg-success"><?php echo htmlspecialchars($consultation_request['status']); ?></span>
+                                </div>
+                                <?php if (!empty($consultation_request['notes'])): ?>
+                                    <div class="request-item notes-container">
+                                        <span class="request-label">Additional Notes:</span>
+                                        <div class="notes-content">
+                                            <?php echo htmlspecialchars($consultation_request['notes']); ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            No approved consultation request found for this student.
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Consultation Form -->
@@ -964,10 +1126,16 @@ if (isset($_SESSION['success_message'])) {
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="attending_staff" class="required-field">Attending Staff:</label>
-                                    <input type="text" id="attending_staff" name="attending_staff" class="form-control" 
-                                           placeholder="Enter staff name" 
-                                           value="" 
-                                           required>
+                                    <div class="staff-datalist-container">
+                                        <input type="text" id="attending_staff" name="attending_staff" class="form-control" 
+                                               list="staff_list" 
+                                               placeholder="Select or type staff name" 
+                                               value="Mary Rose Valencerina" 
+                                               required>
+                                        <datalist id="staff_list">
+                                            <option value="Mary Rose Valencerina">
+                                        </datalist>
+                                    </div>
                                     <div class="error-message" id="staffError">Please enter attending staff name</div>
                                 </div>
                                 <div class="form-group">

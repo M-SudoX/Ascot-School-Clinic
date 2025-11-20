@@ -36,12 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ===============================
-// ✅ FETCH ONLY APPROVED CONSULTATION REQUESTS
+// ✅ FETCH ONLY APPROVED CONSULTATION REQUESTS WITH STUDENT INFO
 // ===============================
 $stmt = $pdo->prepare("
-    SELECT c.id, u.fullname, c.requested, c.date, c.time, c.status
+    SELECT c.id, c.student_id, u.fullname, c.requested, c.date, c.time, c.status,
+           si.id as student_info_id
     FROM consultation_requests c
     JOIN users u ON c.student_id = u.id
+    JOIN student_information si ON u.student_number = si.student_number
     WHERE c.status = 'Approved'
     ORDER BY c.date DESC, c.time DESC
 ");
@@ -393,6 +395,9 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             border-radius: 20px;
             font-size: 0.9rem;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .approvals-table {
@@ -422,9 +427,12 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         .action-buttons {
             display: flex;
             gap: 8px;
+            justify-content: center;
+            align-items: center;
         }
 
-        .btn-complete, .btn-delete {
+        /* ICON BUTTON STYLES */
+        .btn-consult, .btn-complete, .btn-delete {
             border: none;
             border-radius: 8px;
             width: 40px;
@@ -435,6 +443,17 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             cursor: pointer;
             transition: all 0.3s ease;
             font-size: 1rem;
+            text-decoration: none;
+        }
+
+        .btn-consult {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .btn-consult:hover {
+            background: #c3e6cb;
+            transform: scale(1.1);
         }
 
         .btn-complete {
@@ -500,6 +519,11 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             border-left: 4px solid #17a2b8;
         }
 
+        .action-btn.rejected {
+            background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
+            border-left: 4px solid #dc3545;
+        }
+
         /* Modal Styles */
         .modal-content {
             border-radius: 15px;
@@ -535,6 +559,9 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             border-radius: 12px;
             font-size: 0.8rem;
             font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Alert Styles */
@@ -543,6 +570,11 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             border: none;
             margin-bottom: 2rem;
             color: white;
+        }
+
+        /* Center align for table cells */
+        .text-center {
+            text-align: center;
         }
 
         /* Responsive Design - SAME AS ADMIN DASHBOARD */
@@ -642,7 +674,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 gap: 5px;
             }
 
-            .btn-complete, .btn-delete {
+            .btn-consult, .btn-complete, .btn-delete {
                 width: 35px;
                 height: 35px;
                 font-size: 0.9rem;
@@ -681,7 +713,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 gap: 5px;
             }
 
-            .btn-complete, .btn-delete {
+            .btn-consult, .btn-complete, .btn-delete {
                 width: 32px;
                 height: 32px;
                 font-size: 0.8rem;
@@ -933,10 +965,11 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 <a href="completed_consultations.php" class="action-btn completed">
                     <i class="fas fa-flag-checkered"></i>
                     View Completed
-                  <a href="rejected_consultations.php" class="action-btn rejected">
+                </a>
+                <a href="rejected_consultations.php" class="action-btn rejected">
                     <i class="fas fa-times-circle"></i>
                     View Rejected
-                  </a>
+                </a>
             </div>
 
             <!-- Approved Consultations Container -->
@@ -956,8 +989,8 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                                 <th>Name</th>
                                 <th>Concern</th>
                                 <th>Scheduled Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -974,29 +1007,24 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                                         <td><strong><?= htmlspecialchars($c['fullname']); ?></strong></td>
                                         <td><?= htmlspecialchars($c['requested']); ?></td>
                                         <td><?= date('M d, Y g:i A', strtotime($c['date'].' '.$c['time'])); ?></td>
-                                        <td>
+                                        <td class="text-center">
                                             <span class="badge bg-success">
                                                 <?= htmlspecialchars($c['status']); ?>
                                             </span>
                                         </td>
-                                        <td class="action-buttons">
-                                            <!-- MARK AS COMPLETED BUTTON -->
-                                            <form method="POST" class="d-inline" onsubmit="return confirmComplete()">
-                                                <input type="hidden" name="consultation_id" value="<?= $c['id']; ?>">
-                                                <input type="hidden" name="action" value="complete">
-                                                <button type="submit" class="btn-complete" title="Mark as Completed">
-                                                    <i class="fas fa-flag-checkered"></i>
-                                                </button>
-                                            </form>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <!-- CONSULT BUTTON - ICON -->
+                                                <a href="add_consultations.php?id=<?= $c['student_info_id']; ?>" class="btn-consult" title="Start Consultation">
+                                                    <i class="fas fa-stethoscope"></i>
+                                                </a>
 
-                                            <!-- DELETE BUTTON -->
-                                            <form method="POST" class="d-inline" onsubmit="return confirmDelete()">
-                                                <input type="hidden" name="consultation_id" value="<?= $c['id']; ?>">
-                                                <input type="hidden" name="action" value="delete">
-                                                <button type="submit" class="btn-delete" title="Delete">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
+                                              
+                                                    </button>
+                                                </form>
+
+                                               
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
