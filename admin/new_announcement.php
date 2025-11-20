@@ -176,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $mail->Host = 'smtp.gmail.com';
                         $mail->SMTPAuth = true;
                         $mail->Username = 'bihasamaynard070@gmail.com';
-                        $mail->Password = 'zjop ucbv hzfc uosv';
+                        $mail->Password = 'zjopucbvhzfcuosv';
                         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                         $mail->Port = 587;
                         $mail->SMTPOptions = array(
