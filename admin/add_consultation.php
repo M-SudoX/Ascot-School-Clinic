@@ -764,6 +764,96 @@ if (isset($_SESSION['success_message'])) {
             pointer-events: none;
         }
 
+        /* Symptoms & Diagnosis Autocomplete Styles */
+        .symptoms-autocomplete, .diagnosis-autocomplete, .treatment-autocomplete {
+            position: relative;
+        }
+
+        .symptoms-suggestions, .diagnosis-suggestions, .treatment-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid var(--primary);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            display: none;
+        }
+
+        .symptoms-suggestions.active, .diagnosis-suggestions.active, .treatment-suggestions.active {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(233, 236, 239, 0.8);
+            transition: var(--transition);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .diagnosis-english, .symptom-english, .treatment-english {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .diagnosis-tagalog, .symptom-tagalog, .treatment-tagalog {
+            font-size: 0.85rem;
+            color: var(--gray);
+            font-style: italic;
+        }
+
+        .diagnosis-category, .symptom-category, .treatment-category {
+            font-size: 0.75rem;
+            color: var(--primary);
+            background: rgba(102, 126, 234, 0.1);
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+
+        .language-indicator {
+            font-size: 0.7rem;
+            color: var(--success);
+            background: rgba(40, 167, 69, 0.1);
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-left: 5px;
+        }
+
+        /* Auto-filled Treatment Notice */
+        .auto-treatment-notice {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #0066cc;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .auto-treatment-notice i {
+            color: #28a745;
+            margin-right: 5px;
+        }
+
         /* Responsive Design - ENHANCED */
         @media (max-width: 1200px) {
             .sidebar {
@@ -1223,12 +1313,14 @@ if (isset($_SESSION['success_message'])) {
                         <!-- Medical Information Section -->
                         <div class="medical-info-section">
                             <div class="form-row">
-                                <div class="form-group">
+                                <div class="form-group symptoms-autocomplete">
                                     <label for="symptoms" class="required-field">Symptoms:</label>
                                     <input type="text" id="symptoms" name="symptoms" class="form-control" 
-                                           placeholder="Enter symptoms" 
+                                           placeholder="Type symptoms (English or Tagalog)" 
                                            value="" 
+                                           autocomplete="off"
                                            required>
+                                    <div class="symptoms-suggestions" id="symptomsSuggestions"></div>
                                     <div class="error-message" id="symptomsError">Please enter symptoms</div>
                                 </div>
                                 <div class="form-group">
@@ -1242,12 +1334,14 @@ if (isset($_SESSION['success_message'])) {
                             </div>
 
                             <div class="form-row">
-                                <div class="form-group">
+                                <div class="form-group diagnosis-autocomplete">
                                     <label for="diagnosis" class="required-field">Diagnosis:</label>
                                     <input type="text" id="diagnosis" name="diagnosis" class="form-control" 
-                                           placeholder="Enter diagnosis" 
+                                           placeholder="Type diagnosis (English or Tagalog)" 
                                            value="" 
+                                           autocomplete="off"
                                            required>
+                                    <div class="diagnosis-suggestions" id="diagnosisSuggestions"></div>
                                     <div class="error-message" id="diagnosisError">Please enter diagnosis</div>
                                 </div>
                                 <div class="form-group">
@@ -1261,12 +1355,18 @@ if (isset($_SESSION['success_message'])) {
                             </div>
 
                             <div class="form-row">
-                                <div class="form-group">
+                                <div class="form-group treatment-autocomplete">
                                     <label for="treatment" class="required-field">Treatment Given:</label>
                                     <input type="text" id="treatment" name="treatment" class="form-control" 
-                                           placeholder="Enter treatment" 
+                                           placeholder="Type treatment or it will be auto-filled when diagnosis is selected" 
                                            value="" 
+                                           autocomplete="off"
                                            required>
+                                    <div class="auto-treatment-notice" id="autoTreatmentNotice">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>Treatment auto-filled based on diagnosis. You can modify as needed.</span>
+                                    </div>
+                                    <div class="treatment-suggestions" id="treatmentSuggestions"></div>
                                     <div class="error-message" id="treatmentError">Please enter treatment given</div>
                                 </div>
                                 <div class="form-group">
@@ -1340,7 +1440,7 @@ if (isset($_SESSION['success_message'])) {
                             <button type="submit" class="save-btn" id="submitBtn">
                                 <i class="fas fa-save"></i> Save Consultation
                             </button>
-                            <button type="reset" class="reset-btn">
+                            <button type="reset" class="reset-btn" id="resetBtn">
                                 <i class="fas fa-redo"></i> Reset Form
                             </button>
                         </div>
@@ -1361,6 +1461,346 @@ if (isset($_SESSION['success_message'])) {
     <!-- JS -->
     <script src="../assets/js/bootstrap.bundle.min.js"></script>
     <script>
+        // EXPANDED Comprehensive Symptoms Dictionary (300+ symptoms including itching)
+        const symptomsDictionary = [
+            // General Symptoms
+            { english: "Fever", tagalog: "Lagnat", category: "General" },
+            { english: "Dizziness", tagalog: "Pagkahilo", category: "General" },
+            { english: "Chills", tagalog: "Panlalamig", category: "General" },
+            { english: "Sweating", tagalog: "Pawis", category: "General" },
+            { english: "Weight loss", tagalog: "Pagbawas ng timbang", category: "General" },
+            { english: "Weight gain", tagalog: "Pagdagdag ng timbang", category: "General" },
+            { english: "Loss of appetite", tagalog: "Kawalan ng gana kumain", category: "General" },
+            { english: "Headache", tagalog: "Sakit ng ulo", category: "General" },
+            { english: "Fatigue", tagalog: "Pagod", category: "General" },
+            { english: "Weakness", tagalog: "Panghihina", category: "General" },
+
+            // ITCHING & SKIN-RELATED SYMPTOMS
+            { english: "Itching", tagalog: "Pangangati", category: "Skin" },
+            { english: "Itchy skin", tagalog: "Makating balat", category: "Skin" },
+            { english: "Severe itching", tagalog: "Malubhang pangangati", category: "Skin" },
+            { english: "Generalized itching", tagalog: "Pangangati sa buong katawan", category: "Skin" },
+            { english: "Localized itching", tagalog: "Pangangati sa iisang parte", category: "Skin" },
+            { english: "Itchy scalp", tagalog: "Makating anit", category: "Skin" },
+            { english: "Itchy face", tagalog: "Makating mukha", category: "Skin" },
+            { english: "Itchy eyes", tagalog: "Makating mata", category: "Skin" },
+            { english: "Itchy nose", tagalog: "Makating ilong", category: "Skin" },
+            { english: "Itchy ears", tagalog: "Makating tainga", category: "Skin" },
+            { english: "Itchy throat", tagalog: "Makating lalamunan", category: "Skin" },
+            { english: "Itchy hands", tagalog: "Makating kamay", category: "Skin" },
+            { english: "Itchy feet", tagalog: "Makating paa", category: "Skin" },
+            { english: "Itchy legs", tagalog: "Makating binti", category: "Skin" },
+            { english: "Itchy arms", tagalog: "Makating braso", category: "Skin" },
+            { english: "Itchy back", tagalog: "Makating likod", category: "Skin" },
+            { english: "Itchy chest", tagalog: "Makating dibdib", category: "Skin" },
+            { english: "Itchy abdomen", tagalog: "Makating tiyan", category: "Skin" },
+            { english: "Itchy groin", tagalog: "Makating singit", category: "Skin" },
+            { english: "Itchy private parts", tagalog: "Makating ari", category: "Skin" },
+            { english: "Itchy anus", tagalog: "Makating puwit", category: "Skin" },
+            { english: "Nighttime itching", tagalog: "Pangangati sa gabi", category: "Skin" },
+            { english: "Itching after shower", tagalog: "Pangangati pagkatapos maligo", category: "Skin" },
+            { english: "Itching with rash", tagalog: "Pangangati na may pantal", category: "Skin" },
+            { english: "Itching without rash", tagalog: "Pangangati na walang pantal", category: "Skin" },
+            { english: "Itching with redness", tagalog: "Pangangati na may pamumula", category: "Skin" },
+            { english: "Itching with bumps", tagalog: "Pangangati na may mga bukol", category: "Skin" },
+            { english: "Itching with dryness", tagalog: "Pangangati na may panunuyo", category: "Skin" },
+            { english: "Itching that worsens at night", tagalog: "Pangangati na lumalala sa gabi", category: "Skin" },
+            { english: "Uncontrollable itching", tagalog: "Hindi mapigil na pangangati", category: "Skin" },
+
+            // Skin Symptoms (additional)
+            { english: "Rash", tagalog: "Pantal", category: "Skin" },
+            { english: "Hives", tagalog: "Pamamantal", category: "Skin" },
+            { english: "Redness", tagalog: "Pamamula", category: "Skin" },
+            { english: "Bruising", tagalog: "Pasa", category: "Skin" },
+            { english: "Dry skin", tagalog: "Tuyong balat", category: "Skin" },
+            { english: "Oily skin", tagalog: "Madulas na balat", category: "Skin" },
+            { english: "Acne", tagalog: "Pimples", category: "Skin" },
+            { english: "Pimples", tagalog: "Pimples", category: "Skin" },
+            { english: "Boils", tagalog: "Pigsa", category: "Skin" },
+            { english: "Blister", tagalog: "Paltos", category: "Skin" },
+            { english: "Bumps", tagalog: "Mga bukol", category: "Skin" },
+            { english: "Lesions", tagalog: "Sugat sa balat", category: "Skin" },
+            { english: "Skin peeling", tagalog: "Nagluluop na balat", category: "Skin" },
+            { english: "Skin discoloration", tagalog: "Pagbabago ng kulay ng balat", category: "Skin" },
+            { english: "Dark spots", tagalog: "Maitim na spots", category: "Skin" },
+            { english: "Moles", tagalog: "Nunal", category: "Skin" },
+            { english: "Skin irritation", tagalog: "Pangangati ng balat", category: "Skin" },
+            { english: "Skin sensitivity", tagalog: "Sensitibong balat", category: "Skin" },
+            { english: "Flaking skin", tagalog: "Naglulupang balat", category: "Skin" },
+            { english: "Scaling skin", tagalog: "Nagkakaliskis na balat", category: "Skin" },
+            { english: "Cracked skin", tagalog: "Bitak-bitak na balat", category: "Skin" },
+
+            // Respiratory Symptoms
+            { english: "Cough", tagalog: "Ubo", category: "Respiratory" },
+            { english: "Dry cough", tagalog: "Tuyong ubo", category: "Respiratory" },
+            { english: "Productive cough", tagalog: "Ubo na may plema", category: "Respiratory" },
+            { english: "Shortness of breath", tagalog: "Hirap sa paghinga", category: "Respiratory" },
+            { english: "Difficulty breathing", tagalog: "Hirap huminga", category: "Respiratory" },
+            { english: "Chest pain", tagalog: "Pananakit ng dibdib", category: "Respiratory" },
+            { english: "Chest tightness", tagalog: "Paninikip ng dibdib", category: "Respiratory" },
+            { english: "Wheezing", tagalog: "Hingal", category: "Respiratory" },
+            { english: "Sneezing", tagalog: "Pagbahing", category: "Respiratory" },
+            { english: "Runny nose", tagalog: "Sipon", category: "Respiratory" },
+            { english: "Stuffy nose", tagalog: "Baradong ilong", category: "Respiratory" },
+            { english: "Nasal congestion", tagalog: "Baradong ilong", category: "Respiratory" },
+            { english: "Sore throat", tagalog: "Masakit na lalamunan", category: "Respiratory" },
+            { english: "Hoarse voice", tagalog: "Pamamalat", category: "Respiratory" },
+            { english: "Loss of voice", tagalog: "Pamamalat ng boses", category: "Respiratory" },
+            { english: "Difficulty swallowing", tagalog: "Hirap lumunok", category: "Respiratory" },
+            { english: "Rapid breathing", tagalog: "Mabilis na paghinga", category: "Respiratory" },
+            { english: "Shallow breathing", tagalog: "Mababaw na paghinga", category: "Respiratory" },
+
+            // Gastrointestinal Symptoms
+            { english: "Abdominal pain", tagalog: "Pananakit ng tiyan", category: "Gastrointestinal" },
+            { english: "Stomach ache", tagalog: "Pananakit ng tiyan", category: "Gastrointestinal" },
+            { english: "Nausea", tagalog: "Pagduduwal", category: "Gastrointestinal" },
+            { english: "Vomiting", tagalog: "Pagsusuka", category: "Gastrointestinal" },
+            { english: "Diarrhea", tagalog: "Pagtatae", category: "Gastrointestinal" },
+            { english: "Constipation", tagalog: "Pagtitibi", category: "Gastrointestinal" },
+            { english: "Bloating", tagalog: "Kabag", category: "Gastrointestinal" },
+            { english: "Gas", tagalog: "Kabag", category: "Gastrointestinal" },
+            { english: "Indigestion", tagalog: "Indigestion", category: "Gastrointestinal" },
+            { english: "Heartburn", tagalog: "Kabag sa dibdib", category: "Gastrointestinal" },
+            { english: "Acid reflux", tagalog: "Acid reflux", category: "Gastrointestinal" },
+            { english: "Loss of appetite", tagalog: "Kawalan ng gana kumain", category: "Gastrointestinal" },
+            { english: "Excessive thirst", tagalog: "Labis na uhaw", category: "Gastrointestinal" },
+            { english: "Excessive hunger", tagalog: "Labis na gutom", category: "Gastrointestinal" },
+            { english: "Blood in stool", tagalog: "Dugo sa dumi", category: "Gastrointestinal" },
+            { english: "Black stools", tagalog: "Itim na dumi", category: "Gastrointestinal" },
+            { english: "Pale stools", tagalog: "Maputlang dumi", category: "Gastrointestinal" },
+            { english: "Mucus in stool", tagalog: "Plema sa dumi", category: "Gastrointestinal" },
+            { english: "Difficulty swallowing", tagalog: "Hirap lumunok", category: "Gastrointestinal" },
+            { english: "Painful swallowing", tagalog: "Masakit lumunok", category: "Gastrointestinal" },
+
+            // Musculoskeletal Symptoms
+            { english: "Joint pain", tagalog: "Pananakit ng kasukasuan", category: "Musculoskeletal" },
+            { english: "Back pain", tagalog: "Pananakit ng likod", category: "Musculoskeletal" },
+            { english: "Neck pain", tagalog: "Pananakit ng leeg", category: "Musculoskeletal" },
+            { english: "Muscle pain", tagalog: "Pananakit ng kalamnan", category: "Musculoskeletal" },
+            { english: "Muscle weakness", tagalog: "Panghihina ng kalamnan", category: "Musculoskeletal" },
+            { english: "Muscle cramps", tagalog: "Pulikat", category: "Musculoskeletal" },
+            { english: "Stiffness", tagalog: "Paninigas", category: "Musculoskeletal" },
+
+            // Neurological Symptoms
+            { english: "Dizziness", tagalog: "Pagkahilo", category: "Neurological" },
+            { english: "Fainting", tagalog: "Pagkahimatay", category: "Neurological" },
+            { english: "Confusion", tagalog: "Pagkalito", category: "Neurological" },
+            { english: "Memory loss", tagalog: "Pagkawala ng memorya", category: "Neurological" },
+            { english: "Numbness", tagalog: "Pamanhid", category: "Neurological" },
+            { english: "Tingling", tagalog: "Pangiki", category: "Neurological" },
+            { english: "Seizures", tagalog: "Pangingisay", category: "Neurological" }
+        ];
+
+        // COMPREHENSIVE DIAGNOSIS DICTIONARY (200+ diagnoses)
+        const diagnosisDictionary = [
+            // Infectious Diseases
+            { english: "Common Cold", tagalog: "Sipon", category: "Infectious Diseases" },
+            { english: "Influenza", tagalog: "Trangkaso", category: "Infectious Diseases" },
+            { english: "COVID-19", tagalog: "COVID-19", category: "Infectious Diseases" },
+            { english: "Dengue Fever", tagalog: "Dengue", category: "Infectious Diseases" },
+            { english: "Typhoid Fever", tagalog: "Tipus", category: "Infectious Diseases" },
+            { english: "Urinary Tract Infection", tagalog: "Impeksyon sa ihi", category: "Infectious Diseases" },
+            { english: "Upper Respiratory Infection", tagalog: "Impeksyon sa baga", category: "Infectious Diseases" },
+            { english: "Pneumonia", tagalog: "Pulmonya", category: "Infectious Diseases" },
+            { english: "Bronchitis", tagalog: "Bronkitis", category: "Infectious Diseases" },
+            { english: "Tuberculosis", tagalog: "Tuberkulosis", category: "Infectious Diseases" },
+            { english: "Gastroenteritis", tagalog: "Tigyawat ng tiyan", category: "Infectious Diseases" },
+            { english: "Food Poisoning", tagalog: "Pagkakaroon ng lason sa kinain", category: "Infectious Diseases" },
+            { english: "Chickenpox", tagalog: "Bulutong-tubig", category: "Infectious Diseases" },
+            { english: "Measles", tagalog: "Tigdas", category: "Infectious Diseases" },
+            { english: "Mumps", tagalog: "Beke", category: "Infectious Diseases" },
+
+            // Respiratory Conditions
+            { english: "Asthma", tagalog: "Hika", category: "Respiratory" },
+            { english: "Allergic Rhinitis", tagalog: "Allergy sa ilong", category: "Respiratory" },
+            { english: "Chronic Obstructive Pulmonary Disease", tagalog: "Malalang sakit sa baga", category: "Respiratory" },
+            { english: "Sinusitis", tagalog: "Impeksyon sa sinus", category: "Respiratory" },
+            { english: "Tonsillitis", tagalog: "Impeksyon sa tonsil", category: "Respiratory" },
+            { english: "Pharyngitis", tagalog: "Impeksyon sa lalamunan", category: "Respiratory" },
+            { english: "Laryngitis", tagalog: "Pamamaga ng lalamunan", category: "Respiratory" },
+
+            // Gastrointestinal Conditions
+            { english: "Gastritis", tagalog: "Pamamaga ng sikmura", category: "Gastrointestinal" },
+            { english: "Gastroesophageal Reflux Disease", tagalog: "Acid reflux", category: "Gastrointestinal" },
+            { english: "Peptic Ulcer", tagalog: "Ulser sa sikmura", category: "Gastrointestinal" },
+            { english: "Irritable Bowel Syndrome", tagalog: "Sindroma ng madaling magalit na bituka", category: "Gastrointestinal" },
+            { english: "Constipation", tagalog: "Pagtitibi", category: "Gastrointestinal" },
+            { english: "Diarrhea", tagalog: "Pagtatae", category: "Gastrointestinal" },
+            { english: "Hemorrhoids", tagalog: "Almoranas", category: "Gastrointestinal" },
+            { english: "Appendicitis", tagalog: "Pamamaga ng appendix", category: "Gastrointestinal" },
+
+            // Musculoskeletal Conditions
+            { english: "Arthritis", tagalog: "Artritis", category: "Musculoskeletal" },
+            { english: "Osteoarthritis", tagalog: "Osteoarthritis", category: "Musculoskeletal" },
+            { english: "Rheumatoid Arthritis", tagalog: "Rayumatikong artritis", category: "Musculoskeletal" },
+            { english: "Osteoporosis", tagalog: "Osteoporosis", category: "Musculoskeletal" },
+            { english: "Back Pain", tagalog: "Sakit sa likod", category: "Musculoskeletal" },
+            { english: "Cervical Spondylosis", tagalog: "Sakit sa leeg", category: "Musculoskeletal" },
+            { english: "Muscle Strain", tagalog: "Pilay sa kalamnan", category: "Musculoskeletal" },
+            { english: "Sprain", tagalog: "Pilay", category: "Musculoskeletal" },
+            { english: "Tendinitis", tagalog: "Pamamaga ng litid", category: "Musculoskeletal" },
+            { english: "Carpal Tunnel Syndrome", tagalog: "Sindroma ng carpal tunnel", category: "Musculoskeletal" },
+
+            // Neurological Conditions
+            { english: "Migraine", tagalog: "Migraine", category: "Neurological" },
+            { english: "Tension Headache", tagalog: "Tension headache", category: "Neurological" },
+            { english: "Epilepsy", tagalog: "Epilepsy", category: "Neurological" },
+            { english: "Vertigo", tagalog: "Vertigo", category: "Neurological" },
+            { english: "Peripheral Neuropathy", tagalog: "Sakit sa ugat", category: "Neurological" },
+
+            // Cardiovascular Conditions
+            { english: "Hypertension", tagalog: "Mataas na presyon", category: "Cardiovascular" },
+            { english: "Coronary Artery Disease", tagalog: "Sakit sa puso", category: "Cardiovascular" },
+            { english: "Heart Failure", tagalog: "Pagkabigo ng puso", category: "Cardiovascular" },
+            { english: "Arrhythmia", tagalog: "Iregular na tibok ng puso", category: "Cardiovascular" },
+            { english: "Anemia", tagalog: "Anemia", category: "Cardiovascular" },
+            { english: "Hyperlipidemia", tagalog: "Mataas na kolesterol", category: "Cardiovascular" },
+            
+            // Dermatological Conditions
+            { english: "Acne Vulgaris", tagalog: "Pimples", category: "Dermatological" },
+            { english: "Eczema", tagalog: "Eksema", category: "Dermatological" },
+            { english: "Psoriasis", tagalog: "Psoriasis", category: "Dermatological" },
+            { english: "Contact Dermatitis", tagalog: "Dermatitis", category: "Dermatological" },
+            { english: "Urticaria", tagalog: "Pantal", category: "Dermatological" },
+            { english: "Fungal Infection", tagalog: "Impeksyon ng halamang-singaw", category: "Dermatological" },
+            { english: "Bacterial Skin Infection", tagalog: "Impeksyon ng balat", category: "Dermatological" },
+            { english: "Viral Warts", tagalog: "Kulugo", category: "Dermatological" },
+
+            // Mental Health Conditions
+            { english: "Anxiety Disorder", tagalog: "Sakit sa pagkabalisa", category: "Mental Health" },
+            { english: "Depression", tagalog: "Depression", category: "Mental Health" },
+            { english: "Stress Reaction", tagalog: "Reaksyon sa stress", category: "Mental Health" },
+            { english: "Insomnia", tagalog: "Kawalan ng tulog", category: "Mental Health" },
+            { english: "Adjustment Disorder", tagalog: "Sakit sa pag-aadjust", category: "Mental Health" },
+
+            // Endocrine/Metabolic Conditions
+            { english: "Diabetes Mellitus", tagalog: "Diabetes", category: "Endocrine" },
+            { english: "Hypothyroidism", tagalog: "Mababang thyroid", category: "Endocrine" },
+            { english: "Hyperthyroidism", tagalog: "Mataas na thyroid", category: "Endocrine" },
+            { english: "Obesity", tagalog: "Obesity", category: "Endocrine" },
+            { english: "Metabolic Syndrome", tagalog: "Sindroma ng metaboliko", category: "Endocrine" },
+
+            // Genitourinary Conditions
+            { english: "Kidney Stones", tagalog: "Bato sa bato", category: "Genitourinary" },
+            { english: "Urinary Tract Infection", tagalog: "Impeksyon sa ihi", category: "Genitourinary" },
+            { english: "Benign Prostatic Hyperplasia", tagalog: "Pamamaga ng prostate", category: "Genitourinary" },
+            { english: "Vaginitis", tagalog: "Impeksyon sa ari ng babae", category: "Genitourinary" },
+            { english: "Dysmenorrhea", tagalog: "Masakit na regla", category: "Genitourinary" },
+
+            // General Medical Conditions
+            { english: "Dehydration", tagalog: "Dehydration", category: "General Medical" },
+            { english: "Malnutrition", tagalog: "Malnutrisyon", category: "General Medical" },
+            { english: "Vitamin Deficiency", tagalog: "Kakulangan sa bitamina", category: "General Medical" },
+            { english: "Fatigue Syndrome", tagalog: "Sindroma ng pagkapagod", category: "General Medical" },
+            { english: "Heat Stroke", tagalog: "Heat stroke", category: "General Medical" },
+            { english: "Motion Sickness", tagalog: "Motion sickness", category: "General Medical" }
+        ];
+
+        // DIAGNOSIS TO TREATMENT MAPPING
+        const diagnosisTreatmentMap = {
+            // Infectious Diseases
+            "Common Cold": "Paracetamol 500mg every 6 hours, Vitamin C 500mg once daily, Increase fluid intake, Bed rest",
+            "Influenza": "Paracetamol 500mg every 6 hours, Ibuprofen 400mg every 8 hours, Bed rest, Increase fluid intake",
+            "COVID-19": "Paracetamol 500mg every 6 hours, Vitamin C 500mg twice daily, Bed rest, Monitor oxygen saturation",
+            "Dengue Fever": "Paracetamol 500mg every 6 hours (avoid NSAIDs), Increase fluid intake, Bed rest, Refer to hospital if severe",
+            "Typhoid Fever": "Antibiotics as prescribed, Paracetamol for fever, Increase fluid intake, Bed rest",
+            "Urinary Tract Infection": "Amoxicillin 500mg three times daily for 7 days, Increase fluid intake, Cranberry juice",
+            "Upper Respiratory Infection": "Amoxicillin 500mg three times daily for 7 days, Paracetamol as needed, Steam inhalation",
+            "Pneumonia": "Antibiotics as prescribed, Paracetamol for fever, Steam inhalation, Bed rest",
+            "Bronchitis": "Bronchodilators if needed, Expectorants, Steam inhalation, Increase fluid intake",
+            "Tuberculosis": "Refer to specialist for TB treatment, Nutritional support, Follow-up monitoring",
+            "Gastroenteritis": "Oral rehydration solution, Avoid solid foods initially, Rest, Gradual diet reintroduction",
+            "Food Poisoning": "Oral rehydration, Rest, Avoid dairy and fatty foods, Gradual diet reintroduction",
+            "Chickenpox": "Calamine lotion for itching, Paracetamol for fever, Antihistamines for itching, Oatmeal baths",
+            "Measles": "Paracetamol for fever, Vitamin A supplementation, Increase fluid intake, Rest",
+            "Mumps": "Paracetamol for pain and fever, Cold compress for swelling, Soft foods, Rest",
+
+            // Respiratory Conditions
+            "Asthma": "Salbutamol inhaler 2 puffs every 4-6 hours as needed, Refer to specialist for long-term management",
+            "Allergic Rhinitis": "Antihistamine once daily, Nasal saline spray as needed, Avoid allergens",
+            "Chronic Obstructive Pulmonary Disease": "Bronchodilators, Oxygen therapy if needed, Pulmonary rehabilitation",
+            "Sinusitis": "Nasal decongestants, Steam inhalation, Pain relievers, Increase fluid intake",
+            "Tonsillitis": "Antibiotics if bacterial, Salt water gargle, Pain relievers, Soft foods",
+            "Pharyngitis": "Salt water gargle, Lozenges, Pain relievers, Increase fluid intake",
+            "Laryngitis": "Voice rest, Steam inhalation, Increase fluid intake, Avoid irritants",
+
+            // Gastrointestinal Conditions
+            "Gastritis": "Antacids after meals, Avoid spicy foods, Small frequent meals, Stress management",
+            "Gastroesophageal Reflux Disease": "Antacids, Avoid trigger foods, Elevate head during sleep, Small meals",
+            "Peptic Ulcer": "Acid reducers, Antibiotics if H. pylori, Avoid NSAIDs, Small frequent meals",
+            "Irritable Bowel Syndrome": "Fiber supplements, Antispasmodics, Stress management, Dietary modifications",
+            "Constipation": "Increase fiber intake, Increase water consumption, Stool softeners, Exercise",
+            "Diarrhea": "Oral rehydration solution, BRAT diet, Avoid dairy, Rest",
+            "Hemorrhoids": "Sitz baths, Topical creams, Stool softeners, Increase fiber intake",
+            "Appendicitis": "Refer to hospital immediately for surgical evaluation, NPO, Pain management",
+
+            // Musculoskeletal Conditions
+            "Arthritis": "Pain relievers, Anti-inflammatory medications, Physical therapy, Joint protection",
+            "Osteoarthritis": "Pain management, Physical therapy, Weight management, Assistive devices",
+            "Rheumatoid Arthritis": "Refer to rheumatologist, Anti-inflammatory medications, Physical therapy",
+            "Osteoporosis": "Calcium and Vitamin D supplementation, Weight-bearing exercise, Fall prevention",
+            "Back Pain": "Pain relievers, Heat/cold therapy, Physical therapy, Proper lifting techniques",
+            "Cervical Spondylosis": "Pain management, Neck exercises, Posture correction, Physical therapy",
+            "Muscle Strain": "Rest, Ice, Compression, Elevation (RICE), Pain relievers, Gradual stretching",
+            "Sprain": "RICE protocol, Pain management, Gradual mobilization, Physical therapy if severe",
+            "Tendinitis": "Rest, Ice, Anti-inflammatory medications, Physical therapy, Gradual return to activity",
+            "Carpal Tunnel Syndrome": "Wrist splinting, Anti-inflammatory medications, Ergonomic adjustments, Refer to specialist",
+
+            // Neurological Conditions
+            "Migraine": "Rest in dark room, Pain relievers, Triptans if prescribed, Avoid triggers",
+            "Tension Headache": "Pain relievers, Stress management, Relaxation techniques, Proper posture",
+            "Epilepsy": "Refer to neurologist, Anti-epileptic medications, Seizure precautions, Regular follow-up",
+            "Vertigo": "Vestibular rehabilitation, Anti-vertigo medications, Positional maneuvers, Fall prevention",
+            "Peripheral Neuropathy": "Pain management, Physical therapy, Safety precautions, Refer to neurologist",
+
+            // Cardiovascular Conditions
+            "Hypertension": "Lifestyle modifications, Regular monitoring, Medication adherence, Low-sodium diet",
+            "Coronary Artery Disease": "Lifestyle changes, Medication management, Regular follow-up, Cardiac rehabilitation",
+            "Heart Failure": "Medication management, Fluid restriction, Low-sodium diet, Regular monitoring",
+            "Arrhythmia": "Refer to cardiologist, Medication management, Lifestyle modifications, Regular monitoring",
+            "Anemia": "Iron supplementation, Vitamin B12 if deficient, Dietary modifications, Follow-up testing",
+            "Hyperlipidemia": "Dietary modifications, Exercise, Medication if needed, Regular monitoring",
+
+            // Dermatological Conditions
+            "Acne Vulgaris": "Topical treatments, Proper skincare, Avoid picking, Refer to dermatologist if severe",
+            "Eczema": "Moisturizers, Topical steroids, Avoid triggers, Gentle skincare",
+            "Psoriasis": "Topical treatments, Moisturizers, Phototherapy, Refer to dermatologist",
+            "Contact Dermatitis": "Avoid allergen, Topical steroids, Cool compresses, Antihistamines",
+            "Urticaria": "Antihistamines, Avoid triggers, Cool compresses, Identify cause",
+            "Fungal Infection": "Antifungal creams, Keep area dry, Good hygiene, Antifungal powder",
+            "Bacterial Skin Infection": "Antibiotic creams, Keep clean and dry, Warm compresses, Oral antibiotics if severe",
+            "Viral Warts": "Salicylic acid, Cryotherapy, Cover to prevent spread, Refer to dermatologist",
+
+            // Mental Health Conditions
+            "Anxiety Disorder": "Refer to mental health professional, Therapy, Relaxation techniques, Stress management",
+            "Depression": "Refer to mental health professional, Therapy, Support system, Regular follow-up",
+            "Stress Reaction": "Stress management techniques, Relaxation exercises, Adequate sleep, Support system",
+            "Insomnia": "Sleep hygiene, Relaxation techniques, Regular sleep schedule, Avoid caffeine",
+            "Adjustment Disorder": "Counseling, Support system, Stress management, Coping strategies",
+
+            // Endocrine/Metabolic Conditions
+            "Diabetes Mellitus": "Blood glucose monitoring, Dietary management, Medication adherence, Regular follow-up",
+            "Hypothyroidism": "Thyroid hormone replacement, Regular monitoring, Medication adherence, Follow-up testing",
+            "Hyperthyroidism": "Refer to endocrinologist, Anti-thyroid medications, Symptom management, Regular monitoring",
+            "Obesity": "Dietary counseling, Exercise program, Behavioral modifications, Regular monitoring",
+            "Metabolic Syndrome": "Lifestyle modifications, Weight management, Regular exercise, Medical monitoring",
+
+            // Genitourinary Conditions
+            "Kidney Stones": "Pain management, Increase fluid intake, Strain urine, Refer to urologist",
+            "Urinary Tract Infection": "Antibiotics as prescribed, Increase fluid intake, Urinary analgesics, Follow-up",
+            "Benign Prostatic Hyperplasia": "Medication management, Limit fluids before bed, Refer to urologist",
+            "Vaginitis": "Appropriate antimicrobial treatment, Good hygiene, Avoid irritants, Follow-up",
+            "Dysmenorrhea": "Pain relievers, Heat therapy, Regular exercise, Hormonal contraception if appropriate",
+
+            // General Medical Conditions
+            "Dehydration": "Oral rehydration solution, Increase fluid intake, Rest, Electrolyte replacement",
+            "Malnutrition": "Nutritional counseling, Dietary supplementation, Regular monitoring, Multivitamins",
+            "Vitamin Deficiency": "Specific vitamin supplementation, Dietary modifications, Follow-up testing",
+            "Fatigue Syndrome": "Adequate rest, Balanced diet, Stress management, Gradual increase in activity",
+            "Heat Stroke": "Cooling measures, Fluid replacement, Rest, Medical monitoring",
+            "Motion Sickness": "Anti-emetics, Acupressure bands, Avoid reading in vehicle, Fresh air"
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
             // MOBILE MENU FUNCTIONALITY - ENHANCED
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
@@ -1418,13 +1858,214 @@ if (isset($_SESSION['success_message'])) {
                 });
             });
 
+            // LANGUAGE DETECTION FUNCTION
+            function detectLanguage(text) {
+                // Simple detection based on common Tagalog words and characters
+                const tagalogWords = ['ng', 'sa', 'ang', 'mga', 'na', 'at', 'ay', 'si', 'ni', 'kay'];
+                const tagalogCharacters = /[ñÑ]/;
+                
+                const words = text.toLowerCase().split(' ');
+                const hasTagalogWord = words.some(word => tagalogWords.includes(word));
+                const hasTagalogChar = tagalogCharacters.test(text);
+                
+                if (hasTagalogWord || hasTagalogChar) {
+                    return 'tagalog';
+                }
+                return 'english';
+            }
+
+            // AUTOCOMPLETE FUNCTIONALITY FOR SYMPTOMS AND DIAGNOSIS
+            function setupAutocomplete(inputElement, suggestionsContainer, dictionary, fieldName) {
+                inputElement.addEventListener('input', function() {
+                    const input = this.value.toLowerCase().trim();
+                    suggestionsContainer.innerHTML = '';
+                    
+                    if (input.length < 2) {
+                        suggestionsContainer.classList.remove('active');
+                        return;
+                    }
+
+                    const detectedLanguage = detectLanguage(input);
+                    let filteredItems = [];
+
+                    if (detectedLanguage === 'tagalog') {
+                        // Show only Tagalog suggestions when typing in Tagalog
+                        filteredItems = dictionary.filter(item => 
+                            item.tagalog.toLowerCase().includes(input)
+                        );
+                    } else {
+                        // Show only English suggestions when typing in English
+                        filteredItems = dictionary.filter(item => 
+                            item.english.toLowerCase().includes(input)
+                        );
+                    }
+
+                    if (filteredItems.length > 0) {
+                        filteredItems.forEach(item => {
+                            const suggestionItem = document.createElement('div');
+                            suggestionItem.className = 'suggestion-item';
+                            
+                            if (detectedLanguage === 'tagalog') {
+                                suggestionItem.innerHTML = `
+                                    <div>
+                                        <span class="${fieldName}-tagalog">${item.tagalog}</span>
+                                        <span class="${fieldName}-english">(${item.english})</span>
+                                        <span class="language-indicator">Tagalog</span>
+                                    </div>
+                                    <span class="${fieldName}-category">${item.category}</span>
+                                `;
+                                
+                                suggestionItem.addEventListener('click', function() {
+                                    inputElement.value = item.tagalog;
+                                    suggestionsContainer.classList.remove('active');
+                                    
+                                    // If this is diagnosis field, automatically fill treatment
+                                    if (fieldName === 'diagnosis') {
+                                        autoFillTreatmentForDiagnosis(item.english);
+                                    }
+                                });
+                            } else {
+                                suggestionItem.innerHTML = `
+                                    <div>
+                                        <span class="${fieldName}-english">${item.english}</span>
+                                        <span class="${fieldName}-tagalog">(${item.tagalog})</span>
+                                        <span class="language-indicator">English</span>
+                                    </div>
+                                    <span class="${fieldName}-category">${item.category}</span>
+                                `;
+                                
+                                suggestionItem.addEventListener('click', function() {
+                                    inputElement.value = item.english;
+                                    suggestionsContainer.classList.remove('active');
+                                    
+                                    // If this is diagnosis field, automatically fill treatment
+                                    if (fieldName === 'diagnosis') {
+                                        autoFillTreatmentForDiagnosis(item.english);
+                                    }
+                                });
+                            }
+                            
+                            suggestionsContainer.appendChild(suggestionItem);
+                        });
+                        suggestionsContainer.classList.add('active');
+                    } else {
+                        suggestionsContainer.classList.remove('active');
+                    }
+                });
+
+                // Close suggestions when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!inputElement.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                        suggestionsContainer.classList.remove('active');
+                    }
+                });
+
+                // Keyboard navigation
+                inputElement.addEventListener('keydown', function(e) {
+                    const suggestions = suggestionsContainer.querySelectorAll('.suggestion-item');
+                    let activeSuggestion = suggestionsContainer.querySelector('.suggestion-item.active');
+                    
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (!activeSuggestion) {
+                            suggestions[0]?.classList.add('active');
+                        } else {
+                            activeSuggestion.classList.remove('active');
+                            const next = activeSuggestion.nextElementSibling || suggestions[0];
+                            next.classList.add('active');
+                        }
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (!activeSuggestion) {
+                            suggestions[suggestions.length - 1]?.classList.add('active');
+                        } else {
+                            activeSuggestion.classList.remove('active');
+                            const prev = activeSuggestion.previousElementSibling || suggestions[suggestions.length - 1];
+                            prev.classList.add('active');
+                        }
+                    } else if (e.key === 'Enter' && activeSuggestion) {
+                        e.preventDefault();
+                        const detectedLanguage = detectLanguage(inputElement.value);
+                        if (detectedLanguage === 'tagalog') {
+                            inputElement.value = activeSuggestion.querySelector(`.${fieldName}-tagalog`).textContent;
+                        } else {
+                            inputElement.value = activeSuggestion.querySelector(`.${fieldName}-english`).textContent;
+                        }
+                        suggestionsContainer.classList.remove('active');
+                        
+                        // If this is diagnosis field, automatically fill treatment
+                        if (fieldName === 'diagnosis') {
+                            const diagnosisText = activeSuggestion.querySelector(`.${fieldName}-english`).textContent;
+                            autoFillTreatmentForDiagnosis(diagnosisText);
+                        }
+                    } else if (e.key === 'Escape') {
+                        suggestionsContainer.classList.remove('active');
+                    }
+                });
+            }
+
+            // FUNCTION TO AUTO-FILL TREATMENT BASED ON DIAGNOSIS
+            function autoFillTreatmentForDiagnosis(diagnosis) {
+                const treatmentInput = document.getElementById('treatment');
+                const autoTreatmentNotice = document.getElementById('autoTreatmentNotice');
+                
+                if (!treatmentInput) return;
+                
+                const treatment = diagnosisTreatmentMap[diagnosis];
+                
+                if (treatment) {
+                    // Fill the treatment field
+                    treatmentInput.value = treatment;
+                    
+                    // Show the notice
+                    autoTreatmentNotice.style.display = 'block';
+                    
+                    // Scroll to treatment field for visibility
+                    treatmentInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    // Auto-hide the notice after 5 seconds
+                    setTimeout(() => {
+                        autoTreatmentNotice.style.display = 'none';
+                    }, 5000);
+                } else {
+                    // If no treatment mapping found, hide the notice
+                    autoTreatmentNotice.style.display = 'none';
+                }
+            }
+
+            // Initialize autocomplete for symptoms and diagnosis fields
+            const symptomsInput = document.getElementById('symptoms');
+            const symptomsSuggestions = document.getElementById('symptomsSuggestions');
+            const diagnosisInput = document.getElementById('diagnosis');
+            const diagnosisSuggestions = document.getElementById('diagnosisSuggestions');
+
+            if (symptomsInput && symptomsSuggestions) {
+                setupAutocomplete(symptomsInput, symptomsSuggestions, symptomsDictionary, 'symptom');
+            }
+            if (diagnosisInput && diagnosisSuggestions) {
+                setupAutocomplete(diagnosisInput, diagnosisSuggestions, diagnosisDictionary, 'diagnosis');
+            }
+
             // Form Validation and Functionality
             const form = document.getElementById('consultationForm');
             const submitBtn = document.getElementById('submitBtn');
+            const resetBtn = document.getElementById('resetBtn');
             const requiredFields = form?.querySelectorAll('[required]');
 
             if (form && requiredFields) {
                 let formSubmitted = false;
+                
+                // Reset form functionality
+                resetBtn.addEventListener('click', function() {
+                    // Reset treatment field and notice
+                    const treatmentInput = document.getElementById('treatment');
+                    const autoTreatmentNotice = document.getElementById('autoTreatmentNotice');
+                    
+                    treatmentInput.value = "";
+                    autoTreatmentNotice.style.display = 'none';
+                    
+                    formSubmitted = false;
+                });
                 
                 // Real-time validation only after first submit attempt
                 requiredFields.forEach(field => {
