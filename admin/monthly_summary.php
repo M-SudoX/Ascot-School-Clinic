@@ -1128,62 +1128,7 @@ try {
                             <div class="stat-label">Departments Served</div>
                         </div>
                     </div>
-
-                    <!-- Detailed Breakdown -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
-                        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px;">
-                            <h5 style="color: #1a3a5f; margin-bottom: 1rem;">
-                                <i class="fas fa-stethoscope me-2"></i>Top Diagnoses
-                            </h5>
-                            <?php if (!empty($diagnostics)): ?>
-                                <?php 
-                                arsort($diagnostics);
-                                $topDiagnostics = array_slice($diagnostics, 0, 5, true);
-                                ?>
-                                <?php foreach($topDiagnostics as $diagnosis => $count): ?>
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #e9ecef;">
-                                    <span><?php echo htmlspecialchars($diagnosis); ?></span>
-                                    <span style="background: #667eea; color: white; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.8rem;">
-                                        <?php echo $count; ?> cases
-                                    </span>
-                                </div>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <p class="text-muted">No diagnosis data available</p>
-                            <?php endif; ?>
-                        </div>
-                        
-                        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px;">
-                            <h5 style="color: #1a3a5f; margin-bottom: 1rem;">
-                                <i class="fas fa-building me-2"></i>By Department
-                            </h5>
-                            <?php if (!empty($departments)): ?>
-                                <?php arsort($departments); ?>
-                                <?php foreach($departments as $dept => $count): ?>
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #e9ecef;">
-                                    <span><?php echo htmlspecialchars($dept); ?></span>
-                                    <span style="font-weight: 600; color: #667eea;"><?php echo $count; ?></span>
-                                </div>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <p class="text-muted">No department data available</p>
-                            <?php endif; ?>
-                            
-                            <h5 style="color: #1a3a5f; margin-top: 1.5rem; margin-bottom: 1rem;">
-                                <i class="fas fa-graduation-cap me-2"></i>By Year Level
-                            </h5>
-                            <?php if (!empty($year_levels)): ?>
-                                <?php foreach($year_levels as $level => $count): ?>
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #e9ecef;">
-                                    <span><?php echo htmlspecialchars($level); ?></span>
-                                    <span style="font-weight: 600; color: #667eea;"><?php echo $count; ?></span>
-                                </div>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <p class="text-muted">No year level data available</p>
-                            <?php endif; ?>
-                        </div>
-                    </div>
+                       
 
                     <!-- Recent Consultations Table -->
                     <div style="margin-top: 2rem;">

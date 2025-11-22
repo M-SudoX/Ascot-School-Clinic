@@ -12,6 +12,7 @@ if (!isset($_SESSION['admin_id'])) {
 $query = "
 SELECT 
     c.id,
+    c.student_id,
     u.fullname AS student,
     u.student_number AS studentId,
     u.email AS contact,
@@ -20,9 +21,11 @@ SELECT
     DATE_FORMAT(c.date, '%c') AS month,
     DATE_FORMAT(c.date, '%Y') AS year,
     TIME_FORMAT(c.time, '%h:%i %p') AS time,
-    c.status
+    c.status,
+    si.id as student_info_id
 FROM consultation_requests c
 LEFT JOIN users u ON c.student_id = u.id
+LEFT JOIN student_information si ON u.student_number = si.student_number
 WHERE c.status IN ('Approved', 'Rescheduled')
 ORDER BY c.date, c.time ASC
 ";
@@ -599,6 +602,46 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             white-space: nowrap;
         }
 
+        /* Clickable table rows */
+        .appointments-table tbody tr {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .appointments-table tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        /* Action buttons in table */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-consult {
+            border: none;
+            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            text-decoration: none;
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .btn-consult:hover {
+            background: #c3e6cb;
+            transform: scale(1.1);
+        }
+
         /* No Appointments Message */
         .no-appointments {
             text-align: center;
@@ -832,6 +875,17 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             .appointments-table {
                 min-width: 600px;
             }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .btn-consult {
+                width: 35px;
+                height: 35px;
+                font-size: 0.9rem;
+            }
         }
 
         @media (max-width: 576px) {
@@ -902,6 +956,17 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
             .calendar-day > div:first-child {
                 font-size: 0.9rem;
+            }
+
+            .action-buttons {
+                flex-direction: row;
+                gap: 5px;
+            }
+
+            .btn-consult {
+                width: 32px;
+                height: 32px;
+                font-size: 0.8rem;
             }
         }
         
@@ -1275,11 +1340,12 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     <th>Purpose</th>
                                     <th>Contact</th>
                                     <th>Status</th>
+                                    <th class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${dayApps.map(app => `
-                                    <tr>
+                                    <tr data-student-id="${app.student_info_id}">
                                         <td>${app.student}</td>
                                         <td>${app.studentId}</td>
                                         <td class="time-cell">${app.time}</td>
@@ -1290,6 +1356,13 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 ${app.status}
                                             </span>
                                         </td>
+                                        <td class="text-center">
+                                            <div class="action-buttons">
+                                                <a href="add_consultations.php?id=${app.student_info_id}" class="btn-consult" title="Start Consultation" onclick="event.stopPropagation()">
+                                                    <i class="fas fa-stethoscope"></i>
+                                                </a>
+                                            </div>
+                                        </td>
                                     </tr>
                                 `).join('')}
                             </tbody>
@@ -1297,6 +1370,18 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     }
                 </div>
             `;
+            
+            // Add click event listeners to entire table rows
+            if (dayApps.length > 0) {
+                const tableRows = list.querySelectorAll('tbody tr');
+                tableRows.forEach(row => {
+                    row.addEventListener('click', function() {
+                        const studentId = this.getAttribute('data-student-id');
+                        window.location.href = `add_consultations.php?id=${studentId}`;
+                    });
+                });
+            }
+            
             modal.show();
         }
 

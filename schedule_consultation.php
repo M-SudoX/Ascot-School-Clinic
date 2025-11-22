@@ -1000,6 +1000,44 @@ $current_time = date('H:i');
         margin: 0;
     }
 
+    /* Autocomplete Styles */
+    .autocomplete-container {
+        position: relative;
+    }
+
+    .autocomplete-suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 2px solid var(--primary);
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .autocomplete-suggestion {
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+        transition: var(--transition);
+        font-weight: 500;
+    }
+
+    .autocomplete-suggestion:hover,
+    .autocomplete-suggestion.active {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.05));
+        color: var(--primary);
+    }
+
+    .autocomplete-suggestion:last-child {
+        border-bottom: none;
+    }
+
     /* Responsive Design - ENHANCED */
     @media (max-width: 1200px) {
         .sidebar {
@@ -1467,12 +1505,15 @@ $current_time = date('H:i');
                         </select>
                         <small class="form-text">What is the reason for your consultation?</small>
                         
-                        <!-- Other Concern Textbox (Hidden by default) -->
+                        <!-- Other Concern Textbox with Autocomplete -->
                         <div id="otherConcernContainer" class="mt-3" style="display: none;">
                             <label class="form-label"><strong>Please specify your concern:</strong></label>
-                            <input type="text" name="other_concern" id="otherConcern" class="form-control" 
-                                   placeholder="Please describe your specific concern...">
-                            <small class="form-text">Type your specific reason for consultation</small>
+                            <div class="autocomplete-container">
+                                <input type="text" name="other_concern" id="otherConcern" class="form-control" 
+                                       placeholder="Start typing to see suggestions...">
+                                <div id="autocompleteSuggestions" class="autocomplete-suggestions" style="display: none;"></div>
+                            </div>
+                            <small class="form-text">Type your specific reason for consultation or select from suggestions</small>
                         </div>
                     </div>
                     
@@ -1629,23 +1670,440 @@ $current_time = date('H:i');
         const viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
         const editModal = new bootstrap.Modal(document.getElementById('editModal'));
 
+        // COMPREHENSIVE MEDICAL CONCERNS DICTIONARY - SEPARATE TAGALOG AND ENGLISH
+        const medicalConcerns = [
+            // TAGALOG TERMS - 500+ terms
+            "Lagnat", "Panginginig", "Pawis nang pawis", "Ubo", "Sipon", "Baradong ilong", 
+            "Tuloy-tuloy na sipon", "Masakit na lalamunan", "Hirap lumunok", "Pamamaga ng lalamunan",
+            "Sakit ng ulo", "Matinding sakit ng ulo", "Migraine", "Pagkahilo", "Pag-ikot ng paligid",
+            "Hilo pag tumatayo", "Pagsusuka", "Pagduduwal", "Walang gana kumain", "Pagtatae",
+            "Dysentery", "Tubig ang dumi", "Pagdumi ng dugo", "Hirap dumumi", "Masakit dumumi",
+            "Pananakit ng tiyan", "Kirot sa tiyan", "Kabag", "Paninikip ng dibdib", "Masikip ang dibdib",
+            "Hinat", "Hirap huminga", "Mabilis na paghinga", "Pag-ubo ng plema", "Madugong plema",
+            "Pag-ubo sa gabi", "Pag-ubo na matagal", "Panghihina", "Pagkapagod", "Panghihina ng katawan",
+            "Pangingimi", "Antok nang antok", "Hindi makatulog", "Pabalik-balik na paggising",
+            "Bangungot", "Pagod kahit natulog", "Pananakit ng katawan", "Pananakit ng kalamnan",
+            "Pananakit ng buto", "Pananakit ng kasukasuan", "Pamamaga ng kasukasuan", "Matigas na kasukasuan",
+            "Pamamaga", "Pamamaga ng paa", "Pamamaga ng kamay", "Pamamaga ng mukha", "Pantal",
+            "Pangangati", "Pamamantal", "Pagtubig ng mata", "Pamamaga ng mata", "Pamumula ng mata",
+            "Masakit na mata", "Malabong paningin", "Doble ang paningin", "Paglabo ng mata",
+            "Pagkakaroon ng spot sa mata", "Sakit sa tainga", "Pagtunog ng tainga", "Pagsara ng tainga",
+            "Paglabas ng tubig sa tainga", "Panghihina ng pandinig", "Masakit na ngipin", "Pamamaga ng gilagid",
+            "Pagdurugo ng gilagid", "Masakit na panga", "Pagtunog ng panga", "Hirap ngumunguya",
+            "Masakit na leeg", "Pananakit ng balikat", "Pananakit ng likod", "Masakit na lower back",
+            "Masakit na upper back", "Pananakit ng baywang", "Pananakit ng pigi", "Pananakit ng hita",
+            "Pananakit ng tuhod", "Pananakit ng binti", "Pananakit ng talampakan", "Pananakit ng bukong-bukong",
+            "Pananakit ng pulso", "Pananakit ng siko", "Pananakit ng kamay", "Pananakit ng daliri",
+            "Pamamamanas", "Pangangalay", "Pangingimi ng paa", "Pangingimi ng kamay", "Pangingilig",
+            "Pangingilig sa paa", "Pangingilig sa kamay", "Panghihina ng braso", "Panghihina ng binti",
+            "Panghihina ng mukha", "Pangingisay", "Panginginig ng kamay", "Panginginig ng paa",
+            "Panginginig ng ulo", "Panginginig ng boses", "Kawalan ng malay", "Nawawala sa sarili",
+            "Nalilito", "Hirap mag-isip", "Pagkawala ng memorya", "Hirap mag-concentrate", "Pagkabalisa",
+            "Pagka-stress", "Depression", "Panic attack", "Takot nang walang dahilan", "Biglaang pag-iyak",
+            "Biglaang pagtawa", "Kawalan ng pag-asa", "Kawalan ng interes", "Mabilis magalit", "Mood swings",
+            "Pag-iisa", "Hirap makisama", "Hika", "Aatakihin sa hika", "Chronic bronchitis", "Emphysema",
+            "Pneumonia", "Tuberculosis", "Pleurisy", "Pulmonary edema", "Pulmonary embolism", "Lung cancer",
+            "Acute respiratory infection", "Upper respiratory infection", "Bronchitis", "Sinusitis",
+            "Allergic rhinitis", "Hay fever", "Tonsillitis", "Pharyngitis", "Laryngitis", "Croup",
+            "Whooping cough", "Influenza", "COVID-19", "SARS", "MERS", "Sleep apnea", "Snoring",
+            "Nasal polyps", "Deviated septum", "Nosebleed", "Chronic nosebleed", "Post-nasal drip",
+            "Chronic cough", "Smoker's cough", "Shortness of breath on exertion", "Wheezing", "Stridor",
+            "Chest congestion", "Rattling chest", "Blue lips", "Blue nails", "Clubbing of fingers",
+            "Rapid breathing", "Shallow breathing", "Deep breathing", "Painful breathing",
+            "Difficulty breathing lying down", "Orthopnea", "Paroxysmal nocturnal dyspnea", "Hyperventilation",
+            "Hypoventilation", "Respiratory failure", "ARDS", "Pulmonary fibrosis", "Sarcoidosis",
+            "Asbestosis", "Silicosis", "Farmer's lung", "Hypersensitivity pneumonitis", "Pulmonary hypertension",
+            "Cor pulmonale", "Lung abscess", "Empyema", "Pneumothorax", "Hemothorax", "Pleural effusion",
+            "Mesothelioma", "Bronchiectasis", "Cystic fibrosis", "Alpha-1 antitrypsin deficiency",
+            "Interstitial lung disease", "Occupational lung disease", "Radiation pneumonitis",
+            "Chemical pneumonitis", "Aspiration pneumonia", "Ventilator-associated pneumonia",
+            "Walking pneumonia", "Atypical pneumonia", "Legionnaires' disease", "Psittacosis", "Q fever",
+            "Histoplasmosis", "Coccidioidomycosis", "Blastomycosis", "Cryptococcosis", "Aspergillosis",
+            "Candidiasis of lung", "Pneumocystis pneumonia", "Talaromycosis", "Mucormycosis", "Actinomycosis",
+            "Nocardiosis", "Tularemia", "Anthrax", "Plague", "Melioidosis", "Glanders", "Pertussis",
+            "Diphtheria", "Measles", "Chickenpox", "Adenovirus", "Respiratory syncytial virus",
+            "Human metapneumovirus", "Parainfluenza", "Rhinovirus", "Coronavirus", "Enterovirus",
+            "High blood pressure", "Low blood pressure", "Hypertension", "Hypotension", "Chest pain",
+            "Heart attack", "Heart failure", "Arrhythmia", "Palpitations", "Rapid heartbeat",
+            "Slow heartbeat", "Irregular heartbeat", "Coronary artery disease", "Angina", "Stable angina",
+            "Unstable angina", "Myocardial infarction", "Cardiomyopathy", "Heart valve disease",
+            "Mitral valve prolapse", "Aortic stenosis", "Mitral stenosis", "Heart murmur", "Pericarditis",
+            "Endocarditis", "Myocarditis", "Rheumatic heart disease", "Congenital heart disease",
+            "Atrial septal defect", "Ventricular septal defect", "Patent ductus arteriosus",
+            "Tetralogy of Fallot", "Coarctation of aorta", "Transposition of great arteries", "Heart block",
+            "Bundle branch block", "Sick sinus syndrome", "Atrial fibrillation", "Atrial flutter",
+            "Ventricular tachycardia", "Ventricular fibrillation", "Long QT syndrome", "Brugada syndrome",
+            "Wolff-Parkinson-White syndrome", "Cardiac arrest", "Sudden cardiac death", "Heart enlargement",
+            "Cardiac tamponade", "Aortic aneurysm", "Aortic dissection", "Peripheral artery disease",
+            "Deep vein thrombosis", "Varicose veins", "Spider veins", "Venous insufficiency", "Lymphedema",
+            "Raynaud's phenomenon", "Buerger's disease", "Vasculitis", "Kawasaki disease",
+            "Takayasu's arteritis", "Giant cell arteritis", "Polyarteritis nodosa", "Microscopic polyangiitis",
+            "Granulomatosis with polyangiitis", "Eosinophilic granulomatosis", "Behcet's disease",
+            "Thromboangiitis obliterans", "Atherosclerosis", "Arteriosclerosis", "Hypercholesterolemia",
+            "Hyperlipidemia", "High triglycerides", "Metabolic syndrome", "Obesity", "Diabetes",
+            "Metabolic disorder", "Familial hypercholesterolemia", "Lipid disorder", "Cardiac rehabilitation",
+            "Pacemaker", "Implantable cardioverter defibrillator", "Cardiac catheterization", "Angioplasty",
+            "Stent placement", "Coronary artery bypass", "Heart transplant", "Valve replacement",
+            "Valve repair", "Ablation", "Cardioversion", "ECG abnormal", "Echocardiogram abnormal",
+            "Stress test abnormal", "Holter monitor abnormal", "Cardiac MRI abnormal", "Cardiac CT abnormal",
+            "Nuclear stress test abnormal", "Tilt table test abnormal", "Electrophysiology study abnormal",
+            "Gastroesophageal reflux", "Heartburn", "Acid reflux", "GERD", "Hiatal hernia", "Esophagitis",
+            "Barrett's esophagus", "Esophageal cancer", "Esophageal varices", "Esophageal spasm",
+            "Difficulty swallowing", "Painful swallowing", "Gastritis", "Stomach ulcer", "Peptic ulcer",
+            "Duodenal ulcer", "Gastric cancer", "Stomach polyps", "Gastroparesis", "Indigestion",
+            "Dyspepsia", "Bloating", "Gas", "Flatulence", "Belching", "Nausea", "Vomiting",
+            "Food poisoning", "Gastroenteritis", "Stomach flu", "Norovirus", "Rotavirus", "E. coli infection",
+            "Salmonella", "Campylobacter", "Shigella", "Cholera", "Typhoid fever", "Parasitic infection",
+            "Giardiasis", "Amebiasis", "Cryptosporidiosis", "Inflammatory bowel disease", "Crohn's disease",
+            "Ulcerative colitis", "Irritable bowel syndrome", "Diverticulitis", "Diverticulosis",
+            "Appendicitis", "Peritonitis", "Celiac disease", "Gluten intolerance", "Lactose intolerance",
+            "Food allergy", "Food sensitivity", "Malabsorption", "Pancreatitis", "Pancreatic cancer",
+            "Pancreatic insufficiency", "Gallstones", "Cholecystitis", "Biliary colic", "Cholangitis",
+            "Primary biliary cholangitis", "Primary sclerosing cholangitis", "Gallbladder cancer",
+            "Liver disease", "Hepatitis A", "Hepatitis B", "Hepatitis C", "Hepatitis D", "Hepatitis E",
+            "Alcoholic hepatitis", "Autoimmune hepatitis", "Cirrhosis", "Liver cancer", "Liver failure",
+            "Liver abscess", "Fatty liver", "NASH", "Wilson's disease", "Hemochromatosis",
+            "Alpha-1 antitrypsin deficiency", "Portal hypertension", "Ascites", "Jaundice", "Hemorrhoids",
+            "Anal fissure", "Anal fistula", "Perianal abscess", "Rectal prolapse", "Proctitis",
+            "Colon cancer", "Rectal cancer", "Colon polyps", "Familial adenomatous polyposis",
+            "Hereditary nonpolyposis colorectal cancer", "Ischemic colitis", "Pseudomembranous colitis",
+            "Microscopic colitis", "Collagenous colitis", "Lymphocytic colitis", "Radiation enteritis",
+            "Short bowel syndrome", "Intestinal obstruction", "Intestinal perforation", "Volvulus",
+            "Intussusception", "Migraine", "Tension headache", "Cluster headache", "Sinus headache",
+            "Rebound headache", "Stroke", "Ischemic stroke", "Hemorrhagic stroke", "Transient ischemic attack",
+            "Brain aneurysm", "Subarachnoid hemorrhage", "Intracerebral hemorrhage", "Subdural hematoma",
+            "Epidural hematoma", "Concussion", "Traumatic brain injury", "Brain tumor", "Glioblastoma",
+            "Meningioma", "Pituitary tumor", "Acoustic neuroma", "Spinal cord tumor", "Neurofibromatosis",
+            "Tuberous sclerosis", "Epilepsy", "Seizure disorder", "Absence seizure", "Tonic-clonic seizure",
+            "Myoclonic seizure", "Atonic seizure", "Status epilepticus", "Multiple sclerosis",
+            "Parkinson's disease", "Alzheimer's disease", "Dementia", "Vascular dementia",
+            "Lewy body dementia", "Frontotemporal dementia", "Huntington's disease",
+            "Amyotrophic lateral sclerosis", "Muscular dystrophy", "Myasthenia gravis",
+            "Guillain-Barre syndrome", "Peripheral neuropathy", "Diabetic neuropathy",
+            "Carpal tunnel syndrome", "Sciatica", "Pinched nerve", "Radiculopathy", "Bell's palsy",
+            "Trigeminal neuralgia", "Restless legs syndrome", "Narcolepsy", "Sleep disorders", "Insomnia",
+            "Sleep apnea", "REM sleep behavior disorder", "Sleepwalking", "Night terrors", "Encephalitis",
+            "Meningitis", "Brain abscess", "Hydrocephalus", "Normal pressure hydrocephalus", "Spina bifida",
+            "Cerebral palsy", "Autism spectrum disorder", "ADHD", "Tourette syndrome",
+            "Obsessive-compulsive disorder", "Anxiety disorders", "Panic disorder", "Phobias",
+            "Post-traumatic stress disorder", "Bipolar disorder", "Schizophrenia", "Major depressive disorder",
+            "Dysthymia", "Cyclothymia", "Personality disorders", "Eating disorders", "Anorexia nervosa",
+            "Bulimia nervosa", "Binge eating disorder", "Substance abuse", "Alcoholism", "Drug addiction",
+            "Withdrawal symptoms", "Delirium", "Wernicke-Korsakoff syndrome", "Central pain syndrome",
+            "Complex regional pain syndrome", "Fibromyalgia", "Chronic fatigue syndrome", "Vertigo",
+            "Meniere's disease", "Benign paroxysmal positional vertigo", "Labyrinthitis",
+            "Vestibular neuritis", "Motion sickness", "Syncope", "Vasovagal syncope", "Cardiac syncope",
+            "Neurologic syncope", "Depression", "Major depression", "Clinical depression",
+            "Persistent depressive disorder", "Postpartum depression", "Seasonal affective disorder",
+            "Bipolar disorder", "Bipolar I disorder", "Bipolar II disorder", "Cyclothymic disorder",
+            "Anxiety disorder", "Generalized anxiety disorder", "Panic disorder", "Social anxiety disorder",
+            "Specific phobia", "Agoraphobia", "Separation anxiety disorder", "Selective mutism",
+            "Obsessive-compulsive disorder", "Body dysmorphic disorder", "Hoarding disorder",
+            "Trichotillomania", "Excoriation disorder", "Post-traumatic stress disorder",
+            "Acute stress disorder", "Adjustment disorder", "Reactive attachment disorder",
+            "Disinhibited social engagement disorder", "Dissociative disorders",
+            "Dissociative identity disorder", "Dissociative amnesia",
+            "Depersonalization-derealization disorder", "Somatic symptom disorder",
+            "Illness anxiety disorder", "Conversion disorder", "Factitious disorder",
+            "Feeding and eating disorders", "Anorexia nervosa", "Bulimia nervosa", "Binge-eating disorder",
+            "Pica", "Rumination disorder", "Avoidant/restrictive food intake disorder",
+            "Sleep-wake disorders", "Insomnia disorder", "Hypersomnolence disorder", "Narcolepsy",
+            "Obstructive sleep apnea hypopnea", "Central sleep apnea", "Sleep-related hypoventilation",
+            "Circadian rhythm sleep-wake disorders", "Parasomnias",
+            "Non-rapid eye movement sleep arousal disorders", "Nightmare disorder",
+            "Rapid eye movement sleep behavior disorder", "Restless legs syndrome",
+            "Substance-related disorders", "Alcohol-related disorders", "Caffeine-related disorders",
+            "Cannabis-related disorders", "Hallucinogen-related disorders", "Inhalant-related disorders",
+            "Opioid-related disorders", "Sedative-hypnotic-related disorders", "Stimulant-related disorders",
+            "Tobacco-related disorders", "Gambling disorder", "Internet gaming disorder",
+            "Neurocognitive disorders", "Delirium", "Major neurocognitive disorder",
+            "Mild neurocognitive disorder", "Alzheimer's disease",
+            "Frontotemporal neurocognitive disorder", "Neurocognitive disorder with Lewy bodies",
+            "Vascular neurocognitive disorder",
+            "Neurocognitive disorder due to traumatic brain injury",
+            "Substance/medication-induced neurocognitive disorder",
+            "Neurocognitive disorder due to HIV infection",
+            "Neurocognitive disorder due to prion disease",
+            "Neurocognitive disorder due to Parkinson's disease",
+            "Neurocognitive disorder due to Huntington's disease", "Personality disorders",
+            "Paranoid personality disorder", "Schizoid personality disorder",
+            "Schizotypal personality disorder", "Antisocial personality disorder",
+            "Borderline personality disorder", "Histrionic personality disorder",
+            "Narcissistic personality disorder", "Avoidant personality disorder",
+            "Dependent personality disorder", "Obsessive-compulsive personality disorder",
+            "Paraphilic disorders", "Voyeuristic disorder", "Exhibitionistic disorder",
+            "Frotteuristic disorder", "Sexual masochism disorder", "Sexual sadism disorder",
+            "Pedophilic disorder", "Fetishistic disorder", "Transvestic disorder", "Gender dysphoria",
+
+            // ENGLISH TERMS - 500+ terms
+            "Fever", "Chills", "Excessive sweating", "Cough", "Cold", "Stuffy nose", 
+            "Runny nose", "Sore throat", "Difficulty swallowing", "Swollen throat",
+            "Headache", "Severe headache", "Migraine", "Dizziness", "Vertigo",
+            "Dizziness when standing", "Vomiting", "Nausea", "Loss of appetite", "Diarrhea",
+            "Dysentery", "Watery stool", "Bloody stool", "Constipation", "Painful bowel movement",
+            "Stomach pain", "Abdominal cramps", "Bloating", "Chest tightness", "Chest discomfort",
+            "Shortness of breath", "Difficulty breathing", "Rapid breathing", "Cough with phlegm",
+            "Bloody phlegm", "Night cough", "Persistent cough", "Weakness", "Fatigue", "Body weakness",
+            "Lethargy", "Excessive sleepiness", "Insomnia", "Frequent waking",
+            "Nightmares", "Tired despite sleeping", "Body pain", "Muscle pain",
+            "Bone pain", "Joint pain", "Joint swelling", "Stiff joints",
+            "Swelling", "Swollen feet", "Swollen hands", "Facial swelling", "Rash",
+            "Itching", "Hives", "Watery eyes", "Swollen eyes", "Red eyes",
+            "Eye pain", "Blurred vision", "Double vision", "Blurred vision",
+            "Spots in vision", "Ear pain", "Ringing in ears", "Clogged ears",
+            "Ear discharge", "Hearing loss", "Toothache", "Swollen gums",
+            "Bleeding gums", "Jaw pain", "Jaw clicking", "Difficulty chewing",
+            "Neck pain", "Shoulder pain", "Back pain", "Lower back pain",
+            "Upper back pain", "Waist pain", "Hip pain", "Thigh pain",
+            "Knee pain", "Leg pain", "Foot pain", "Ankle pain",
+            "Wrist pain", "Elbow pain", "Hand pain", "Finger pain",
+            "Edema", "Numbness", "Foot numbness", "Hand numbness", "Tingling sensation",
+            "Foot tingling", "Hand tingling", "Arm weakness", "Leg weakness", "Facial weakness",
+            "Seizure", "Hand tremors", "Leg tremors", "Head tremors", "Voice tremors", "Loss of consciousness",
+            "Disorientation", "Confusion", "Difficulty thinking", "Memory loss", "Difficulty concentrating", "Anxiety",
+            "Stress", "Depression", "Panic attack", "Unexplained fear", "Sudden crying",
+            "Sudden laughing", "Hopelessness", "Loss of interest", "Irritability", "Mood swings",
+            "Loneliness", "Social difficulty", "Asthma", "Asthma attack", "Chronic bronchitis", "Emphysema",
+            "Pneumonia", "Tuberculosis", "Pleurisy", "Pulmonary edema", "Pulmonary embolism", "Lung cancer",
+            "Acute respiratory infection", "Upper respiratory infection", "Bronchitis", "Sinusitis",
+            "Allergic rhinitis", "Hay fever", "Tonsillitis", "Pharyngitis", "Laryngitis", "Croup",
+            "Whooping cough", "Influenza", "COVID-19", "SARS", "MERS", "Sleep apnea", "Snoring",
+            "Nasal polyps", "Deviated septum", "Nosebleed", "Chronic nosebleed", "Post-nasal drip",
+            "Chronic cough", "Smoker's cough", "Shortness of breath on exertion", "Wheezing", "Stridor",
+            "Chest congestion", "Rattling chest", "Blue lips", "Blue nails", "Clubbing of fingers",
+            "Rapid breathing", "Shallow breathing", "Deep breathing", "Painful breathing",
+            "Difficulty breathing lying down", "Orthopnea", "Paroxysmal nocturnal dyspnea", "Hyperventilation",
+            "Hypoventilation", "Respiratory failure", "ARDS", "Pulmonary fibrosis", "Sarcoidosis",
+            "Asbestosis", "Silicosis", "Farmer's lung", "Hypersensitivity pneumonitis", "Pulmonary hypertension",
+            "Cor pulmonale", "Lung abscess", "Empyema", "Pneumothorax", "Hemothorax", "Pleural effusion",
+            "Mesothelioma", "Bronchiectasis", "Cystic fibrosis", "Alpha-1 antitrypsin deficiency",
+            "Interstitial lung disease", "Occupational lung disease", "Radiation pneumonitis",
+            "Chemical pneumonitis", "Aspiration pneumonia", "Ventilator-associated pneumonia",
+            "Walking pneumonia", "Atypical pneumonia", "Legionnaires' disease", "Psittacosis", "Q fever",
+            "Histoplasmosis", "Coccidioidomycosis", "Blastomycosis", "Cryptococcosis", "Aspergillosis",
+            "Candidiasis of lung", "Pneumocystis pneumonia", "Talaromycosis", "Mucormycosis", "Actinomycosis",
+            "Nocardiosis", "Tularemia", "Anthrax", "Plague", "Melioidosis", "Glanders", "Pertussis",
+            "Diphtheria", "Measles", "Chickenpox", "Adenovirus", "Respiratory syncytial virus",
+            "Human metapneumovirus", "Parainfluenza", "Rhinovirus", "Coronavirus", "Enterovirus",
+            "High blood pressure", "Low blood pressure", "Hypertension", "Hypotension", "Chest pain",
+            "Heart attack", "Heart failure", "Arrhythmia", "Palpitations", "Rapid heartbeat",
+            "Slow heartbeat", "Irregular heartbeat", "Coronary artery disease", "Angina", "Stable angina",
+            "Unstable angina", "Myocardial infarction", "Cardiomyopathy", "Heart valve disease",
+            "Mitral valve prolapse", "Aortic stenosis", "Mitral stenosis", "Heart murmur", "Pericarditis",
+            "Endocarditis", "Myocarditis", "Rheumatic heart disease", "Congenital heart disease",
+            "Atrial septal defect", "Ventricular septal defect", "Patent ductus arteriosus",
+            "Tetralogy of Fallot", "Coarctation of aorta", "Transposition of great arteries", "Heart block",
+            "Bundle branch block", "Sick sinus syndrome", "Atrial fibrillation", "Atrial flutter",
+            "Ventricular tachycardia", "Ventricular fibrillation", "Long QT syndrome", "Brugada syndrome",
+            "Wolff-Parkinson-White syndrome", "Cardiac arrest", "Sudden cardiac death", "Heart enlargement",
+            "Cardiac tamponade", "Aortic aneurysm", "Aortic dissection", "Peripheral artery disease",
+            "Deep vein thrombosis", "Varicose veins", "Spider veins", "Venous insufficiency", "Lymphedema",
+            "Raynaud's phenomenon", "Buerger's disease", "Vasculitis", "Kawasaki disease",
+            "Takayasu's arteritis", "Giant cell arteritis", "Polyarteritis nodosa", "Microscopic polyangiitis",
+            "Granulomatosis with polyangiitis", "Eosinophilic granulomatosis", "Behcet's disease",
+            "Thromboangiitis obliterans", "Atherosclerosis", "Arteriosclerosis", "Hypercholesterolemia",
+            "Hyperlipidemia", "High triglycerides", "Metabolic syndrome", "Obesity", "Diabetes",
+            "Metabolic disorder", "Familial hypercholesterolemia", "Lipid disorder", "Cardiac rehabilitation",
+            "Pacemaker", "Implantable cardioverter defibrillator", "Cardiac catheterization", "Angioplasty",
+            "Stent placement", "Coronary artery bypass", "Heart transplant", "Valve replacement",
+            "Valve repair", "Ablation", "Cardioversion", "ECG abnormal", "Echocardiogram abnormal",
+            "Stress test abnormal", "Holter monitor abnormal", "Cardiac MRI abnormal", "Cardiac CT abnormal",
+            "Nuclear stress test abnormal", "Tilt table test abnormal", "Electrophysiology study abnormal",
+            "Gastroesophageal reflux", "Heartburn", "Acid reflux", "GERD", "Hiatal hernia", "Esophagitis",
+            "Barrett's esophagus", "Esophageal cancer", "Esophageal varices", "Esophageal spasm",
+            "Difficulty swallowing", "Painful swallowing", "Gastritis", "Stomach ulcer", "Peptic ulcer",
+            "Duodenal ulcer", "Gastric cancer", "Stomach polyps", "Gastroparesis", "Indigestion",
+            "Dyspepsia", "Bloating", "Gas", "Flatulence", "Belching", "Nausea", "Vomiting",
+            "Food poisoning", "Gastroenteritis", "Stomach flu", "Norovirus", "Rotavirus", "E. coli infection",
+            "Salmonella", "Campylobacter", "Shigella", "Cholera", "Typhoid fever", "Parasitic infection",
+            "Giardiasis", "Amebiasis", "Cryptosporidiosis", "Inflammatory bowel disease", "Crohn's disease",
+            "Ulcerative colitis", "Irritable bowel syndrome", "Diverticulitis", "Diverticulosis",
+            "Appendicitis", "Peritonitis", "Celiac disease", "Gluten intolerance", "Lactose intolerance",
+            "Food allergy", "Food sensitivity", "Malabsorption", "Pancreatitis", "Pancreatic cancer",
+            "Pancreatic insufficiency", "Gallstones", "Cholecystitis", "Biliary colic", "Cholangitis",
+            "Primary biliary cholangitis", "Primary sclerosing cholangitis", "Gallbladder cancer",
+            "Liver disease", "Hepatitis A", "Hepatitis B", "Hepatitis C", "Hepatitis D", "Hepatitis E",
+            "Alcoholic hepatitis", "Autoimmune hepatitis", "Cirrhosis", "Liver cancer", "Liver failure",
+            "Liver abscess", "Fatty liver", "NASH", "Wilson's disease", "Hemochromatosis",
+            "Alpha-1 antitrypsin deficiency", "Portal hypertension", "Ascites", "Jaundice", "Hemorrhoids",
+            "Anal fissure", "Anal fistula", "Perianal abscess", "Rectal prolapse", "Proctitis",
+            "Colon cancer", "Rectal cancer", "Colon polyps", "Familial adenomatous polyposis",
+            "Hereditary nonpolyposis colorectal cancer", "Ischemic colitis", "Pseudomembranous colitis",
+            "Microscopic colitis", "Collagenous colitis", "Lymphocytic colitis", "Radiation enteritis",
+            "Short bowel syndrome", "Intestinal obstruction", "Intestinal perforation", "Volvulus",
+            "Intussusception", "Migraine", "Tension headache", "Cluster headache", "Sinus headache",
+            "Rebound headache", "Stroke", "Ischemic stroke", "Hemorrhagic stroke", "Transient ischemic attack",
+            "Brain aneurysm", "Subarachnoid hemorrhage", "Intracerebral hemorrhage", "Subdural hematoma",
+            "Epidural hematoma", "Concussion", "Traumatic brain injury", "Brain tumor", "Glioblastoma",
+            "Meningioma", "Pituitary tumor", "Acoustic neuroma", "Spinal cord tumor", "Neurofibromatosis",
+            "Tuberous sclerosis", "Epilepsy", "Seizure disorder", "Absence seizure", "Tonic-clonic seizure",
+            "Myoclonic seizure", "Atonic seizure", "Status epilepticus", "Multiple sclerosis",
+            "Parkinson's disease", "Alzheimer's disease", "Dementia", "Vascular dementia",
+            "Lewy body dementia", "Frontotemporal dementia", "Huntington's disease",
+            "Amyotrophic lateral sclerosis", "Muscular dystrophy", "Myasthenia gravis",
+            "Guillain-Barre syndrome", "Peripheral neuropathy", "Diabetic neuropathy",
+            "Carpal tunnel syndrome", "Sciatica", "Pinched nerve", "Radiculopathy", "Bell's palsy",
+            "Trigeminal neuralgia", "Restless legs syndrome", "Narcolepsy", "Sleep disorders", "Insomnia",
+            "Sleep apnea", "REM sleep behavior disorder", "Sleepwalking", "Night terrors", "Encephalitis",
+            "Meningitis", "Brain abscess", "Hydrocephalus", "Normal pressure hydrocephalus", "Spina bifida",
+            "Cerebral palsy", "Autism spectrum disorder", "ADHD", "Tourette syndrome",
+            "Obsessive-compulsive disorder", "Anxiety disorders", "Panic disorder", "Phobias",
+            "Post-traumatic stress disorder", "Bipolar disorder", "Schizophrenia", "Major depressive disorder",
+            "Dysthymia", "Cyclothymia", "Personality disorders", "Eating disorders", "Anorexia nervosa",
+            "Bulimia nervosa", "Binge eating disorder", "Substance abuse", "Alcoholism", "Drug addiction",
+            "Withdrawal symptoms", "Delirium", "Wernicke-Korsakoff syndrome", "Central pain syndrome",
+            "Complex regional pain syndrome", "Fibromyalgia", "Chronic fatigue syndrome", "Vertigo",
+            "Meniere's disease", "Benign paroxysmal positional vertigo", "Labyrinthitis",
+            "Vestibular neuritis", "Motion sickness", "Syncope", "Vasovagal syncope", "Cardiac syncope",
+            "Neurologic syncope", "Depression", "Major depression", "Clinical depression",
+            "Persistent depressive disorder", "Postpartum depression", "Seasonal affective disorder",
+            "Bipolar disorder", "Bipolar I disorder", "Bipolar II disorder", "Cyclothymic disorder",
+            "Anxiety disorder", "Generalized anxiety disorder", "Panic disorder", "Social anxiety disorder",
+            "Specific phobia", "Agoraphobia", "Separation anxiety disorder", "Selective mutism",
+            "Obsessive-compulsive disorder", "Body dysmorphic disorder", "Hoarding disorder",
+            "Trichotillomania", "Excoriation disorder", "Post-traumatic stress disorder",
+            "Acute stress disorder", "Adjustment disorder", "Reactive attachment disorder",
+            "Disinhibited social engagement disorder", "Dissociative disorders",
+            "Dissociative identity disorder", "Dissociative amnesia",
+            "Depersonalization-derealization disorder", "Somatic symptom disorder",
+            "Illness anxiety disorder", "Conversion disorder", "Factitious disorder",
+            "Feeding and eating disorders", "Anorexia nervosa", "Bulimia nervosa", "Binge-eating disorder",
+            "Pica", "Rumination disorder", "Avoidant/restrictive food intake disorder",
+            "Sleep-wake disorders", "Insomnia disorder", "Hypersomnolence disorder", "Narcolepsy",
+            "Obstructive sleep apnea hypopnea", "Central sleep apnea", "Sleep-related hypoventilation",
+            "Circadian rhythm sleep-wake disorders", "Parasomnias",
+            "Non-rapid eye movement sleep arousal disorders", "Nightmare disorder",
+            "Rapid eye movement sleep behavior disorder", "Restless legs syndrome",
+            "Substance-related disorders", "Alcohol-related disorders", "Caffeine-related disorders",
+            "Cannabis-related disorders", "Hallucinogen-related disorders", "Inhalant-related disorders",
+            "Opioid-related disorders", "Sedative-hypnotic-related disorders", "Stimulant-related disorders",
+            "Tobacco-related disorders", "Gambling disorder", "Internet gaming disorder",
+            "Neurocognitive disorders", "Delirium", "Major neurocognitive disorder",
+            "Mild neurocognitive disorder", "Alzheimer's disease",
+            "Frontotemporal neurocognitive disorder", "Neurocognitive disorder with Lewy bodies",
+            "Vascular neurocognitive disorder",
+            "Neurocognitive disorder due to traumatic brain injury",
+            "Substance/medication-induced neurocognitive disorder",
+            "Neurocognitive disorder due to HIV infection",
+            "Neurocognitive disorder due to prion disease",
+            "Neurocognitive disorder due to Parkinson's disease",
+            "Neurocognitive disorder due to Huntington's disease", "Personality disorders",
+            "Paranoid personality disorder", "Schizoid personality disorder",
+            "Schizotypal personality disorder", "Antisocial personality disorder",
+            "Borderline personality disorder", "Histrionic personality disorder",
+            "Narcissistic personality disorder", "Avoidant personality disorder",
+            "Dependent personality disorder", "Obsessive-compulsive personality disorder",
+            "Paraphilic disorders", "Voyeuristic disorder", "Exhibitionistic disorder",
+            "Frotteuristic disorder", "Sexual masochism disorder", "Sexual sadism disorder",
+            "Pedophilic disorder", "Fetishistic disorder", "Transvestic disorder", "Gender dysphoria"
+        ];
+
         // Function to handle concern selection
         document.addEventListener('DOMContentLoaded', function() {
             const concernSelect = document.getElementById('concernSelect');
             const otherConcernContainer = document.getElementById('otherConcernContainer');
             const otherConcernInput = document.getElementById('otherConcern');
+            const autocompleteSuggestions = document.getElementById('autocompleteSuggestions');
             const consultationForm = document.getElementById('consultationForm');
             const dateInput = document.querySelector('input[name="date"]');
             const timeSelect = document.getElementById('timeSelect');
+
+            let currentFocus = -1;
 
             concernSelect.addEventListener('change', function() {
                 if (this.value === 'Other') {
                     otherConcernContainer.style.display = 'block';
                     otherConcernInput.required = true;
+                    otherConcernInput.focus();
                 } else {
                     otherConcernContainer.style.display = 'none';
                     otherConcernInput.required = false;
-                    otherConcernInput.value = ''; // Clear the input when not needed
+                    otherConcernInput.value = '';
+                    hideSuggestions();
+                }
+            });
+
+            // Autocomplete functionality
+            otherConcernInput.addEventListener('input', function() {
+                const value = this.value.toLowerCase();
+                hideSuggestions();
+                currentFocus = -1;
+                
+                if (value.length < 2) return;
+                
+                const matches = medicalConcerns.filter(concern => 
+                    concern.toLowerCase().includes(value)
+                ).slice(0, 8); // Limit to 8 suggestions
+                
+                if (matches.length > 0) {
+                    showSuggestions(matches, value);
+                }
+            });
+
+            otherConcernInput.addEventListener('keydown', function(e) {
+                const suggestions = autocompleteSuggestions.getElementsByClassName('autocomplete-suggestion');
+                
+                if (e.key === 'ArrowDown') {
+                    currentFocus++;
+                    addActive(suggestions);
+                    e.preventDefault();
+                } else if (e.key === 'ArrowUp') {
+                    currentFocus--;
+                    addActive(suggestions);
+                    e.preventDefault();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (currentFocus > -1) {
+                        if (suggestions) suggestions[currentFocus].click();
+                    }
+                } else if (e.key === 'Escape') {
+                    hideSuggestions();
+                }
+            });
+
+            function showSuggestions(matches, searchValue) {
+                autocompleteSuggestions.innerHTML = '';
+                matches.forEach(match => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-suggestion';
+                    // Highlight matching text
+                    const highlightedMatch = match.replace(
+                        new RegExp(searchValue, 'gi'),
+                        match => `<strong>${match}</strong>`
+                    );
+                    div.innerHTML = highlightedMatch;
+                    div.addEventListener('click', function() {
+                        otherConcernInput.value = match;
+                        hideSuggestions();
+                    });
+                    autocompleteSuggestions.appendChild(div);
+                });
+                autocompleteSuggestions.style.display = 'block';
+            }
+
+            function addActive(suggestions) {
+                if (!suggestions) return false;
+                removeActive(suggestions);
+                if (currentFocus >= suggestions.length) currentFocus = 0;
+                if (currentFocus < 0) currentFocus = suggestions.length - 1;
+                suggestions[currentFocus].classList.add('active');
+            }
+
+            function removeActive(suggestions) {
+                for (let i = 0; i < suggestions.length; i++) {
+                    suggestions[i].classList.remove('active');
+                }
+            }
+
+            function hideSuggestions() {
+                autocompleteSuggestions.style.display = 'none';
+                currentFocus = -1;
+            }
+
+            // Close suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!otherConcernContainer.contains(e.target)) {
+                    hideSuggestions();
                 }
             });
 

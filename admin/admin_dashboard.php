@@ -40,6 +40,62 @@ $stats_stmt = $pdo->prepare($stats_sql);
 $stats_stmt->execute();
 $stats = $stats_stmt->fetch(PDO::FETCH_ASSOC);
 
+// Initialize counts for badges
+$pending_approvals = 0;
+$new_students_today = 0;
+$pending_consultations = 0;
+$pending_reports = 0;
+$system_alerts = 0;
+$new_announcements = 0;
+$approved_today = 0;
+
+// Check if tables exist and fetch counts
+try {
+    // Get pending approvals count
+    $pending_sql = "SELECT COUNT(*) as pending_count FROM consultation_requests WHERE status = 'Pending'";
+    $pending_stmt = $pdo->prepare($pending_sql);
+    $pending_stmt->execute();
+    $pending_approvals = $pending_stmt->fetch(PDO::FETCH_ASSOC)['pending_count'];
+
+    // Get approved appointments for today (for Calendar View badge)
+    $approved_sql = "SELECT COUNT(*) as approved_count FROM consultation_requests WHERE status = 'Approved' AND DATE(created_at) = CURDATE()";
+    $approved_stmt = $pdo->prepare($approved_sql);
+    $approved_stmt->execute();
+    $approved_today = $approved_stmt->fetch(PDO::FETCH_ASSOC)['approved_count'];
+
+    // Get new students registered today
+    $students_sql = "SELECT COUNT(*) as new_students FROM students WHERE DATE(created_at) = CURDATE()";
+    $students_stmt = $pdo->prepare($students_sql);
+    $students_stmt->execute();
+    $new_students_today = $students_stmt->fetch(PDO::FETCH_ASSOC)['new_students'];
+
+    // Get pending consultations
+    $consultations_sql = "SELECT COUNT(*) as pending_consults FROM consultations WHERE status = 'pending'";
+    $consultations_stmt = $pdo->prepare($consultations_sql);
+    $consultations_stmt->execute();
+    $pending_consultations = $consultations_stmt->fetch(PDO::FETCH_ASSOC)['pending_consults'];
+
+    // Get reports needing attention (example: reports from today)
+    $reports_sql = "SELECT COUNT(*) as today_reports FROM consultations WHERE DATE(consultation_date) = CURDATE()";
+    $reports_stmt = $pdo->prepare($reports_sql);
+    $reports_stmt->execute();
+    $pending_reports = $reports_stmt->fetch(PDO::FETCH_ASSOC)['today_reports'];
+
+    // Get system alerts (example: low stock, maintenance needed, etc.)
+    // For now, we'll use a simple count - you can replace this with actual system alerts
+    $system_alerts = 0; // Default to 0 since we don't have system_alerts table
+
+    // Get new announcements
+    $announcements_sql = "SELECT COUNT(*) as new_announce FROM announcements WHERE DATE(created_at) = CURDATE() AND status = 'active'";
+    $announcements_stmt = $pdo->prepare($announcements_sql);
+    $announcements_stmt->execute();
+    $new_announcements = $announcements_stmt->fetch(PDO::FETCH_ASSOC)['new_announce'];
+
+} catch (PDOException $e) {
+    // If there's an error, set counts to 0
+    error_log("Database error: " . $e->getMessage());
+}
+
 // Function to format activity time
 function formatActivityTime($datetime) {
     $time = strtotime($datetime);
@@ -257,6 +313,7 @@ function getActivityStyle($action) {
             text-align: left;
             cursor: pointer;
             font-weight: 500;
+            position: relative;
         }
 
         .nav-item:hover {
@@ -292,6 +349,81 @@ function getActivityStyle($action) {
             transform: rotate(180deg);
         }
 
+        /* WORDPRESS-STYLE NOTIFICATION BADGE */
+        .wp-badge {
+            background: #dc3545;
+            color: white !important;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: auto;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        /* Number count badge */
+        .count-badge {
+            background: #dc3545;
+            color: white !important;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: auto;
+            margin-right: 10px;
+        }
+
+        /* Different color badges */
+        .info-badge {
+            background: #17a2b8;
+            color: white !important;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: auto;
+            margin-right: 10px;
+        }
+
+        .success-badge {
+            background: #28a745;
+            color: white !important;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: auto;
+            margin-right: 10px;
+        }
+
+        .warning-badge {
+            background: #ffc107;
+            color: #212529 !important;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: auto;
+            margin-right: 10px;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
         .submenu {
             max-height: 0;
             overflow: hidden;
@@ -312,6 +444,7 @@ function getActivityStyle($action) {
             transition: all 0.3s ease;
             font-size: 0.9rem;
             font-weight: 400;
+            position: relative;
         }
 
         .submenu-item:hover {
@@ -322,6 +455,17 @@ function getActivityStyle($action) {
             width: 18px;
             margin-right: 0.7rem;
             font-size: 0.9rem;
+        }
+
+        /* Notification badge for submenu items */
+        .submenu-badge {
+            background: #dc3545;
+            color: white !important;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            margin-left: auto;
         }
 
         .nav-item.logout {
@@ -773,11 +917,17 @@ function getActivityStyle($action) {
                         <i class="fas fa-user-graduate"></i>
                         <span>Student Management</span>
                         <i class="fas fa-chevron-down arrow"></i>
+                        <?php if ($new_students_today > 0): ?>
+                            <span class="success-badge"><?php echo $new_students_today; ?> NEW</span>
+                        <?php endif; ?>
                     </button>
                     <div class="submenu" id="studentMenu">
                         <a href="students.php" class="submenu-item">
                             <i class="fas fa-id-card"></i>
                             Students Profile
+                            <?php if ($new_students_today > 0): ?>
+                                <span class="submenu-badge">+<?php echo $new_students_today; ?></span>
+                            <?php endif; ?>
                         </a>
                         <a href="search_students.php" class="submenu-item">
                             <i class="fas fa-search"></i>
@@ -791,11 +941,17 @@ function getActivityStyle($action) {
                         <i class="fas fa-stethoscope"></i>
                         <span>Consultation</span>
                         <i class="fas fa-chevron-down arrow"></i>
+                        <?php if ($pending_consultations > 0): ?>
+                            <span class="info-badge"><?php echo $pending_consultations; ?></span>
+                        <?php endif; ?>
                     </button>
                     <div class="submenu" id="consultationMenu">
                         <a href="view_records.php" class="submenu-item">
                             <i class="fas fa-folder-open"></i>
                             View Records
+                            <?php if ($pending_consultations > 0): ?>
+                                <span class="submenu-badge"><?php echo $pending_consultations; ?> pending</span>
+                            <?php endif; ?>
                         </a>
                     </div>
                 </div>
@@ -805,15 +961,24 @@ function getActivityStyle($action) {
                         <i class="fas fa-calendar-check"></i>
                         <span>Appointments</span>
                         <i class="fas fa-chevron-down arrow"></i>
+                        <?php if ($pending_approvals > 0): ?>
+                            <span class="wp-badge">NEW</span>
+                        <?php endif; ?>
                     </button>
                     <div class="submenu" id="appointmentsMenu">
                         <a href="calendar_view.php" class="submenu-item">
                             <i class="fas fa-calendar-alt"></i>
                             Calendar View
+                            <?php if ($approved_today > 0): ?>
+                                <span class="submenu-badge" style="background: #28a745;"><?php echo $approved_today; ?> approved</span>
+                            <?php endif; ?>
                         </a>
                         <a href="approvals.php" class="submenu-item">
                             <i class="fas fa-check-circle"></i>
                             Approvals
+                            <?php if ($pending_approvals > 0): ?>
+                                <span class="count-badge"><?php echo $pending_approvals; ?></span>
+                            <?php endif; ?>
                         </a>
                     </div>
                 </div>
@@ -823,11 +988,17 @@ function getActivityStyle($action) {
                         <i class="fas fa-chart-bar"></i>
                         <span>Reports</span>
                         <i class="fas fa-chevron-down arrow"></i>
+                        <?php if ($pending_reports > 0): ?>
+                            <span class="warning-badge">UPDATED</span>
+                        <?php endif; ?>
                     </button>
                     <div class="submenu" id="reportsMenu">
                         <a href="monthly_summary.php" class="submenu-item">
                             <i class="fas fa-file-invoice"></i>
                             Monthly Summary
+                            <?php if ($pending_reports > 0): ?>
+                                <span class="submenu-badge">Today: <?php echo $pending_reports; ?></span>
+                            <?php endif; ?>
                         </a>
                     </div>
                 </div>
@@ -837,6 +1008,9 @@ function getActivityStyle($action) {
                         <i class="fas fa-cog"></i>
                         <span>Admin Tools</span>
                         <i class="fas fa-chevron-down arrow"></i>
+                        <?php if ($system_alerts > 0): ?>
+                            <span class="wp-badge">ALERT</span>
+                        <?php endif; ?>
                     </button>
                     <div class="submenu" id="adminMenu">
                         <a href="users_logs.php" class="submenu-item">
@@ -846,6 +1020,9 @@ function getActivityStyle($action) {
                         <a href="backup_restore.php" class="submenu-item">
                             <i class="fas fa-clipboard-list"></i>
                             Back up & Restore
+                            <?php if ($system_alerts > 0): ?>
+                                <span class="submenu-badge">!</span>
+                            <?php endif; ?>
                         </a>
                     </div>
                 </div>
@@ -855,6 +1032,9 @@ function getActivityStyle($action) {
                         <i class="fas fa-bullhorn"></i>
                         <span>Announcement</span>
                         <i class="fas fa-chevron-down arrow"></i>
+                        <?php if ($new_announcements > 0): ?>
+                            <span class="success-badge">NEW</span>
+                        <?php endif; ?>
                     </button>
                     <div class="submenu" id="announcementMenu">
                         <a href="new_announcement.php" class="submenu-item">
@@ -864,6 +1044,9 @@ function getActivityStyle($action) {
                         <a href="announcement_history.php" class="submenu-item">
                             <i class="fas fa-history"></i>
                             History
+                            <?php if ($new_announcements > 0): ?>
+                                <span class="submenu-badge">+<?php echo $new_announcements; ?></span>
+                            <?php endif; ?>
                         </a>
                     </div>
                 </div>

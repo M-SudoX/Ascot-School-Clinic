@@ -64,9 +64,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $consultation_time = trim($_POST['consultation_time'] ?? $current_time);
         $physician_notes = trim($_POST['physician_notes'] ?? '');
         
-        // Validate required fields
-        if (empty($symptoms) || empty($diagnosis) || empty($attending_staff)) {
-            throw new Exception("Please fill in all required fields: Symptoms, Diagnosis, and Attending Staff.");
+        // Validate ALL fields are required
+        if (empty($symptoms) || empty($temperature) || empty($diagnosis) || 
+            empty($blood_pressure) || empty($treatment) || empty($heart_rate) || 
+            empty($attending_staff) || empty($consultation_date) || empty($consultation_time) ||
+            empty($physician_notes)) {
+            throw new Exception("Please fill in ALL fields. All fields are required.");
         }
         
         if (!$student) {
@@ -1078,10 +1081,12 @@ if (isset($_SESSION['success_message'])) {
                                     <div class="error-message" id="symptomsError">Please enter symptoms</div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="temperature">Temperature:</label>
+                                    <label for="temperature" class="required-field">Temperature:</label>
                                     <input type="text" id="temperature" name="temperature" class="form-control" 
                                            placeholder="e.g., 36.5°C" 
-                                           value="">
+                                           value="" 
+                                           required>
+                                    <div class="error-message" id="temperatureError">Please enter temperature</div>
                                 </div>
                             </div>
 
@@ -1095,25 +1100,31 @@ if (isset($_SESSION['success_message'])) {
                                     <div class="error-message" id="diagnosisError">Please enter diagnosis</div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="blood_pressure">Blood Pressure:</label>
+                                    <label for="blood_pressure" class="required-field">Blood Pressure:</label>
                                     <input type="text" id="blood_pressure" name="blood_pressure" class="form-control" 
                                            placeholder="e.g., 120/80 mmHg" 
-                                           value="">
+                                           value="" 
+                                           required>
+                                    <div class="error-message" id="bloodPressureError">Please enter blood pressure</div>
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="treatment">Treatment Given:</label>
+                                    <label for="treatment" class="required-field">Treatment Given:</label>
                                     <input type="text" id="treatment" name="treatment" class="form-control" 
                                            placeholder="Enter treatment" 
-                                           value="">
+                                           value="" 
+                                           required>
+                                    <div class="error-message" id="treatmentError">Please enter treatment given</div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="heart_rate">Heart Rate:</label>
+                                    <label for="heart_rate" class="required-field">Heart Rate:</label>
                                     <input type="text" id="heart_rate" name="heart_rate" class="form-control" 
                                            placeholder="e.g., 72 bpm" 
-                                           value="">
+                                           value="" 
+                                           required>
+                                    <div class="error-message" id="heartRateError">Please enter heart rate</div>
                                 </div>
                             </div>
                         </div>
@@ -1166,9 +1177,10 @@ if (isset($_SESSION['success_message'])) {
                         <!-- Physician's Notes -->
                         <div class="physician-notes-section">
                             <div class="form-group">
-                                <label for="physician_notes">Physician's notes:</label>
+                                <label for="physician_notes" class="required-field">Physician's notes:</label>
                                 <textarea id="physician_notes" name="physician_notes" class="form-control" rows="4" 
-                                          placeholder="Enter additional notes..."></textarea>
+                                          placeholder="Enter additional notes..." required></textarea>
+                                <div class="error-message" id="physicianNotesError">Please enter physician's notes</div>
                             </div>
                         </div>
 
@@ -1255,15 +1267,33 @@ if (isset($_SESSION['success_message'])) {
             const form = document.getElementById('consultationForm');
             const submitBtn = document.getElementById('submitBtn');
             const requiredFields = form.querySelectorAll('[required]');
+            let formSubmitted = false;
             
-            // Real-time validation
+            // Function to validate all required fields
+            function validateAllFields() {
+                let isValid = true;
+                
+                requiredFields.forEach(field => {
+                    if (!validateField(field)) {
+                        isValid = false;
+                    }
+                });
+                
+                return isValid;
+            }
+            
+            // Real-time validation only after first submit attempt
             requiredFields.forEach(field => {
                 field.addEventListener('input', function() {
-                    validateField(this);
+                    if (formSubmitted) {
+                        validateField(this);
+                    }
                 });
                 
                 field.addEventListener('blur', function() {
-                    validateField(this);
+                    if (formSubmitted) {
+                        validateField(this);
+                    }
                 });
             });
             
@@ -1283,6 +1313,7 @@ if (isset($_SESSION['success_message'])) {
             // Form submission
             form.addEventListener('submit', function(e) {
                 let isValid = true;
+                formSubmitted = true;
                 
                 requiredFields.forEach(field => {
                     if (!validateField(field)) {
@@ -1297,6 +1328,9 @@ if (isset($_SESSION['success_message'])) {
                     if (firstError) {
                         firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
+                    
+                    // Show alert message
+                    alert('Please fill in ALL fields before submitting the form. All fields are required.');
                     return false;
                 }
                 

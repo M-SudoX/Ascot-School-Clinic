@@ -48,9 +48,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $consultation_time = trim($_POST['consultation_time'] ?? $current_time);
         $physician_notes = trim($_POST['physician_notes'] ?? '');
         
-        // Validate required fields
-        if (empty($symptoms) || empty($diagnosis) || empty($attending_staff)) {
-            throw new Exception("Please fill in all required fields: Symptoms, Diagnosis, and Attending Staff.");
+        // Validate ALL fields are required
+        if (empty($symptoms) || empty($temperature) || empty($diagnosis) || 
+            empty($blood_pressure) || empty($treatment) || empty($heart_rate) || 
+            empty($attending_staff) || empty($consultation_date) || empty($consultation_time) ||
+            empty($physician_notes)) {
+            throw new Exception("Please fill in ALL fields. All fields are required.");
         }
         
         if (!$student) {
@@ -112,6 +115,26 @@ if (isset($_SESSION['success_message'])) {
     <link href="../assets/webfonts/all.min.css" rel="stylesheet">
     
     <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary: #764ba2;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+            --accent: #ffda6a;
+            --accent-light: #fff7da;
+            --text-dark: #2c3e50;
+            --text-light: #6c757d;
+            --border-radius: 16px;
+            --shadow: 0 8px 32px rgba(0,0,0,0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -120,39 +143,46 @@ if (isset($_SESSION['success_message'])) {
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f6fa;
-            padding-top: 100px; /* Added for fixed header */
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            padding-top: 100px;
+            line-height: 1.6;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Header Styles - FIXED */
+        /* Header Styles - ENHANCED */
         .top-header {
-            background: 
-                linear-gradient(90deg, 
-                    #ffda6a 0%, 
-                    #ffda6a 30%, 
-                    #FFF5CC 70%, 
-                    #ffffff 100%);
-            color: white;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: fixed; /* Added */
-            top: 0; /* Added */
-            left: 0; /* Added */
-            right: 0; /* Added */
-            z-index: 1000; /* Added */
-            height: 100px; /* Added */
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            padding: 0.75rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+            height: 100px;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
 
         .header-content {
             display: flex;
             align-items: center;
             gap: 1rem;
+            height: 100%;
         }
 
         .logo-img {
             width: 80px;
             height: 80px;
             object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            transition: var(--transition);
+        }
+
+        .logo-img:hover {
+            transform: scale(1.05);
         }
 
         .school-info {
@@ -162,104 +192,148 @@ if (isset($_SESSION['success_message'])) {
         .republic {
             font-size: 0.75rem;
             opacity: 0.9;
-            color: #555;
+            letter-spacing: 0.5px;
+            color: var(--text-dark);
+            font-weight: 600;
         }
 
         .school-name {
             font-size: 1.2rem;
-            font-weight: bold;
+            font-weight: 800;
             margin: 0.2rem 0;
-            color: #555;
+            line-height: 1.2;
+            color: var(--text-dark);
+            background: linear-gradient(135deg, var(--text-dark), #495057);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .clinic-title {
             font-size: 0.85rem;
             opacity: 0.9;
-            color: #555;
+            font-weight: 600;
+            color: var(--text-dark);
+            letter-spacing: 0.5px;
         }
 
-        /* Mobile Menu Toggle - FIXED */
+        /* Mobile Menu Toggle - ENHANCED */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
-            top: 100px; /* Adjusted for fixed header */
+            top: 110px;
             left: 20px;
-            z-index: 1001;
-            background: #667eea;
+            z-index: 1025;
+            background: var(--primary);
             color: white;
             border: none;
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: var(--shadow);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
         }
 
         .mobile-menu-toggle:hover {
-            transform: scale(1.1);
-            background: #764ba2;
+            transform: scale(1.05);
+            background: var(--primary-dark);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
         }
 
-        /* Dashboard Container - FIXED */
+        /* Dashboard Container - ENHANCED */
         .dashboard-container {
             display: flex;
             min-height: calc(100vh - 100px);
         }
 
-        /* Sidebar Styles - FIXED */
+        /* Sidebar Styles - ENHANCED */
         .sidebar {
             width: 280px;
-            background: white;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: 2px 0 20px rgba(0,0,0,0.08);
             padding: 2rem 0;
             transition: transform 0.3s ease;
-            position: fixed; /* Added */
-            top: 100px; /* Added */
-            left: 0; /* Added */
-            bottom: 0; /* Added */
-            overflow-y: auto; /* Added */
-            z-index: 999; /* Added */
+            position: fixed;
+            top: 100px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            z-index: 1020;
+            border-right: 1px solid rgba(255,255,255,0.2);
         }
 
         .sidebar-nav {
             display: flex;
             flex-direction: column;
-            height: 100%; /* Added */
+            height: 100%;
+            gap: 0.5rem;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
             padding: 1rem 1.5rem;
-            color: #444;
+            color: var(--text-dark);
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             border: none;
             background: none;
             width: 100%;
             text-align: left;
             cursor: pointer;
+            font-weight: 600;
+            border-radius: 0 12px 12px 0;
+            margin: 0.25rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
+            transition: var(--transition);
         }
 
         .nav-item:hover {
-            background: #f8f9fa;
-            color: #667eea;
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .nav-item:hover::before {
+            width: 100%;
         }
 
         .nav-item.active {
-            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-            color: #667eea;
-            border-left: 4px solid #667eea;
+            background: linear-gradient(90deg, rgba(255,218,106,0.15) 0%, transparent 100%);
+            color: var(--text-dark);
+            border-left: 6px solid var(--accent);
+        }
+
+        .nav-item.active::before {
+            width: 100%;
         }
 
         .nav-item i {
             width: 25px;
             margin-right: 1rem;
+            font-size: 1.2rem;
+            color: inherit;
+            transition: var(--transition);
         }
 
         .nav-item span {
             flex: 1;
+            color: inherit;
+            font-size: 0.95rem;
         }
 
         .nav-item .arrow {
@@ -271,11 +345,22 @@ if (isset($_SESSION['success_message'])) {
             transform: rotate(180deg);
         }
 
+        .nav-item.logout {
+            color: var(--danger);
+            margin-top: auto;
+            border-left: 6px solid transparent;
+        }
+
+        .nav-item.logout:hover {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger);
+        }
+
         .submenu {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease;
-            background: #f8f9fa;
+            background: rgba(248, 249, 250, 0.8);
         }
 
         .submenu.show {
@@ -286,15 +371,22 @@ if (isset($_SESSION['success_message'])) {
             display: flex;
             align-items: center;
             padding: 0.75rem 1.5rem 0.75rem 3.5rem;
-            color: #666;
+            color: var(--text-light);
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             font-size: 0.9rem;
+            font-weight: 500;
         }
 
         .submenu-item:hover {
-            background: #e9ecef;
-            color: #667eea;
+            background: rgba(233, 236, 239, 0.8);
+            color: var(--primary);
+        }
+
+        .submenu-item.active {
+            background: rgba(255, 218, 106, 0.15);
+            color: var(--text-dark);
+            border-left: 4px solid var(--accent);
         }
 
         .submenu-item i {
@@ -302,62 +394,58 @@ if (isset($_SESSION['success_message'])) {
             margin-right: 0.75rem;
         }
 
-        .nav-item.logout {
-            color: #dc3545;
-            margin-top: auto;
-        }
-
-        .nav-item.logout:hover {
-            background: rgba(220, 53, 69, 0.1);
-        }
-
-        /* Main Content - FIXED */
+        /* Main Content - ENHANCED */
         .main-content {
             flex: 1;
             padding: 2rem;
             overflow-x: hidden;
-            background: #f8f9fa;
-            margin-left: 280px; /* Added for sidebar space */
-            margin-top: 0; /* Added */
+            margin-left: 280px;
+            margin-top: 0;
         }
 
-        /* Sidebar Overlay for Mobile - FIXED */
+        /* Sidebar Overlay for Mobile - ENHANCED */
         .sidebar-overlay {
             display: none;
             position: fixed;
-            top: 100px; /* Adjusted for fixed header */
+            top: 100px;
             left: 0;
             right: 0;
             bottom: 0;
             background: rgba(0,0,0,0.5);
-            z-index: 999;
+            backdrop-filter: blur(5px);
+            z-index: 1019;
         }
 
         .sidebar-overlay.active {
             display: block;
         }
 
-        /* Add Consultation Specific Styles */
+        /* Page Header - ENHANCED */
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid rgba(233, 236, 239, 0.8);
         }
 
         .page-header h1 {
             font-size: 1.8rem;
-            font-weight: 700;
-            color: #2c3e50;
+            font-weight: 800;
+            color: var(--text-dark);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            margin: 0;
         }
 
         .page-header h1 i {
-            color: #667eea;
+            color: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .header-buttons {
@@ -366,16 +454,17 @@ if (isset($_SESSION['success_message'])) {
         }
 
         .back-btn {
-            padding: 10px 20px;
-            border-radius: 8px;
+            padding: 12px 24px;
+            border-radius: 12px;
             text-decoration: none;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             display: flex;
             align-items: center;
             gap: 8px;
-            background: #6c757d;
+            background: var(--gray);
             color: white;
+            box-shadow: var(--shadow);
         }
 
         .back-btn:hover {
@@ -383,43 +472,77 @@ if (isset($_SESSION['success_message'])) {
             transform: translateY(-2px);
             color: white;
             text-decoration: none;
+            box-shadow: 0 6px 25px rgba(108, 117, 125, 0.4);
         }
 
+        /* Student Info Card - ENHANCED */
         .student-info-card {
-            background: white;
-            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius);
             padding: 2rem;
             margin-bottom: 2rem;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            border-left: 4px solid #667eea;
+            box-shadow: var(--shadow);
+            border-left: 6px solid var(--accent);
+            transition: var(--transition);
+        }
+
+        .student-info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
         }
 
         .student-name {
             font-size: 1.5rem;
-            font-weight: 700;
-            color: #2c3e50;
+            font-weight: 800;
+            color: var(--text-dark);
             margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .student-name::before {
+            content: '👤';
+            font-size: 1.2rem;
         }
 
         .student-details {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 15px;
         }
 
         .student-details span {
-            background: #f8f9fa;
-            padding: 8px 15px;
+            background: rgba(248, 249, 250, 0.8);
+            padding: 8px 16px;
             border-radius: 8px;
             font-size: 0.9rem;
-            color: #6c757d;
+            color: var(--text-light);
+            font-weight: 500;
+            border: 1px solid rgba(233, 236, 239, 0.5);
+            transition: var(--transition);
         }
 
+        .student-details span:hover {
+            background: rgba(255, 218, 106, 0.2);
+            color: var(--text-dark);
+        }
+
+        /* Consultation Form - ENHANCED */
         .consultation-form {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: var(--transition);
+        }
+
+        .consultation-form:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
         }
 
         .form-container {
@@ -440,43 +563,50 @@ if (isset($_SESSION['success_message'])) {
         }
 
         .form-group label {
-            font-weight: 600;
-            color: #2c3e50;
+            font-weight: 700;
+            color: var(--text-dark);
             margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .required-field::after {
             content: " *";
-            color: #dc3545;
+            color: var(--danger);
         }
 
         .form-control {
-            padding: 12px 15px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
+            padding: 14px 16px;
+            border: 2px solid rgba(233, 236, 239, 0.8);
+            border-radius: 12px;
             font-size: 1rem;
-            transition: all 0.3s ease;
+            transition: var(--transition);
+            background: rgba(255, 255, 255, 0.8);
         }
 
         .form-control:focus {
-            border-color: #667eea;
+            border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
         }
 
         .is-invalid {
-            border-color: #dc3545 !important;
+            border-color: var(--danger) !important;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
         }
 
         .error-message {
-            color: #dc3545;
+            color: var(--danger);
             font-size: 0.875em;
             margin-top: 5px;
             display: none;
+            font-weight: 500;
         }
 
         .divider {
             height: 1px;
-            background: linear-gradient(90deg, transparent, #e9ecef, transparent);
+            background: linear-gradient(90deg, transparent, rgba(233, 236, 239, 0.8), transparent);
             margin: 1rem 0;
         }
 
@@ -488,85 +618,96 @@ if (isset($_SESSION['success_message'])) {
         }
 
         .save-btn, .reset-btn {
-            padding: 12px 30px;
+            padding: 14px 32px;
             border: none;
-            border-radius: 8px;
-            font-weight: 600;
+            border-radius: 12px;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             display: flex;
             align-items: center;
             gap: 8px;
+            box-shadow: var(--shadow);
         }
 
         .save-btn {
-            background: #28a745;
+            background: linear-gradient(135deg, var(--success), #218838);
             color: white;
         }
 
         .save-btn:hover {
-            background: #218838;
             transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(40, 167, 69, 0.4);
+        }
+
+        .save-btn:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         .reset-btn {
-            background: #6c757d;
+            background: linear-gradient(135deg, var(--gray), #5a6268);
             color: white;
         }
 
         .reset-btn:hover {
-            background: #5a6268;
             transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(108, 117, 125, 0.4);
         }
 
-        /* Success Alert */
+        /* Success Alert - ENHANCED */
         .success-alert {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
+            background: rgba(212, 237, 218, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(195, 230, 203, 0.8);
             color: #155724;
-            padding: 1.5rem;
-            border-radius: 15px;
+            padding: 2rem;
+            border-radius: var(--border-radius);
             margin-bottom: 2rem;
-            border-left: 4px solid #28a745;
+            border-left: 6px solid var(--success);
             animation: slideIn 0.5s ease-out;
+            box-shadow: var(--shadow);
         }
 
         .success-alert i {
-            color: #28a745;
+            color: var(--success);
             margin-right: 0.5rem;
         }
 
         .success-actions {
-            margin-top: 1rem;
+            margin-top: 1.5rem;
             display: flex;
             gap: 1rem;
             flex-wrap: wrap;
         }
 
         .success-btn {
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
+            padding: 10px 20px;
+            border-radius: 8px;
             text-decoration: none;
-            font-weight: 500;
+            font-weight: 600;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
+            gap: 8px;
+            transition: var(--transition);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         .success-btn.primary {
-            background: #28a745;
+            background: var(--success);
             color: white;
         }
 
         .success-btn.secondary {
-            background: #6c757d;
+            background: var(--gray);
             color: white;
         }
 
         .success-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             color: white;
             text-decoration: none;
         }
@@ -582,36 +723,109 @@ if (isset($_SESSION['success_message'])) {
             }
         }
 
-        /* Responsive Design - FIXED */
+        /* Alert Styles - ENHANCED */
+        .alert {
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: none;
+            box-shadow: var(--shadow);
+        }
+
+        .alert-danger {
+            background: rgba(248, 215, 218, 0.95);
+            backdrop-filter: blur(20px);
+            color: #721c24;
+            border-left: 6px solid var(--danger);
+        }
+
+        .dynamic-error-alert {
+            animation: slideIn 0.5s ease-out;
+        }
+
+        /* Custom styles for datalist dropdown */
+        .staff-datalist-container {
+            position: relative;
+        }
+
+        .staff-datalist-container input {
+            width: 100%;
+        }
+
+        .staff-datalist-container::after {
+            content: '\f0d7';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+            pointer-events: none;
+        }
+
+        /* Responsive Design - ENHANCED */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 260px;
+            }
+            
+            .main-content {
+                margin-left: 260px;
+            }
+        }
+
         @media (max-width: 992px) {
             .school-name {
                 font-size: 1rem;
             }
 
             .logo-img {
-                width: 50px;
-                height: 50px;
+                width: 60px;
+                height: 60px;
+            }
+
+            .consultation-form {
+                padding: 2rem;
+            }
+
+            .student-info-card {
+                padding: 1.5rem;
             }
         }
 
         @media (max-width: 768px) {
+            body {
+                padding-top: 100px;
+            }
+            
             .mobile-menu-toggle {
-                display: block;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                top: 110px;
+                left: 20px;
             }
 
             .sidebar {
                 position: fixed;
                 left: 0;
-                top: 100px; /* Adjusted for fixed header */
-                height: calc(100vh - 100px); /* Adjusted for fixed header */
-                z-index: 1000;
+                top: 100px;
+                height: calc(100vh - 100px);
+                z-index: 1020;
                 transform: translateX(-100%);
                 overflow-y: auto;
-                width: 280px; /* Added */
+                width: 300px;
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(30px);
             }
 
             .sidebar.active {
                 transform: translateX(0);
+            }
+
+            .sidebar-overlay {
+                top: 100px;
             }
 
             .sidebar-overlay.active {
@@ -619,9 +833,9 @@ if (isset($_SESSION['success_message'])) {
             }
 
             .main-content {
-                padding: 1rem;
+                padding: 1.5rem;
                 width: 100%;
-                margin-left: 0; /* Reset margin for mobile */
+                margin-left: 0;
             }
 
             .header-content {
@@ -629,7 +843,7 @@ if (isset($_SESSION['success_message'])) {
             }
 
             .school-name {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
             }
 
             .republic, .clinic-title {
@@ -648,7 +862,7 @@ if (isset($_SESSION['success_message'])) {
             }
 
             .student-info-card, .consultation-form {
-                padding: 1rem;
+                padding: 1.5rem;
             }
 
             .form-row {
@@ -669,12 +883,6 @@ if (isset($_SESSION['success_message'])) {
                 width: 100%;
                 justify-content: center;
             }
-        }
-
-        @media (max-width: 480px) {
-            .page-header h1 {
-                font-size: 1.4rem;
-            }
 
             .success-actions {
                 flex-direction: column;
@@ -684,18 +892,126 @@ if (isset($_SESSION['success_message'])) {
                 justify-content: center;
             }
         }
+
+        @media (max-width: 576px) {
+            .page-header h1 {
+                font-size: 1.4rem;
+            }
+
+            .consultation-form {
+                padding: 1.25rem;
+            }
+
+            .student-info-card {
+                padding: 1.25rem;
+            }
+
+            .main-content {
+                padding: 1.25rem;
+            }
+            
+            .mobile-menu-toggle {
+                top: 105px;
+                width: 45px;
+                height: 45px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .logo-img {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .school-name {
+                font-size: 0.8rem;
+            }
+            
+            .republic, .clinic-title {
+                font-size: 0.6rem;
+            }
+            
+            .mobile-menu-toggle {
+                width: 45px;
+                height: 45px;
+                top: 105px;
+                left: 15px;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+
+            .consultation-form {
+                padding: 1rem;
+            }
+
+            .student-info-card {
+                padding: 1rem;
+            }
+        }
+
+        /* ANIMATIONS - ENHANCED */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .slide-in-left {
+            animation: slideInLeft 0.6s ease-out;
+        }
+
+        /* Scrollbar Styling */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--primary-dark), #6a4a9a);
+        }
     </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - FIXED -->
-    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+    <!-- Mobile Menu Toggle Button - ENHANCED -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - FIXED -->
+    <!-- Sidebar Overlay for Mobile - ENHANCED -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- HEADER - FIXED -->
+    <!-- HEADER - ENHANCED -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -709,9 +1025,9 @@ if (isset($_SESSION['success_message'])) {
         </div>
     </header>
 
-    <!-- DASHBOARD CONTAINER - FIXED -->
+    <!-- DASHBOARD CONTAINER - ENHANCED -->
     <div class="dashboard-container">
-        <!-- SIDEBAR - FIXED -->
+        <!-- SIDEBAR - ENHANCED -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="admin_dashboard.php" class="nav-item">
@@ -840,12 +1156,12 @@ if (isset($_SESSION['success_message'])) {
         <!-- MAIN CONTENT -->
         <main class="main-content">
             <!-- Page Header -->
-            <div class="page-header">
+            <div class="page-header fade-in">
                 <h1><i class="fas fa-plus-circle"></i> Add New Consultation</h1>
                 <div class="header-buttons">
                     <?php if ($student): ?>
-                        <a href="consultation_history.php?id=<?php echo $student_id; ?>" class="back-btn">
-                            <i class="fas fa-arrow-left"></i> Back to Consultation History
+                        <a href="students.php" class="back-btn">
+                            <i class="fas fa-arrow-left"></i> Back to Students
                         </a>
                     <?php else: ?>
                         <a href="students.php" class="back-btn">
@@ -857,7 +1173,7 @@ if (isset($_SESSION['success_message'])) {
 
             <!-- Success Message -->
             <?php if (!empty($success)): ?>
-                <div class="success-alert">
+                <div class="success-alert fade-in">
                     <div class="d-flex align-items-center">
                         <i class="fas fa-check-circle fa-lg"></i>
                         <div>
@@ -883,7 +1199,7 @@ if (isset($_SESSION['success_message'])) {
 
             <!-- Error Message -->
             <?php if (!empty($error)): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <div class="alert alert-danger alert-dismissible fade show fade-in" role="alert">
                     <i class="fas fa-exclamation-triangle"></i> 
                     <strong>Error:</strong> <?php echo $error; ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -892,7 +1208,7 @@ if (isset($_SESSION['success_message'])) {
 
             <?php if ($student): ?>
                 <!-- Student Information -->
-                <div class="student-info-card">
+                <div class="student-info-card fade-in">
                     <div class="student-name"><?php echo htmlspecialchars($student['fullname']); ?></div>
                     <div class="student-details">
                         <span>ID: <?php echo htmlspecialchars($student['student_number']); ?></span>
@@ -902,7 +1218,7 @@ if (isset($_SESSION['success_message'])) {
                 </div>
 
                 <!-- Consultation Form -->
-                <form method="POST" class="consultation-form" id="consultationForm">
+                <form method="POST" class="consultation-form fade-in" id="consultationForm">
                     <div class="form-container">
                         <!-- Medical Information Section -->
                         <div class="medical-info-section">
@@ -916,10 +1232,12 @@ if (isset($_SESSION['success_message'])) {
                                     <div class="error-message" id="symptomsError">Please enter symptoms</div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="temperature">Temperature:</label>
+                                    <label for="temperature" class="required-field">Temperature:</label>
                                     <input type="text" id="temperature" name="temperature" class="form-control" 
                                            placeholder="e.g., 36.5°C" 
-                                           value="">
+                                           value="" 
+                                           required>
+                                    <div class="error-message" id="temperatureError">Please enter temperature</div>
                                 </div>
                             </div>
 
@@ -933,25 +1251,31 @@ if (isset($_SESSION['success_message'])) {
                                     <div class="error-message" id="diagnosisError">Please enter diagnosis</div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="blood_pressure">Blood Pressure:</label>
+                                    <label for="blood_pressure" class="required-field">Blood Pressure:</label>
                                     <input type="text" id="blood_pressure" name="blood_pressure" class="form-control" 
                                            placeholder="e.g., 120/80 mmHg" 
-                                           value="">
+                                           value="" 
+                                           required>
+                                    <div class="error-message" id="bloodPressureError">Please enter blood pressure</div>
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="treatment">Treatment Given:</label>
+                                    <label for="treatment" class="required-field">Treatment Given:</label>
                                     <input type="text" id="treatment" name="treatment" class="form-control" 
                                            placeholder="Enter treatment" 
-                                           value="">
+                                           value="" 
+                                           required>
+                                    <div class="error-message" id="treatmentError">Please enter treatment given</div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="heart_rate">Heart Rate:</label>
+                                    <label for="heart_rate" class="required-field">Heart Rate:</label>
                                     <input type="text" id="heart_rate" name="heart_rate" class="form-control" 
                                            placeholder="e.g., 72 bpm" 
-                                           value="">
+                                           value="" 
+                                           required>
+                                    <div class="error-message" id="heartRateError">Please enter heart rate</div>
                                 </div>
                             </div>
                         </div>
@@ -964,10 +1288,16 @@ if (isset($_SESSION['success_message'])) {
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="attending_staff" class="required-field">Attending Staff:</label>
-                                    <input type="text" id="attending_staff" name="attending_staff" class="form-control" 
-                                           placeholder="Enter staff name" 
-                                           value="" 
-                                           required>
+                                    <div class="staff-datalist-container">
+                                        <input type="text" id="attending_staff" name="attending_staff" class="form-control" 
+                                               list="staff_list" 
+                                               placeholder="Select or type staff name" 
+                                               value="Mary Rose Valencerina" 
+                                               required>
+                                        <datalist id="staff_list">
+                                            <option value="Mary Rose Valencerina">
+                                        </datalist>
+                                    </div>
                                     <div class="error-message" id="staffError">Please enter attending staff name</div>
                                 </div>
                                 <div class="form-group">
@@ -998,9 +1328,10 @@ if (isset($_SESSION['success_message'])) {
                         <!-- Physician's Notes -->
                         <div class="physician-notes-section">
                             <div class="form-group">
-                                <label for="physician_notes">Physician's notes:</label>
+                                <label for="physician_notes" class="required-field">Physician's notes:</label>
                                 <textarea id="physician_notes" name="physician_notes" class="form-control" rows="4" 
-                                          placeholder="Enter additional notes..."></textarea>
+                                          placeholder="Enter additional notes..." required></textarea>
+                                <div class="error-message" id="physicianNotesError">Please enter physician's notes</div>
                             </div>
                         </div>
 
@@ -1017,7 +1348,7 @@ if (isset($_SESSION['success_message'])) {
                 </form>
 
             <?php else: ?>
-                <div class="alert alert-danger text-center">
+                <div class="alert alert-danger text-center fade-in">
                     <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
                     <h4>Student Not Found</h4>
                     <p>The requested student record could not be found.</p>
@@ -1030,147 +1361,210 @@ if (isset($_SESSION['success_message'])) {
     <!-- JS -->
     <script src="../assets/js/bootstrap.bundle.min.js"></script>
     <script>
-        // MOBILE MENU FUNCTIONALITY - FIXED
-        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-        const sidebar = document.getElementById('sidebar');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
-
-        mobileMenuToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('active');
-            sidebarOverlay.classList.toggle('active');
-            const icon = this.querySelector('i');
-            icon.classList.toggle('fa-bars');
-            icon.classList.toggle('fa-times');
-        });
-
-        sidebarOverlay.addEventListener('click', function() {
-            sidebar.classList.remove('active');
-            sidebarOverlay.classList.remove('active');
-            mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
-        });
-
-        // Close sidebar when clicking submenu items on mobile
-        if (window.innerWidth <= 768) {
-            document.querySelectorAll('.submenu-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    sidebar.classList.remove('active');
-                    sidebarOverlay.classList.remove('active');
-                    mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
-                });
-            });
-        }
-
-        // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - FIXED
-        document.querySelectorAll('.dropdown-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const targetId = this.getAttribute('data-target');
-                const submenu = document.getElementById(targetId);
-                const arrow = this.querySelector('.arrow');
-
-                document.querySelectorAll('.submenu').forEach(menu => {
-                    if (menu.id !== targetId && menu.classList.contains('show')) {
-                        menu.classList.remove('show');
-                        const otherBtn = document.querySelector(`[data-target="${menu.id}"]`);
-                        if (otherBtn) {
-                            otherBtn.querySelector('.arrow').classList.remove('rotate');
-                        }
-                    }
-                });
-
-                submenu.classList.toggle('show');
-                arrow.classList.toggle('rotate');
-            });
-        });
-
-        // Form Validation and Functionality
         document.addEventListener('DOMContentLoaded', function() {
+            // MOBILE MENU FUNCTIONALITY - ENHANCED
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+            function toggleMobileMenu() {
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+                const icon = mobileMenuToggle.querySelector('i');
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-times');
+                
+                // Add animation class
+                if (sidebar.classList.contains('active')) {
+                    sidebar.classList.add('slide-in-left');
+                } else {
+                    sidebar.classList.remove('slide-in-left');
+                }
+            }
+
+            mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+            sidebarOverlay.addEventListener('click', toggleMobileMenu);
+
+            // Close sidebar when clicking submenu items on mobile
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('.submenu-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        sidebar.classList.remove('active');
+                        sidebarOverlay.classList.remove('active');
+                        mobileMenuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
+                    });
+                });
+            }
+
+            // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS - ENHANCED
+            document.querySelectorAll('.dropdown-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const submenu = document.getElementById(targetId);
+                    const arrow = this.querySelector('.arrow');
+
+                    document.querySelectorAll('.submenu').forEach(menu => {
+                        if (menu.id !== targetId && menu.classList.contains('show')) {
+                            menu.classList.remove('show');
+                            const otherBtn = document.querySelector(`[data-target="${menu.id}"]`);
+                            if (otherBtn) {
+                                otherBtn.querySelector('.arrow').classList.remove('rotate');
+                            }
+                        }
+                    });
+
+                    submenu.classList.toggle('show');
+                    arrow.classList.toggle('rotate');
+                });
+            });
+
+            // Form Validation and Functionality
             const form = document.getElementById('consultationForm');
             const submitBtn = document.getElementById('submitBtn');
-            const requiredFields = form.querySelectorAll('[required]');
-            
-            // Real-time validation
-            requiredFields.forEach(field => {
-                field.addEventListener('input', function() {
-                    validateField(this);
-                });
+            const requiredFields = form?.querySelectorAll('[required]');
+
+            if (form && requiredFields) {
+                let formSubmitted = false;
                 
-                field.addEventListener('blur', function() {
-                    validateField(this);
-                });
-            });
-            
-            function validateField(field) {
-                const errorElement = document.getElementById(field.id + 'Error');
-                if (!field.value.trim()) {
-                    field.classList.add('is-invalid');
-                    if (errorElement) errorElement.style.display = 'block';
-                    return false;
-                } else {
-                    field.classList.remove('is-invalid');
-                    if (errorElement) errorElement.style.display = 'none';
-                    return true;
-                }
-            }
-            
-            // Form submission
-            form.addEventListener('submit', function(e) {
-                let isValid = true;
-                
+                // Real-time validation only after first submit attempt
                 requiredFields.forEach(field => {
-                    if (!validateField(field)) {
-                        isValid = false;
-                    }
+                    field.addEventListener('input', function() {
+                        if (formSubmitted) {
+                            validateField(this);
+                        }
+                    });
+                    
+                    field.addEventListener('blur', function() {
+                        if (formSubmitted) {
+                            validateField(this);
+                        }
+                    });
                 });
                 
-                if (!isValid) {
-                    e.preventDefault();
-                    // Scroll to first error
-                    const firstError = form.querySelector('.is-invalid');
-                    if (firstError) {
-                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                function validateField(field) {
+                    const errorElement = document.getElementById(field.id + 'Error');
+                    if (!field.value.trim()) {
+                        field.classList.add('is-invalid');
+                        if (errorElement) errorElement.style.display = 'block';
+                        return false;
+                    } else {
+                        field.classList.remove('is-invalid');
+                        if (errorElement) errorElement.style.display = 'none';
+                        return true;
                     }
-                    return false;
                 }
                 
-                // Show loading state
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-                submitBtn.disabled = true;
+                // Form submission - STRICTER VALIDATION
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault(); // Always prevent default first
+                    
+                    let isValid = true;
+                    let firstInvalidField = null;
+                    formSubmitted = true;
+                    
+                    // Validate all required fields
+                    requiredFields.forEach(field => {
+                        if (!validateField(field)) {
+                            isValid = false;
+                            if (!firstInvalidField) {
+                                firstInvalidField = field;
+                            }
+                        }
+                    });
+                    
+                    if (!isValid) {
+                        // Show error message
+                        showErrorMessage("Please fill in ALL fields before submitting the form. All fields are required.");
+                        
+                        // Scroll to first error
+                        if (firstInvalidField) {
+                            firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            firstInvalidField.focus();
+                        }
+                        return false;
+                    }
+                    
+                    // If all validations pass, show loading and submit
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                    submitBtn.disabled = true;
+                    
+                    // Programmatically submit the form
+                    this.submit();
+                });
                 
-                return true;
-            });
-            
-            // Auto-format inputs
-            const tempInput = document.getElementById('temperature');
-            if (tempInput) {
-                tempInput.addEventListener('blur', function() {
-                    let value = this.value.trim();
-                    if (value && !value.includes('°')) {
-                        value = value.replace(/[CF]$/i, '').trim();
-                        this.value = value + '°C';
+                // Function to show error message
+                function showErrorMessage(message) {
+                    // Remove existing error alerts
+                    const existingAlerts = document.querySelectorAll('.dynamic-error-alert');
+                    existingAlerts.forEach(alert => alert.remove());
+                    
+                    // Create new error alert
+                    const errorAlert = document.createElement('div');
+                    errorAlert.className = 'alert alert-danger alert-dismissible fade show dynamic-error-alert';
+                    errorAlert.innerHTML = `
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <strong>Validation Error:</strong> ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+                    
+                    // Insert after the success message or at the top of main content
+                    const successAlert = document.querySelector('.success-alert');
+                    if (successAlert) {
+                        successAlert.parentNode.insertBefore(errorAlert, successAlert.nextSibling);
+                    } else {
+                        const pageHeader = document.querySelector('.page-header');
+                        if (pageHeader) {
+                            pageHeader.parentNode.insertBefore(errorAlert, pageHeader.nextSibling);
+                        }
                     }
-                });
-            }
-            
-            const bpInput = document.getElementById('blood_pressure');
-            if (bpInput) {
-                bpInput.addEventListener('blur', function() {
-                    let value = this.value.trim();
-                    if (value && !value.toLowerCase().includes('mmhg')) {
-                        value = value.replace(/[^0-9\/]/g, '');
-                        if (value) this.value = value + ' mmHg';
-                    }
-                });
-            }
-            
-            const hrInput = document.getElementById('heart_rate');
-            if (hrInput) {
-                hrInput.addEventListener('blur', function() {
-                    let value = this.value.trim();
-                    if (value && !value.toLowerCase().includes('bpm')) {
-                        value = value.replace(/\D/g, '');
-                        if (value) this.value = value + ' bpm';
-                    }
-                });
+                    
+                    // Auto-remove after 5 seconds
+                    setTimeout(() => {
+                        if (errorAlert.parentNode) {
+                            errorAlert.style.opacity = '0';
+                            errorAlert.style.transition = 'opacity 0.5s ease';
+                            setTimeout(() => {
+                                if (errorAlert.parentNode) {
+                                    errorAlert.parentNode.removeChild(errorAlert);
+                                }
+                            }, 500);
+                        }
+                    }, 5000);
+                }
+                
+                // Auto-format inputs
+                const tempInput = document.getElementById('temperature');
+                if (tempInput) {
+                    tempInput.addEventListener('blur', function() {
+                        let value = this.value.trim();
+                        if (value && !value.includes('°')) {
+                            value = value.replace(/[CF]$/i, '').trim();
+                            this.value = value + '°C';
+                        }
+                    });
+                }
+                
+                const bpInput = document.getElementById('blood_pressure');
+                if (bpInput) {
+                    bpInput.addEventListener('blur', function() {
+                        let value = this.value.trim();
+                        if (value && !value.toLowerCase().includes('mmhg')) {
+                            value = value.replace(/[^0-9\/]/g, '');
+                            if (value) this.value = value + ' mmHg';
+                        }
+                    });
+                }
+                
+                const hrInput = document.getElementById('heart_rate');
+                if (hrInput) {
+                    hrInput.addEventListener('blur', function() {
+                        let value = this.value.trim();
+                        if (value && !value.toLowerCase().includes('bpm')) {
+                            value = value.replace(/\D/g, '');
+                            if (value) this.value = value + ' bpm';
+                        }
+                    });
+                }
             }
 
             // Auto-hide success message after 10 seconds
@@ -1201,6 +1595,12 @@ if (isset($_SESSION['success_message'])) {
             // Update time immediately and then every minute
             updateCurrentTime();
             setInterval(updateCurrentTime, 60000);
+
+            // Add fade-in animations to elements
+            const fadeElements = document.querySelectorAll('.fade-in');
+            fadeElements.forEach((element, index) => {
+                element.style.animationDelay = `${index * 0.15}s`;
+            });
         });
     </script>
 </body>
