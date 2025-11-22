@@ -84,7 +84,7 @@ try {
     $recent_activities = [];
 }
 
-// ✅ NEW: FETCH CONSULTATION STATUS COUNTS FOR NOTIFICATIONS
+// ✅ ENHANCED: FETCH CONSULTATION STATUS COUNTS FOR NOTIFICATIONS
 try {
     $status_counts_stmt = $pdo->prepare("
         SELECT status, COUNT(*) as count 
@@ -101,7 +101,7 @@ try {
     $rejected_count = 0;
     $rescheduled_count = 0;
     $cancelled_count = 0;
-    $total_notifications = 0;
+    $consultation_notifications = 0;
     
     // Process counts
     foreach ($status_counts as $status_count) {
@@ -121,40 +121,43 @@ try {
         }
     }
     
-    $total_notifications = $approved_count + $rejected_count + $rescheduled_count + $cancelled_count;
+    $consultation_notifications = $approved_count + $rejected_count + $rescheduled_count + $cancelled_count;
     
 } catch (PDOException $e) {
     $approved_count = 0;
     $rejected_count = 0;
     $rescheduled_count = 0;
     $cancelled_count = 0;
-    $total_notifications = 0;
+    $consultation_notifications = 0;
 }
 
-// ✅ NEW: FETCH ANNOUNCEMENTS FOR NOTIFICATIONS
+// ✅ UPDATED: FETCH ANNOUNCEMENT COUNTS FOR NOTIFICATIONS (EXPIRED ANNOUNCEMENTS ARE NOT COUNTED)
 try {
-    $announcement_stmt = $pdo->prepare("
-        SELECT id, title, content, created_at, is_important 
+    // COUNT ONLY NEW ANNOUNCEMENTS (last 7 days) that are still active
+    $new_announcements_stmt = $pdo->prepare("
+        SELECT COUNT(*) as count 
         FROM announcements 
-        WHERE (target_audience = 'all' OR target_audience = 'students')
-        AND status = 'active'
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-        ORDER BY created_at DESC 
-        LIMIT 10
+        WHERE post_on_front = 1 
+        AND is_active = 1
+        AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        AND (expiry_date IS NULL OR expiry_date > NOW())
     ");
-    $announcement_stmt->execute();
-    $announcements = $announcement_stmt->fetchAll(PDO::FETCH_ASSOC);
+    $new_announcements_stmt->execute();
+    $new_announcements_count = $new_announcements_stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // Count unread announcements (you can implement read status tracking later)
-    $announcement_count = count($announcements);
+    // ✅ REMOVED: Expired announcements are no longer counted
+    
+    // TOTAL ANNOUNCEMENT NOTIFICATIONS (only new announcements)
+    $announcement_notifications = $new_announcements_count;
+    
+    // TOTAL ALL NOTIFICATIONS
+    $total_notifications = $consultation_notifications + $announcement_notifications;
     
 } catch (PDOException $e) {
-    $announcements = [];
-    $announcement_count = 0;
+    $new_announcements_count = 0;
+    $announcement_notifications = 0;
+    $total_notifications = $consultation_notifications;
 }
-
-// Calculate total notifications (consultation updates + announcements)
-$total_bell_notifications = $total_notifications + $announcement_count;
 
 // Use PDO - Secure database access
 // PDO was used to PROTECT the student information
@@ -283,7 +286,7 @@ $total_bell_notifications = $total_notifications + $announcement_count;
             letter-spacing: 0.5px;
         }
 
-        /* ✅ NEW: BELL NOTIFICATION STYLES */
+        /* ✅ ENHANCED: BELL NOTIFICATION STYLES */
         .notification-bell {
             position: relative;
             display: flex;
@@ -349,12 +352,12 @@ $total_bell_notifications = $total_notifications + $announcement_count;
             }
         }
 
-        /* ✅ NEW: NOTIFICATION DROPDOWN */
+        /* ✅ ENHANCED: NOTIFICATION DROPDOWN */
         .notification-dropdown {
             position: absolute;
             top: 100%;
             right: 0;
-            width: 400px;
+            width: 380px;
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(20px);
             border-radius: var(--border-radius);
@@ -366,8 +369,6 @@ $total_bell_notifications = $total_notifications + $announcement_count;
             visibility: hidden;
             transform: translateY(-10px);
             transition: var(--transition);
-            max-height: 500px;
-            overflow-y: auto;
         }
 
         .notification-dropdown.active {
@@ -416,57 +417,55 @@ $total_bell_notifications = $total_notifications + $announcement_count;
             font-weight: 700;
         }
 
-        .notification-tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-        }
-
-        .notification-tab {
-            padding: 0.5rem 1rem;
-            background: none;
-            border: none;
-            border-radius: 8px 8px 0 0;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            color: var(--text-light);
-        }
-
-        .notification-tab.active {
-            color: var(--primary);
-            background: rgba(102, 126, 234, 0.1);
-            border-bottom: 2px solid var(--primary);
-        }
-
-        .notification-tab:hover:not(.active) {
-            background: rgba(0,0,0,0.05);
-        }
-
-        .notification-content {
-            display: none;
-        }
-
-        .notification-content.active {
-            display: block;
-        }
-
         .notification-items {
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
+        }
+
+        .notification-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .notification-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .notification-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(248,249,250,0.8);
+        }
+
+        .notification-section-header h6 {
+            color: var(--text-dark);
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .notification-section-count {
+            background: var(--primary);
+            color: white;
+            border-radius: 20px;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 700;
         }
 
         .notification-item {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 1rem;
             padding: 1rem;
             border-radius: 12px;
             margin-bottom: 0.75rem;
             transition: var(--transition);
             border-left: 4px solid;
-            cursor: pointer;
         }
 
         .notification-item:hover {
@@ -494,14 +493,9 @@ $total_bell_notifications = $total_notifications + $announcement_count;
             background: rgba(118, 75, 162, 0.05);
         }
 
-        .notification-item.announcement {
-            border-left-color: var(--info);
-            background: rgba(23, 162, 184, 0.05);
-        }
-
-        .notification-item.important {
-            border-left-color: var(--danger);
-            background: rgba(220, 53, 69, 0.08);
+        .notification-item.new-announcement {
+            border-left-color: var(--success);
+            background: rgba(40, 167, 69, 0.05);
         }
 
         .notification-icon {
@@ -513,7 +507,6 @@ $total_bell_notifications = $total_notifications + $announcement_count;
             justify-content: center;
             font-size: 1.1rem;
             color: white;
-            flex-shrink: 0;
         }
 
         .notification-icon.approved {
@@ -532,52 +525,24 @@ $total_bell_notifications = $total_notifications + $announcement_count;
             background: var(--secondary);
         }
 
-        .notification-icon.announcement {
-            background: var(--info);
+        .notification-icon.new-announcement {
+            background: var(--success);
         }
 
-        .notification-icon.important {
-            background: var(--danger);
-        }
-
-        .notification-content-text {
+        .notification-content {
             flex: 1;
-            min-width: 0;
         }
 
-        .notification-content-text p {
+        .notification-content p {
             margin: 0;
             font-weight: 600;
             color: var(--text-dark);
             font-size: 0.9rem;
-            line-height: 1.4;
         }
 
-        .notification-content-text small {
+        .notification-content small {
             color: var(--text-light);
             font-size: 0.8rem;
-            display: block;
-            margin-top: 0.25rem;
-        }
-
-        .announcement-title {
-            font-weight: 700;
-            color: var(--text-dark);
-            margin-bottom: 0.25rem;
-            display: -webkit-box;
-            -webkit-line-clamp: 1;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .announcement-preview {
-            color: var(--text-light);
-            font-size: 0.85rem;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            margin-bottom: 0.25rem;
         }
 
         .notification-empty {
@@ -727,7 +692,7 @@ $total_bell_notifications = $total_notifications + $announcement_count;
             color: var(--danger);
         }
 
-        /* ✅ NEW: SIDEBAR NOTIFICATION BADGES */
+        /* ✅ ENHANCED: SIDEBAR NOTIFICATION BADGES */
         .notification-badge {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
@@ -745,6 +710,10 @@ $total_bell_notifications = $total_notifications + $announcement_count;
             transition: var(--transition);
         }
 
+        .notification-badge.announcement {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        }
+
         .notification-badge.approved {
             background: linear-gradient(135deg, var(--success), #218838);
         }
@@ -759,10 +728,6 @@ $total_bell_notifications = $total_notifications + $announcement_count;
 
         .notification-badge.cancelled {
             background: linear-gradient(135deg, var(--secondary), #6f42c1);
-        }
-
-        .notification-badge.announcement {
-            background: linear-gradient(135deg, var(--info), #138496);
         }
 
         .notification-badge.total {
@@ -842,7 +807,7 @@ $total_bell_notifications = $total_notifications + $announcement_count;
             font-weight: 500;
         }
 
-        /* ✅ NEW: NOTIFICATION BAR STYLES */
+        /* ✅ ENHANCED: NOTIFICATION BAR STYLES */
         .notification-bar {
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
             color: white;
@@ -880,7 +845,6 @@ $total_bell_notifications = $total_notifications + $announcement_count;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
             transition: var(--transition);
-            cursor: pointer;
         }
 
         .notification-badge-large:hover {
@@ -1409,7 +1373,7 @@ $total_bell_notifications = $total_notifications + $announcement_count;
             }
 
             .notification-dropdown {
-                width: 300px;
+                width: 320px;
                 right: -50px;
             }
 
@@ -1657,43 +1621,42 @@ $total_bell_notifications = $total_notifications + $announcement_count;
                     </div>
                 </div>
 
-                <!-- ✅ NEW: BELL NOTIFICATION -->
+                <!-- ✅ ENHANCED: BELL NOTIFICATION -->
                 <div class="notification-wrapper" style="position: relative;">
                     <div class="notification-bell" id="notificationBell">
                         <i class="fas fa-bell"></i>
-                        <?php if ($total_bell_notifications > 0): ?>
+                        <?php if ($total_notifications > 0): ?>
                             <div class="bell-badge" id="bellBadge">
-                                <?= $total_bell_notifications ?>
+                                <?= $total_notifications ?>
                             </div>
                         <?php endif; ?>
                     </div>
 
-                    <!-- ✅ NEW: NOTIFICATION DROPDOWN -->
+                    <!-- ✅ ENHANCED: NOTIFICATION DROPDOWN -->
                     <div class="notification-dropdown" id="notificationDropdown">
                         <div class="notification-header">
                             <h5><i class="fas fa-bell"></i> Notifications</h5>
-                            <?php if ($total_bell_notifications > 0): ?>
-                                <span class="notification-count"><?= $total_bell_notifications ?> new</span>
+                            <?php if ($total_notifications > 0): ?>
+                                <span class="notification-count"><?= $total_notifications ?> new</span>
                             <?php endif; ?>
                         </div>
                         
-                        <div class="notification-tabs">
-                            <button class="notification-tab active" data-tab="all">All</button>
-                            <button class="notification-tab" data-tab="consultations">Consultations</button>
-                            <button class="notification-tab" data-tab="announcements">Announcements</button>
-                        </div>
-                        
-                        <!-- All Notifications -->
-                        <div class="notification-content active" id="tab-all">
-                            <div class="notification-items">
-                                <?php if ($total_bell_notifications > 0): ?>
-                                    <!-- Consultation Notifications -->
+                        <div class="notification-items">
+                            <?php if ($total_notifications > 0): ?>
+                                <!-- Consultation Notifications Section -->
+                                <?php if ($consultation_notifications > 0): ?>
+                                <div class="notification-section">
+                                    <div class="notification-section-header">
+                                        <h6><i class="fas fa-calendar-check me-2"></i> Consultation Updates</h6>
+                                        <span class="notification-section-count"><?= $consultation_notifications ?></span>
+                                    </div>
+                                    
                                     <?php if ($approved_count > 0): ?>
-                                        <div class="notification-item approved" onclick="window.location.href='schedule_consultation.php'">
+                                        <div class="notification-item approved">
                                             <div class="notification-icon approved">
                                                 <i class="fas fa-check-circle"></i>
                                             </div>
-                                            <div class="notification-content-text">
+                                            <div class="notification-content">
                                                 <p><?= $approved_count ?> Consultation<?= $approved_count > 1 ? 's' : '' ?> Approved</p>
                                                 <small>Your consultation request has been approved</small>
                                             </div>
@@ -1701,11 +1664,11 @@ $total_bell_notifications = $total_notifications + $announcement_count;
                                     <?php endif; ?>
                                     
                                     <?php if ($rejected_count > 0): ?>
-                                        <div class="notification-item rejected" onclick="window.location.href='schedule_consultation.php'">
+                                        <div class="notification-item rejected">
                                             <div class="notification-icon rejected">
                                                 <i class="fas fa-times-circle"></i>
                                             </div>
-                                            <div class="notification-content-text">
+                                            <div class="notification-content">
                                                 <p><?= $rejected_count ?> Consultation<?= $rejected_count > 1 ? 's' : '' ?> Rejected</p>
                                                 <small>Your consultation request has been rejected</small>
                                             </div>
@@ -1713,11 +1676,11 @@ $total_bell_notifications = $total_notifications + $announcement_count;
                                     <?php endif; ?>
                                     
                                     <?php if ($rescheduled_count > 0): ?>
-                                        <div class="notification-item rescheduled" onclick="window.location.href='schedule_consultation.php'">
+                                        <div class="notification-item rescheduled">
                                             <div class="notification-icon rescheduled">
                                                 <i class="fas fa-calendar-alt"></i>
                                             </div>
-                                            <div class="notification-content-text">
+                                            <div class="notification-content">
                                                 <p><?= $rescheduled_count ?> Consultation<?= $rescheduled_count > 1 ? 's' : '' ?> Rescheduled</p>
                                                 <small>Your consultation has been rescheduled</small>
                                             </div>
@@ -1725,133 +1688,55 @@ $total_bell_notifications = $total_notifications + $announcement_count;
                                     <?php endif; ?>
                                     
                                     <?php if ($cancelled_count > 0): ?>
-                                        <div class="notification-item cancelled" onclick="window.location.href='schedule_consultation.php'">
+                                        <div class="notification-item cancelled">
                                             <div class="notification-icon cancelled">
                                                 <i class="fas fa-ban"></i>
                                             </div>
-                                            <div class="notification-content-text">
+                                            <div class="notification-content">
                                                 <p><?= $cancelled_count ?> Consultation<?= $cancelled_count > 1 ? 's' : '' ?> Cancelled</p>
                                                 <small>Your consultation has been cancelled</small>
                                             </div>
                                         </div>
                                     <?php endif; ?>
-                                    
-                                    <!-- Announcement Notifications -->
-                                    <?php if (!empty($announcements)): ?>
-                                        <?php foreach (array_slice($announcements, 0, 3) as $announcement): ?>
-                                            <div class="notification-item announcement <?= $announcement['is_important'] ? 'important' : '' ?>" onclick="window.location.href='student_announcement.php'">
-                                                <div class="notification-icon announcement <?= $announcement['is_important'] ? 'important' : '' ?>">
-                                                    <i class="fas fa-bullhorn"></i>
-                                                </div>
-                                                <div class="notification-content-text">
-                                                    <div class="announcement-title"><?= htmlspecialchars($announcement['title']) ?></div>
-                                                    <div class="announcement-preview"><?= htmlspecialchars(substr($announcement['content'], 0, 100)) ?>...</div>
-                                                    <small><?= date('M d, Y', strtotime($announcement['created_at'])) ?></small>
-                                                </div>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <div class="notification-empty">
-                                        <i class="fas fa-bell-slash"></i>
-                                        <p>No new notifications</p>
-                                    </div>
+                                </div>
                                 <?php endif; ?>
-                            </div>
+
+                                <!-- Announcement Notifications Section -->
+                                <?php if ($announcement_notifications > 0): ?>
+                                <div class="notification-section">
+                                    <div class="notification-section-header">
+                                        <h6><i class="fas fa-bullhorn me-2"></i> Announcement Updates</h6>
+                                        <span class="notification-section-count"><?= $announcement_notifications ?></span>
+                                    </div>
+                                    
+                                    <?php if ($new_announcements_count > 0): ?>
+                                        <div class="notification-item new-announcement">
+                                            <div class="notification-icon new-announcement">
+                                                <i class="fas fa-bell"></i>
+                                            </div>
+                                            <div class="notification-content">
+                                                <p><?= $new_announcements_count ?> New Announcement<?= $new_announcements_count > 1 ? 's' : '' ?></p>
+                                                <small>Posted in the last 7 days</small>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <div class="notification-empty">
+                                    <i class="fas fa-bell-slash"></i>
+                                    <p>No new notifications</p>
+                                </div>
+                            <?php endif; ?>
                         </div>
                         
-                        <!-- Consultation Notifications -->
-                        <div class="notification-content" id="tab-consultations">
-                            <div class="notification-items">
-                                <?php if ($total_notifications > 0): ?>
-                                    <?php if ($approved_count > 0): ?>
-                                        <div class="notification-item approved" onclick="window.location.href='schedule_consultation.php'">
-                                            <div class="notification-icon approved">
-                                                <i class="fas fa-check-circle"></i>
-                                            </div>
-                                            <div class="notification-content-text">
-                                                <p><?= $approved_count ?> Consultation<?= $approved_count > 1 ? 's' : '' ?> Approved</p>
-                                                <small>Your consultation request has been approved</small>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                    
-                                    <?php if ($rejected_count > 0): ?>
-                                        <div class="notification-item rejected" onclick="window.location.href='schedule_consultation.php'">
-                                            <div class="notification-icon rejected">
-                                                <i class="fas fa-times-circle"></i>
-                                            </div>
-                                            <div class="notification-content-text">
-                                                <p><?= $rejected_count ?> Consultation<?= $rejected_count > 1 ? 's' : '' ?> Rejected</p>
-                                                <small>Your consultation request has been rejected</small>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                    
-                                    <?php if ($rescheduled_count > 0): ?>
-                                        <div class="notification-item rescheduled" onclick="window.location.href='schedule_consultation.php'">
-                                            <div class="notification-icon rescheduled">
-                                                <i class="fas fa-calendar-alt"></i>
-                                            </div>
-                                            <div class="notification-content-text">
-                                                <p><?= $rescheduled_count ?> Consultation<?= $rescheduled_count > 1 ? 's' : '' ?> Rescheduled</p>
-                                                <small>Your consultation has been rescheduled</small>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                    
-                                    <?php if ($cancelled_count > 0): ?>
-                                        <div class="notification-item cancelled" onclick="window.location.href='schedule_consultation.php'">
-                                            <div class="notification-icon cancelled">
-                                                <i class="fas fa-ban"></i>
-                                            </div>
-                                            <div class="notification-content-text">
-                                                <p><?= $cancelled_count ?> Consultation<?= $cancelled_count > 1 ? 's' : '' ?> Cancelled</p>
-                                                <small>Your consultation has been cancelled</small>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <div class="notification-empty">
-                                        <i class="fas fa-calendar-times"></i>
-                                        <p>No consultation updates</p>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        
-                        <!-- Announcement Notifications -->
-                        <div class="notification-content" id="tab-announcements">
-                            <div class="notification-items">
-                                <?php if (!empty($announcements)): ?>
-                                    <?php foreach ($announcements as $announcement): ?>
-                                        <div class="notification-item announcement <?= $announcement['is_important'] ? 'important' : '' ?>" onclick="window.location.href='student_announcement.php'">
-                                            <div class="notification-icon announcement <?= $announcement['is_important'] ? 'important' : '' ?>">
-                                                <i class="fas fa-bullhorn"></i>
-                                            </div>
-                                            <div class="notification-content-text">
-                                                <div class="announcement-title"><?= htmlspecialchars($announcement['title']) ?></div>
-                                                <div class="announcement-preview"><?= htmlspecialchars(substr($announcement['content'], 0, 100)) ?>...</div>
-                                                <small><?= date('M d, Y', strtotime($announcement['created_at'])) ?></small>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <div class="notification-empty">
-                                        <i class="fas fa-bullhorn"></i>
-                                        <p>No announcements</p>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        
-                        <?php if ($total_bell_notifications > 0): ?>
+                        <?php if ($total_notifications > 0): ?>
                             <div class="text-center mt-3">
                                 <a href="schedule_consultation.php" class="btn btn-primary btn-sm me-2">
-                                    <i class="fas fa-eye me-1"></i> View Consultations
+                                    <i class="fas fa-calendar me-1"></i> Consultations
                                 </a>
-                                <a href="student_announcement.php" class="btn btn-info btn-sm">
-                                    <i class="fas fa-bullhorn me-1"></i> View Announcements
+                                <a href="student_announcement.php" class="btn btn-success btn-sm">
+                                    <i class="fas fa-bullhorn me-1"></i> Announcements
                                 </a>
                             </div>
                         <?php endif; ?>
@@ -1878,10 +1763,10 @@ $total_bell_notifications = $total_notifications + $announcement_count;
                 <a href="schedule_consultation.php" class="nav-item">
                     <i class="fas fa-calendar-plus"></i>
                     <span>Schedule Consultation</span>
-                    <!-- ✅ NEW: NOTIFICATION BADGES -->
-                    <?php if ($total_notifications > 0): ?>
-                        <div class="notification-badge total" title="Total consultation updates: <?= $total_notifications ?>">
-                            <?= $total_notifications ?>
+                    <!-- ✅ ENHANCED: NOTIFICATION BADGES -->
+                    <?php if ($consultation_notifications > 0): ?>
+                        <div class="notification-badge total" title="Consultation updates: <?= $consultation_notifications ?>">
+                            <?= $consultation_notifications ?>
                         </div>
                     <?php endif; ?>
                 </a>
@@ -1894,10 +1779,10 @@ $total_bell_notifications = $total_notifications + $announcement_count;
                 <a href="student_announcement.php" class="nav-item">
                     <i class="fas fa-bullhorn"></i>
                     <span>Announcement</span>
-                    <!-- ✅ NEW: ANNOUNCEMENT NOTIFICATION BADGE -->
-                    <?php if ($announcement_count > 0): ?>
-                        <div class="notification-badge announcement" title="New announcements: <?= $announcement_count ?>">
-                            <?= $announcement_count ?>
+                    <!-- ✅ NEW: ANNOUNCEMENT NOTIFICATION BADGE IN SIDEBAR -->
+                    <?php if ($announcement_notifications > 0): ?>
+                        <div class="notification-badge announcement" title="Announcement updates: <?= $announcement_notifications ?>">
+                            <?= $announcement_notifications ?>
                         </div>
                     <?php endif; ?>
                 </a>
@@ -1924,22 +1809,50 @@ $total_bell_notifications = $total_notifications + $announcement_count;
                 </div>
             </div>
 
-            <!-- ✅ NEW: NOTIFICATION BAR -->
-            <?php if ($total_bell_notifications > 0): ?>
+            <!-- ✅ ENHANCED: NOTIFICATION BAR -->
+            <?php if ($total_notifications > 0): ?>
             <div class="notification-bar fade-in">
-                <h5><i class="fas fa-bell"></i> Recent Updates</h5>
+                <h5><i class="fas fa-bell"></i> Consultation & Announcement Updates</h5>
                 <div class="notification-badges-container">
-                    <?php if ($total_notifications > 0): ?>
-                        <div class="notification-badge-large" onclick="window.location.href='schedule_consultation.php'">
-                            <div class="badge-count"><?= $total_notifications ?></div>
-                            <div class="badge-label">Consultation Update<?= $total_notifications > 1 ? 's' : '' ?></div>
+                    <?php if ($consultation_notifications > 0): ?>
+                        <div class="notification-badge-large">
+                            <div class="badge-count"><?= $consultation_notifications ?></div>
+                            <div class="badge-label">Consultation Update<?= $consultation_notifications > 1 ? 's' : '' ?></div>
                         </div>
                     <?php endif; ?>
                     
-                    <?php if ($announcement_count > 0): ?>
-                        <div class="notification-badge-large" onclick="window.location.href='student_announcement.php'">
-                            <div class="badge-count"><?= $announcement_count ?></div>
-                            <div class="badge-label">New Announcement<?= $announcement_count > 1 ? 's' : '' ?></div>
+                    <?php if ($announcement_notifications > 0): ?>
+                        <div class="notification-badge-large">
+                            <div class="badge-count"><?= $announcement_notifications ?></div>
+                            <div class="badge-label">Announcement Update<?= $announcement_notifications > 1 ? 's' : '' ?></div>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($approved_count > 0): ?>
+                        <div class="notification-badge-large">
+                            <div class="badge-count"><?= $approved_count ?></div>
+                            <div class="badge-label">Approved Consultation<?= $approved_count > 1 ? 's' : '' ?></div>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($rejected_count > 0): ?>
+                        <div class="notification-badge-large">
+                            <div class="badge-count"><?= $rejected_count ?></div>
+                            <div class="badge-label">Rejected Consultation<?= $rejected_count > 1 ? 's' : '' ?></div>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($rescheduled_count > 0): ?>
+                        <div class="notification-badge-large">
+                            <div class="badge-count"><?= $rescheduled_count ?></div>
+                            <div class="badge-label">Rescheduled Consultation<?= $rescheduled_count > 1 ? 's' : '' ?></div>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($cancelled_count > 0): ?>
+                        <div class="notification-badge-large">
+                            <div class="badge-count"><?= $cancelled_count ?></div>
+                            <div class="badge-label">Cancelled Consultation<?= $cancelled_count > 1 ? 's' : '' ?></div>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -2130,7 +2043,7 @@ $total_bell_notifications = $total_notifications + $announcement_count;
                 });
             }
 
-            // ✅ NEW: BELL NOTIFICATION FUNCTIONALITY
+            // ✅ ENHANCED: BELL NOTIFICATION FUNCTIONALITY
             const notificationBell = document.getElementById('notificationBell');
             const notificationDropdown = document.getElementById('notificationDropdown');
             const bellBadge = document.getElementById('bellBadge');
@@ -2158,28 +2071,6 @@ $total_bell_notifications = $total_notifications + $announcement_count;
                 }
             });
 
-            // ✅ NEW: NOTIFICATION TAB FUNCTIONALITY
-            const notificationTabs = document.querySelectorAll('.notification-tab');
-            const notificationContents = document.querySelectorAll('.notification-content');
-
-            notificationTabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const tabId = this.getAttribute('data-tab');
-                    
-                    // Update active tab
-                    notificationTabs.forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Show corresponding content
-                    notificationContents.forEach(content => {
-                        content.classList.remove('active');
-                        if (content.id === `tab-${tabId}`) {
-                            content.classList.add('active');
-                        }
-                    });
-                });
-            });
-
             // Close dropdown when clicking outside
             document.addEventListener('click', function(e) {
                 if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
@@ -2192,6 +2083,34 @@ $total_bell_notifications = $total_notifications + $announcement_count;
                 if (e.key === 'Escape') {
                     notificationDropdown.classList.remove('active');
                 }
+            });
+
+            // ✅ ENHANCED: NOTIFICATION ITEM INTERACTIONS
+            const notificationItems = document.querySelectorAll('.notification-item');
+            notificationItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (this.classList.contains('new-announcement')) {
+                        window.location.href = 'student_announcement.php';
+                    } else {
+                        window.location.href = 'schedule_consultation.php';
+                    }
+                });
+                
+                item.style.cursor = 'pointer';
+            });
+
+            // ✅ ENHANCED: NOTIFICATION BADGE INTERACTIONS
+            const notificationBadges = document.querySelectorAll('.notification-badge-large');
+            notificationBadges.forEach(badge => {
+                badge.addEventListener('click', function() {
+                    if (this.querySelector('.badge-label').textContent.includes('Announcement')) {
+                        window.location.href = 'student_announcement.php';
+                    } else {
+                        window.location.href = 'schedule_consultation.php';
+                    }
+                });
+                
+                badge.style.cursor = 'pointer';
             });
 
             // LOADING ANIMATIONS
@@ -2234,7 +2153,7 @@ $total_bell_notifications = $total_notifications + $announcement_count;
                 document.body.classList.add('touch-device');
                 
                 // Increase tap targets
-                const tapTargets = document.querySelectorAll('.nav-item, .action-btn, .appointment-item, .activity-item, .notification-bell');
+                const tapTargets = document.querySelectorAll('.nav-item, .action-btn, .appointment-item, .activity-item, .notification-bell, .notification-badge-large');
                 tapTargets.forEach(target => {
                     target.style.minHeight = '44px';
                 });
@@ -2262,31 +2181,6 @@ $total_bell_notifications = $total_notifications + $announcement_count;
                             behavior: 'smooth',
                             block: 'start'
                         });
-                    }
-                });
-            });
-
-            // ✅ NEW: NOTIFICATION BAR INTERACTIONS
-            const notificationBadges = document.querySelectorAll('.notification-badge-large');
-            notificationBadges.forEach(badge => {
-                badge.addEventListener('click', function() {
-                    // Redirect to appropriate page based on badge type
-                    if (this.querySelector('.badge-label').textContent.includes('Consultation')) {
-                        window.location.href = 'schedule_consultation.php';
-                    } else if (this.querySelector('.badge-label').textContent.includes('Announcement')) {
-                        window.location.href = 'student_announcement.php';
-                    }
-                });
-            });
-
-            // ✅ NEW: NOTIFICATION ITEM INTERACTIONS
-            const notificationItems = document.querySelectorAll('.notification-item');
-            notificationItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    if (this.classList.contains('announcement')) {
-                        window.location.href = 'student_announcement.php';
-                    } else {
-                        window.location.href = 'schedule_consultation.php';
                     }
                 });
             });

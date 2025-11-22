@@ -59,9 +59,9 @@ try {
     $consultation_notifications = 0;
 }
 
-// ✅ NEW: FETCH ANNOUNCEMENT COUNTS FOR NOTIFICATIONS
+// ✅ UPDATED: FETCH ANNOUNCEMENT COUNTS FOR NOTIFICATIONS (WALANG EXPIRED ANNOUNCEMENTS)
 try {
-    // COUNT NEW ANNOUNCEMENTS (last 7 days)
+    // COUNT ONLY NEW ANNOUNCEMENTS (last 7 days) that are still active
     $new_announcements_stmt = $pdo->prepare("
         SELECT COUNT(*) as count 
         FROM announcements 
@@ -73,25 +73,16 @@ try {
     $new_announcements_stmt->execute();
     $new_announcements_count = $new_announcements_stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // COUNT EXPIRED ANNOUNCEMENTS
-    $expired_count_stmt = $pdo->prepare("
-        SELECT COUNT(*) as count 
-        FROM announcements 
-        WHERE post_on_front = 1 
-        AND (is_active = 0 OR expiry_date <= NOW())
-    ");
-    $expired_count_stmt->execute();
-    $expired_announcements_count = $expired_count_stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    // ✅ REMOVED: Expired announcements are no longer counted
     
-    // TOTAL ANNOUNCEMENT NOTIFICATIONS
-    $announcement_notifications = $new_announcements_count + $expired_announcements_count;
+    // TOTAL ANNOUNCEMENT NOTIFICATIONS (only new announcements)
+    $announcement_notifications = $new_announcements_count;
     
     // TOTAL ALL NOTIFICATIONS
     $total_notifications = $consultation_notifications + $announcement_notifications;
     
 } catch (PDOException $e) {
     $new_announcements_count = 0;
-    $expired_announcements_count = 0;
     $announcement_notifications = 0;
     $total_notifications = $consultation_notifications;
 }
@@ -490,11 +481,6 @@ for ($i = 1; $i <= $numWeeks; $i++) {
             background: rgba(40, 167, 69, 0.05);
         }
 
-        .notification-item.expired-announcement {
-            border-left-color: var(--danger);
-            background: rgba(220, 53, 69, 0.05);
-        }
-
         .notification-icon {
             width: 40px;
             height: 40px;
@@ -524,10 +510,6 @@ for ($i = 1; $i <= $numWeeks; $i++) {
 
         .notification-icon.new-announcement {
             background: var(--success);
-        }
-
-        .notification-icon.expired-announcement {
-            background: var(--danger);
         }
 
         .notification-content {
@@ -1395,7 +1377,7 @@ for ($i = 1; $i <= $numWeeks; $i++) {
                     </div>
                 </div>
 
-                <!-- ✅ UPDATED: BELL NOTIFICATION WITH ANNOUNCEMENTS -->
+                <!-- ✅ UPDATED: BELL NOTIFICATION WITH ANNOUNCEMENTS (WALANG EXPIRED) -->
                 <div class="notification-wrapper" style="position: relative;">
                     <div class="notification-bell" id="notificationBell">
                         <i class="fas fa-bell"></i>
@@ -1406,7 +1388,7 @@ for ($i = 1; $i <= $numWeeks; $i++) {
                         <?php endif; ?>
                     </div>
 
-                    <!-- ✅ UPDATED: NOTIFICATION DROPDOWN WITH ANNOUNCEMENTS -->
+                    <!-- ✅ UPDATED: NOTIFICATION DROPDOWN WITH ANNOUNCEMENTS (WALANG EXPIRED) -->
                     <div class="notification-dropdown" id="notificationDropdown">
                         <div class="notification-header">
                             <h5><i class="fas fa-bell"></i> Notifications</h5>
@@ -1491,18 +1473,6 @@ for ($i = 1; $i <= $numWeeks; $i++) {
                                             <div class="notification-content">
                                                 <p><?= $new_announcements_count ?> New Announcement<?= $new_announcements_count > 1 ? 's' : '' ?></p>
                                                 <small>Posted in the last 7 days</small>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                    
-                                    <?php if ($expired_announcements_count > 0): ?>
-                                        <div class="notification-item expired-announcement">
-                                            <div class="notification-icon expired-announcement">
-                                                <i class="fas fa-clock"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $expired_announcements_count ?> Expired Announcement<?= $expired_announcements_count > 1 ? 's' : '' ?></p>
-                                                <small>No longer active</small>
                                             </div>
                                         </div>
                                     <?php endif; ?>
@@ -1754,7 +1724,7 @@ for ($i = 1; $i <= $numWeeks; $i++) {
             const notificationItems = document.querySelectorAll('.notification-item');
             notificationItems.forEach(item => {
                 item.addEventListener('click', function() {
-                    if (this.classList.contains('new-announcement') || this.classList.contains('expired-announcement')) {
+                    if (this.classList.contains('new-announcement')) {
                         window.location.href = 'student_announcement.php';
                     } else {
                         window.location.href = 'schedule_consultation.php';

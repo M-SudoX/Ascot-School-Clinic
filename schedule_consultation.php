@@ -64,9 +64,9 @@ try {
     $consultation_notifications = 0;
 }
 
-// ✅ NEW: FETCH ANNOUNCEMENT COUNTS FOR NOTIFICATIONS
+// ✅ UPDATED: FETCH ANNOUNCEMENT COUNTS FOR NOTIFICATIONS - TANGGALIN ANG EXPIRED ANNOUNCEMENTS
 try {
-    // COUNT NEW ANNOUNCEMENTS (last 7 days)
+    // COUNT NEW ANNOUNCEMENTS (last 7 days) - ISAMA LANG ANG ACTIVE AT HINDI EXPIRED
     $new_announcements_stmt = $pdo->prepare("
         SELECT COUNT(*) as count 
         FROM announcements 
@@ -78,18 +78,11 @@ try {
     $new_announcements_stmt->execute();
     $new_announcements_count = $new_announcements_stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // COUNT EXPIRED ANNOUNCEMENTS
-    $expired_count_stmt = $pdo->prepare("
-        SELECT COUNT(*) as count 
-        FROM announcements 
-        WHERE post_on_front = 1 
-        AND (is_active = 0 OR expiry_date <= NOW())
-    ");
-    $expired_count_stmt->execute();
-    $expired_announcements_count = $expired_count_stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    // ✅ INIWASAN: HUWAG NA BILANGIN ANG EXPIRED ANNOUNCEMENTS SA NOTIFICATION COUNT
+    $expired_announcements_count = 0; // Hindi na kasama sa count
     
-    // TOTAL ANNOUNCEMENT NOTIFICATIONS
-    $announcement_notifications = $new_announcements_count + $expired_announcements_count;
+    // ✅ UPDATED: TOTAL ANNOUNCEMENT NOTIFICATIONS - NEW ANNOUNCEMENTS LANG
+    $announcement_notifications = $new_announcements_count; // Tanggal na ang expired announcements
     
     // TOTAL ALL NOTIFICATIONS
     $total_notifications = $consultation_notifications + $announcement_notifications;
@@ -534,7 +527,7 @@ $current_time = date('H:i');
         }
     }
 
-    /* ✅ NEW: NOTIFICATION DROPDOWN */
+    /* ✅ UPDATED: NOTIFICATION DROPDOWN - WALANG EXPIRED ANNOUNCEMENTS */
     .notification-dropdown {
         position: absolute;
         top: 100%;
@@ -680,10 +673,7 @@ $current_time = date('H:i');
         background: rgba(40, 167, 69, 0.05);
     }
 
-    .notification-item.expired-announcement {
-        border-left-color: var(--danger);
-        background: rgba(220, 53, 69, 0.05);
-    }
+    /* ✅ INIWASAN: WALANG STYLE PARA SA EXPIRED ANNOUNCEMENTS */
 
     .notification-icon {
         width: 40px;
@@ -716,9 +706,7 @@ $current_time = date('H:i');
         background: var(--success);
     }
 
-    .notification-icon.expired-announcement {
-        background: var(--danger);
-    }
+    /* ✅ INIWASAN: WALANG ICON PARA SA EXPIRED ANNOUNCEMENTS */
 
     .notification-content {
         flex: 1;
@@ -1882,7 +1870,7 @@ $current_time = date('H:i');
                         <?php endif; ?>
                     </div>
 
-                    <!-- ✅ NEW: NOTIFICATION DROPDOWN -->
+                    <!-- ✅ UPDATED: NOTIFICATION DROPDOWN - WALANG EXPIRED ANNOUNCEMENTS -->
                     <div class="notification-dropdown" id="notificationDropdown">
                         <div class="notification-header">
                             <h5><i class="fas fa-bell"></i> Notifications</h5>
@@ -1951,7 +1939,7 @@ $current_time = date('H:i');
                                 </div>
                                 <?php endif; ?>
 
-                                <!-- Announcement Notifications Section -->
+                                <!-- ✅ UPDATED: ANNOUNCEMENT NOTIFICATIONS SECTION - NEW ANNOUNCEMENTS LANG -->
                                 <?php if ($announcement_notifications > 0): ?>
                                 <div class="notification-section">
                                     <div class="notification-section-header">
@@ -1971,17 +1959,7 @@ $current_time = date('H:i');
                                         </div>
                                     <?php endif; ?>
                                     
-                                    <?php if ($expired_announcements_count > 0): ?>
-                                        <div class="notification-item expired-announcement">
-                                            <div class="notification-icon expired-announcement">
-                                                <i class="fas fa-clock"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $expired_announcements_count ?> Expired Announcement<?= $expired_announcements_count > 1 ? 's' : '' ?></p>
-                                                <small>No longer active</small>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
+                                    <!-- ✅ INIWASAN: WALANG EXPIRED ANNOUNCEMENTS NOTIFICATION -->
                                 </div>
                                 <?php endif; ?>
                             <?php else: ?>
@@ -2041,9 +2019,9 @@ $current_time = date('H:i');
                 <a href="student_announcement.php" class="nav-item">
                     <i class="fas fa-bullhorn"></i>
                     <span>Announcement</span>
-                    <!-- ✅ NEW: ANNOUNCEMENT NOTIFICATION BADGE IN SIDEBAR -->
+                    <!-- ✅ UPDATED: ANNOUNCEMENT NOTIFICATION BADGE IN SIDEBAR - NEW ANNOUNCEMENTS LANG -->
                     <?php if ($announcement_notifications > 0): ?>
-                        <div class="notification-badge" title="Announcement updates: <?= $announcement_notifications ?>">
+                        <div class="notification-badge" title="New announcements: <?= $announcement_notifications ?>">
                             <?= $announcement_notifications ?>
                         </div>
                     <?php endif; ?>
@@ -2421,11 +2399,12 @@ $current_time = date('H:i');
             });
         }
 
-        // ✅ NEW: NOTIFICATION ITEM INTERACTIONS
+        // ✅ UPDATED: NOTIFICATION ITEM INTERACTIONS - WALANG EXPIRED ANNOUNCEMENTS
         const notificationItems = document.querySelectorAll('.notification-item');
         notificationItems.forEach(item => {
             item.addEventListener('click', function() {
-                if (this.classList.contains('new-announcement') || this.classList.contains('expired-announcement')) {
+                // ✅ UPDATED: LAHAT NG NOTIFICATION ITEMS MAG-REDIRECT SA TAMANG PAGE
+                if (this.classList.contains('new-announcement')) {
                     window.location.href = 'student_announcement.php';
                 } else {
                     window.location.href = 'schedule_consultation.php';

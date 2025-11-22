@@ -13,6 +13,37 @@ if (!isset($_SESSION['student_id'])) {
 $student_id = $_SESSION['student_id'];
 $student_number = $_SESSION['student_number'] ?? ($_SESSION['student_id'] ?? 'N/A');
 
+// ✅ NEW: AUTO-EXPIRE ANNOUNCEMENTS ON PAGE LOAD
+function expireAnnouncements($pdo) {
+    try {
+        $currentDateTime = date('Y-m-d H:i:s');
+        $stmt = $pdo->prepare("
+            UPDATE announcements 
+            SET is_active = 0, 
+                status = 'inactive',
+                updated_at = NOW()
+            WHERE expiry_date IS NOT NULL 
+            AND expiry_date <= ? 
+            AND is_active = 1
+            AND status = 'active'
+        ");
+        $stmt->execute([$currentDateTime]);
+        
+        $expiredCount = $stmt->rowCount();
+        if ($expiredCount > 0) {
+            error_log("Automatically expired $expiredCount announcements at $currentDateTime");
+        }
+        
+        return $expiredCount;
+    } catch (PDOException $e) {
+        error_log("Error expiring announcements: " . $e->getMessage());
+        return 0;
+    }
+}
+
+// ✅ RUN AUTO-EXPIRATION ON EVERY PAGE LOAD
+$expiredCount = expireAnnouncements($pdo);
+
 // ✅ NEW: FETCH CONSULTATION STATUS COUNTS FOR NOTIFICATIONS
 try {
     $status_counts_stmt = $pdo->prepare("
@@ -160,7 +191,7 @@ try {
     $expired_stmt->execute();
     $expired_announcements = $expired_stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // ✅ NEW: COUNT NEW ANNOUNCEMENTS (last 7 days)
+    // ✅ UPDATED: COUNT ONLY NEW ANNOUNCEMENTS (last 7 days) - WALANG EXPIRED
     $new_announcements_stmt = $pdo->prepare("
         SELECT COUNT(*) as count 
         FROM announcements 
@@ -172,20 +203,12 @@ try {
     $new_announcements_stmt->execute();
     $new_announcements_count = $new_announcements_stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // ✅ NEW: COUNT EXPIRED ANNOUNCEMENTS
-    $expired_count_stmt = $pdo->prepare("
-        SELECT COUNT(*) as count 
-        FROM announcements 
-        WHERE post_on_front = 1 
-        AND (is_active = 0 OR expiry_date <= NOW())
-    ");
-    $expired_count_stmt->execute();
-    $expired_announcements_count = $expired_count_stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    // ✅ REMOVED: Expired announcements are no longer counted in notifications
     
-    // ✅ NEW: TOTAL ANNOUNCEMENT NOTIFICATIONS
-    $announcement_notifications = $new_announcements_count + $expired_announcements_count;
+    // ✅ UPDATED: TOTAL ANNOUNCEMENT NOTIFICATIONS (only new announcements)
+    $announcement_notifications = $new_announcements_count;
     
-    // ✅ NEW: TOTAL ALL NOTIFICATIONS
+    // ✅ UPDATED: TOTAL ALL NOTIFICATIONS
     $total_notifications = $consultation_notifications + $announcement_notifications;
     
 } catch (PDOException $e) {
@@ -193,7 +216,6 @@ try {
     $announcements = [];
     $expired_announcements = [];
     $new_announcements_count = 0;
-    $expired_announcements_count = 0;
     $announcement_notifications = 0;
     $total_notifications = $consultation_notifications;
 }
@@ -389,7 +411,7 @@ try {
             }
         }
 
-        /* ✅ NEW: NOTIFICATION DROPDOWN */
+        /* ✅ UPDATED: NOTIFICATION DROPDOWN (WALANG EXPIRED ANNOUNCEMENTS) */
         .notification-dropdown {
             position: absolute;
             top: 100%;
@@ -535,10 +557,7 @@ try {
             background: rgba(40, 167, 69, 0.05);
         }
 
-        .notification-item.expired-announcement {
-            border-left-color: var(--danger);
-            background: rgba(220, 53, 69, 0.05);
-        }
+        /* ✅ REMOVED: Expired announcement notification item styles */
 
         .notification-icon {
             width: 40px;
@@ -571,9 +590,7 @@ try {
             background: var(--success);
         }
 
-        .notification-icon.expired-announcement {
-            background: var(--danger);
-        }
+        /* ✅ REMOVED: Expired announcement icon styles */
 
         .notification-content {
             flex: 1;
@@ -1725,7 +1742,7 @@ try {
                     </div>
                 </div>
 
-                <!-- ✅ NEW: BELL NOTIFICATION -->
+                <!-- ✅ UPDATED: BELL NOTIFICATION (WALANG EXPIRED ANNOUNCEMENTS) -->
                 <div class="notification-wrapper" style="position: relative;">
                     <div class="notification-bell" id="notificationBell">
                         <i class="fas fa-bell"></i>
@@ -1736,7 +1753,7 @@ try {
                         <?php endif; ?>
                     </div>
 
-                    <!-- ✅ NEW: NOTIFICATION DROPDOWN -->
+                    <!-- ✅ UPDATED: NOTIFICATION DROPDOWN (WALANG EXPIRED ANNOUNCEMENTS) -->
                     <div class="notification-dropdown" id="notificationDropdown">
                         <div class="notification-header">
                             <h5><i class="fas fa-bell"></i> Notifications</h5>
@@ -1825,17 +1842,7 @@ try {
                                         </div>
                                     <?php endif; ?>
                                     
-                                    <?php if ($expired_announcements_count > 0): ?>
-                                        <div class="notification-item expired-announcement">
-                                            <div class="notification-icon expired-announcement">
-                                                <i class="fas fa-clock"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $expired_announcements_count ?> Expired Announcement<?= $expired_announcements_count > 1 ? 's' : '' ?></p>
-                                                <small>No longer active</small>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
+                                    <!-- ✅ REMOVED: Expired announcements notification items -->
                                 </div>
                                 <?php endif; ?>
                             <?php else: ?>
@@ -1894,7 +1901,7 @@ try {
                 <a href="schedule_consultation.php" class="nav-item">
                     <i class="fas fa-calendar-plus"></i>
                     <span>Schedule Consultation</span>
-                    <!-- ✅ NEW: NOTIFICATION BADGES -->
+                    <!-- ✅ UPDATED: NOTIFICATION BADGES -->
                     <?php if ($consultation_notifications > 0): ?>
                         <div class="notification-badge total" title="Consultation updates: <?= $consultation_notifications ?>">
                             <?= $consultation_notifications ?>
@@ -1910,7 +1917,7 @@ try {
                 <a href="student_announcement.php" class="nav-item active">
                     <i class="fas fa-bullhorn"></i>
                     <span>Announcement</span>
-                    <!-- ✅ NEW: ANNOUNCEMENT NOTIFICATION BADGE IN SIDEBAR -->
+                    <!-- ✅ UPDATED: ANNOUNCEMENT NOTIFICATION BADGE IN SIDEBAR -->
                     <?php if ($announcement_notifications > 0): ?>
                         <div class="notification-badge" title="Announcement updates: <?= $announcement_notifications ?>">
                             <?= $announcement_notifications ?>
@@ -1956,9 +1963,6 @@ try {
                         <button class="nav-link" id="archive-tab" data-bs-toggle="tab" data-bs-target="#archive" type="button" role="tab">
                             <i class="fas fa-archive me-2"></i> Expired Announcements
                             <span class="badge badge-secondary ms-2"><?php echo count($expired_announcements); ?></span>
-                            <?php if ($expired_announcements_count > 0): ?>
-                                <span class="badge badge-danger ms-1"><?= $expired_announcements_count ?> expired</span>
-                            <?php endif; ?>
                         </button>
                     </li>
                 </ul>
@@ -1980,7 +1984,7 @@ try {
                                     $cardClass = $isExpiringSoon ? 'expiring-soon' : '';
                                     $isNew = strtotime($announcement['created_at']) >= strtotime('-7 days');
                                 ?>
-                                    <div class="announcement-card <?php echo $cardClass; ?>">
+                                    <div class="announcement-card <?php echo $cardClass; ?>" data-announcement-id="<?php echo $announcement['id']; ?>" data-expiry="<?php echo $announcement['expiry_date']; ?>">
                                         <div class="announcement-header">
                                             <div class="announcement-icon <?php echo $cardClass; ?>">
                                                 <i class="fas fa-bullhorn"></i>
@@ -2214,7 +2218,7 @@ try {
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ✅ NEW: BELL NOTIFICATION FUNCTIONALITY
+            // ✅ UPDATED: BELL NOTIFICATION FUNCTIONALITY
             const notificationBell = document.getElementById('notificationBell');
             const notificationDropdown = document.getElementById('notificationDropdown');
             const bellBadge = document.getElementById('bellBadge');
@@ -2318,6 +2322,101 @@ try {
                 }
             }
 
+            // ✅ UPDATED: REAL-TIME ANNOUNCEMENT EXPIRATION CHECK
+            function checkAnnouncementExpirations() {
+                const activeAnnouncements = document.querySelectorAll('.announcement-card:not(.expired)');
+                const now = new Date();
+                
+                activeAnnouncements.forEach(card => {
+                    const expiryDate = card.getAttribute('data-expiry');
+                    
+                    if (expiryDate && expiryDate !== 'null') {
+                        const expiry = new Date(expiryDate);
+                        
+                        if (expiry <= now) {
+                            // Announcement has expired - move to expired section
+                            moveAnnouncementToExpired(card);
+                        }
+                    }
+                });
+            }
+
+            // ✅ UPDATED: MOVE EXPIRED ANNOUNCEMENT TO EXPIRED SECTION
+            function moveAnnouncementToExpired(card) {
+                // Add expired styling
+                card.classList.add('expired');
+                card.classList.remove('expiring-soon');
+                
+                // Update the icon
+                const icon = card.querySelector('.announcement-icon');
+                if (icon) {
+                    icon.classList.add('expired');
+                    icon.classList.remove('expiring-soon');
+                    icon.innerHTML = '<i class="fas fa-archive"></i>';
+                }
+                
+                // Update status
+                const status = card.querySelector('.status-active');
+                if (status) {
+                    status.className = 'status-expired';
+                    status.innerHTML = '<i class="fas fa-circle me-1"></i> Expired';
+                }
+                
+                // Update expiry info
+                const expiryInfo = card.querySelector('.expiry-info');
+                if (expiryInfo) {
+                    expiryInfo.className = 'expiry-info expired';
+                    expiryInfo.innerHTML = '<i class="fas fa-clock me-1"></i> Expired: ' + 
+                        new Date(card.getAttribute('data-expiry')).toLocaleString();
+                }
+                
+                // Remove countdown timer
+                const countdown = card.querySelector('.countdown-timer');
+                if (countdown) {
+                    countdown.remove();
+                }
+                
+                // Remove expiring badges
+                const expiringBadges = card.querySelectorAll('.badge-warning');
+                expiringBadges.forEach(badge => badge.remove());
+                
+                // Add expired badge
+                const title = card.querySelector('h4');
+                if (title) {
+                    const expiredBadge = document.createElement('span');
+                    expiredBadge.className = 'badge badge-danger';
+                    expiredBadge.innerHTML = '<i class="fas fa-ban me-1"></i> Expired';
+                    title.appendChild(expiredBadge);
+                }
+                
+                // Show notification
+                showExpirationNotification(card);
+            }
+
+            // ✅ UPDATED: SHOW EXPIRATION NOTIFICATION
+            function showExpirationNotification(card) {
+                const title = card.querySelector('h4').textContent.split('Expired')[0].trim();
+                
+                // Create notification
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-warning alert-dismissible fade show position-fixed';
+                notification.style.cssText = 'top: 100px; right: 20px; z-index: 1060; min-width: 300px;';
+                notification.innerHTML = `
+                    <i class="fas fa-clock me-2"></i>
+                    <strong>Announcement Expired:</strong> "${title}" has expired and moved to archive.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 5000);
+            }
+
             // Real-time countdown update for expiring announcements
             function updateCountdownTimers() {
                 const timers = document.querySelectorAll('.countdown-timer');
@@ -2329,6 +2428,12 @@ try {
                     if (expiryDate <= now) {
                         timer.innerHTML = '<i class="fas fa-ban me-1"></i> Expired';
                         timer.className = 'countdown-timer countdown-expired';
+                        
+                        // Also move the parent announcement to expired
+                        const card = timer.closest('.announcement-card');
+                        if (card && !card.classList.contains('expired')) {
+                            moveAnnouncementToExpired(card);
+                        }
                         return;
                     }
                     
@@ -2355,9 +2460,17 @@ try {
                 });
             }
 
-            // Update countdown every minute
-            updateCountdownTimers();
-            setInterval(updateCountdownTimers, 60000);
+            // Update countdown and check expirations every 30 seconds
+            function updateAnnouncements() {
+                updateCountdownTimers();
+                checkAnnouncementExpirations();
+            }
+
+            // Initial update
+            updateAnnouncements();
+            
+            // Set up interval for real-time updates
+            setInterval(updateAnnouncements, 30000); // Check every 30 seconds
 
             // LOADING ANIMATIONS
             const staggerElements = document.querySelectorAll('.stagger-animation > *');
@@ -2417,11 +2530,11 @@ try {
                 }
             });
 
-            // ✅ NEW: NOTIFICATION ITEM INTERACTIONS
+            // ✅ UPDATED: NOTIFICATION ITEM INTERACTIONS
             const notificationItems = document.querySelectorAll('.notification-item');
             notificationItems.forEach(item => {
                 item.addEventListener('click', function() {
-                    if (this.classList.contains('new-announcement') || this.classList.contains('expired-announcement')) {
+                    if (this.classList.contains('new-announcement')) {
                         window.location.href = 'student_announcement.php';
                     } else {
                         window.location.href = 'schedule_consultation.php';
@@ -2430,16 +2543,6 @@ try {
                 
                 item.style.cursor = 'pointer';
             });
-
-            // Auto-refresh announcements every 5 minutes
-            function autoRefreshAnnouncements() {
-                setTimeout(() => {
-                    location.reload();
-                }, 300000); // 5 minutes
-            }
-
-            // Initialize auto-refresh
-            autoRefreshAnnouncements();
         });
 
         // Keyboard navigation for modal

@@ -59,9 +59,9 @@ try {
     $consultation_notifications = 0;
 }
 
-// ✅ NEW: FETCH ANNOUNCEMENT COUNTS FOR NOTIFICATIONS
+// ✅ FIXED: ANNOUNCEMENT COUNTS - TANGGALIN ANG EXPIRED SA NOTIFICATION COUNT
 try {
-    // COUNT NEW ANNOUNCEMENTS (last 7 days)
+    // COUNT NEW ANNOUNCEMENTS (last 7 days) - ACTIVE LANG AT HINDI EXPIRED
     $new_announcements_stmt = $pdo->prepare("
         SELECT COUNT(*) as count 
         FROM announcements 
@@ -73,20 +73,13 @@ try {
     $new_announcements_stmt->execute();
     $new_announcements_count = $new_announcements_stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // COUNT EXPIRED ANNOUNCEMENTS
-    $expired_count_stmt = $pdo->prepare("
-        SELECT COUNT(*) as count 
-        FROM announcements 
-        WHERE post_on_front = 1 
-        AND (is_active = 0 OR expiry_date <= NOW())
-    ");
-    $expired_count_stmt->execute();
-    $expired_announcements_count = $expired_count_stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    // ✅ FIXED: TANGGALIN ANG COUNTING NG EXPIRED ANNOUNCEMENTS
+    $expired_announcements_count = 0; // Hindi na kasama sa notification count
     
-    // TOTAL ANNOUNCEMENT NOTIFICATIONS
-    $announcement_notifications = $new_announcements_count + $expired_announcements_count;
+    // ✅ FIXED: TOTAL ANNOUNCEMENT NOTIFICATIONS - NEW ANNOUNCEMENTS LANG
+    $announcement_notifications = $new_announcements_count; // Expired hindi na kasama
     
-    // TOTAL ALL NOTIFICATIONS
+    // ✅ FIXED: TOTAL ALL NOTIFICATIONS
     $total_notifications = $consultation_notifications + $announcement_notifications;
     
 } catch (PDOException $e) {
@@ -1458,17 +1451,7 @@ try {
                                         </div>
                                     <?php endif; ?>
                                     
-                                    <?php if ($expired_announcements_count > 0): ?>
-                                        <div class="notification-item expired-announcement">
-                                            <div class="notification-icon expired-announcement">
-                                                <i class="fas fa-clock"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $expired_announcements_count ?> Expired Announcement<?= $expired_announcements_count > 1 ? 's' : '' ?></p>
-                                                <small>No longer active</small>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
+                                    <!-- ✅ FIXED: TANGGAL NA ANG EXPIRED ANNOUNCEMENTS SA NOTIFICATION -->
                                 </div>
                                 <?php endif; ?>
                             <?php else: ?>
