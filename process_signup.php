@@ -24,6 +24,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
+    // ✅ Student Number Validation - Maximum 10 characters (any characters allowed)
+    if (strlen($student_number) > 10) {
+        $_SESSION['error'] = 'Student number must be maximum 10 characters.';
+        header("Location: signup.php");
+        exit();
+    }
+
     if ($password !== $confirm_password) {
         $_SESSION['error'] = 'Passwords do not match.';
         header("Location: signup.php");

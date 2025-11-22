@@ -222,6 +222,26 @@ session_start();
       color: #e74c3c;
     }
 
+    /* Student Number Validation */
+    .student-number-validation {
+      font-size: 0.8rem;
+      margin: -10px 0 12px 0;
+      font-weight: 500;
+      display: none;
+    }
+
+    .student-number-validation.show {
+      display: block;
+    }
+
+    .student-number-validation.valid {
+      color: #27ae60;
+    }
+
+    .student-number-validation.invalid {
+      color: #e74c3c;
+    }
+
     /* Compact Resend Section */
     .resend-section {
       background: #fff9e6;
@@ -489,7 +509,17 @@ session_start();
         ✓ Letters, spaces, hyphens, commas, and periods only
       </div>
 
-      <input type="text" name="student_number" id="student_number" class="form-control" placeholder="Student Number:" required onkeyup="checkFormComplete()" />
+      <!-- Student Number Field with 10-character limit (any characters) -->
+      <input type="text" name="student_number" id="student_number" class="form-control" 
+             placeholder="Student Number:" required 
+             maxlength="10"
+             onkeyup="validateStudentNumber(); checkFormComplete();" 
+             oninput="this.value = this.value.slice(0, 10)" />
+      
+      <div id="student-number-validation" class="student-number-validation">
+        ✓ Maximum 10 characters
+      </div>
+
       <input type="email" name="email" id="email" class="form-control" placeholder="Email Address:" required onkeyup="checkFormComplete()" />
 
       <!-- Password Field -->
@@ -594,6 +624,30 @@ session_start();
       }
     }
 
+    // Student Number Validation Function
+    function validateStudentNumber() {
+      const studentNumberInput = document.getElementById('student_number');
+      const studentNumberValidation = document.getElementById('student-number-validation');
+      const studentNumber = studentNumberInput.value.trim();
+      
+      if (studentNumber === '') {
+        studentNumberValidation.style.display = 'none';
+        return false;
+      }
+      
+      studentNumberValidation.style.display = 'block';
+      
+      if (studentNumber.length <= 10) {
+        studentNumberValidation.textContent = '✓ Valid student number (' + studentNumber.length + '/10 characters)';
+        studentNumberValidation.className = 'student-number-validation valid show';
+        return true;
+      } else {
+        studentNumberValidation.textContent = '✗ Maximum 10 characters allowed';
+        studentNumberValidation.className = 'student-number-validation invalid show';
+        return false;
+      }
+    }
+
     function showPasswordRequirements() {
       const box = document.getElementById('password-requirements');
       box.classList.add('show');
@@ -659,9 +713,10 @@ session_start();
       const hasSymbol = /[!@#$%^&*]/.test(password);
       const hasLetter = /[A-Za-z]/.test(password);
       const isValidName = validateName();
+      const isValidStudentNumber = validateStudentNumber();
 
       const allValid = fullname && student_number && email &&
-                      isValidName &&
+                      isValidName && isValidStudentNumber &&
                       hasLength && hasNumber && hasSymbol && hasLetter &&
                       password === confirmPassword;
 
@@ -692,6 +747,7 @@ session_start();
       const hasSymbol = /[!@#$%^&*]/.test(password);
       const hasLetter = /[A-Za-z]/.test(password);
       const isValidName = validateName();
+      const isValidStudentNumber = validateStudentNumber();
 
       if (!fullname || !student_number || !email || !password || !confirmPassword) {
         alert('Please fill out all fields.');
@@ -700,6 +756,11 @@ session_start();
 
       if (!isValidName) {
         alert('Full name can only contain letters, spaces, hyphens, commas, and periods.');
+        return false;
+      }
+
+      if (!isValidStudentNumber) {
+        alert('Student number must be maximum 10 characters.');
         return false;
       }
 
