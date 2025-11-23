@@ -17,16 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action && $id) {
         try {
-            if ($action === 'delete') {
-                $stmt = $pdo->prepare("DELETE FROM consultation_requests WHERE id = ?");
-                $stmt->execute([$id]);
-                $_SESSION['success_message'] = "Consultation request deleted successfully.";
-            } elseif ($action === 'complete') {
-                $stmt = $pdo->prepare("UPDATE consultation_requests SET status = 'Completed' WHERE id = ?");
-                $stmt->execute([$id]);
-                $_SESSION['success_message'] = "Consultation marked as completed successfully.";
-            } elseif ($action === 'disapprove') {
-                $stmt = $pdo->prepare("UPDATE consultation_requests SET status = 'Rejected' WHERE id = ?");
+            if ($action === 'disapprove') {
+                $stmt = $pdo->prepare("UPDATE consultation_requests SET status = 'Disapproved' WHERE id = ?");
                 $stmt->execute([$id]);
                 $_SESSION['success_message'] = "Consultation disapproved successfully.";
             }
@@ -436,7 +428,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         }
 
         /* ICON BUTTON STYLES */
-        .btn-consult, .btn-complete, .btn-delete, .btn-disapprove {
+        .btn-consult, .btn-disapprove {
             border: none;
             border-radius: 8px;
             width: 40px;
@@ -457,26 +449,6 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
 
         .btn-consult:hover {
             background: #c3e6cb;
-            transform: scale(1.1);
-        }
-
-        .btn-complete {
-            background: #d1edf1;
-            color: #0c5460;
-        }
-
-        .btn-complete:hover {
-            background: #bee5eb;
-            transform: scale(1.1);
-        }
-
-        .btn-delete {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .btn-delete:hover {
-            background: #f1b0b7;
             transform: scale(1.1);
         }
 
@@ -688,7 +660,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 gap: 5px;
             }
 
-            .btn-consult, .btn-complete, .btn-delete, .btn-disapprove {
+            .btn-consult, .btn-disapprove {
                 width: 35px;
                 height: 35px;
                 font-size: 0.9rem;
@@ -727,7 +699,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                 gap: 5px;
             }
 
-            .btn-consult, .btn-complete, .btn-delete, .btn-disapprove {
+            .btn-consult, .btn-disapprove {
                 width: 32px;
                 height: 32px;
                 font-size: 0.8rem;
@@ -1033,30 +1005,12 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                                                     <i class="fas fa-stethoscope"></i>
                                                 </a>
 
-                                                <!-- COMPLETE BUTTON - ICON -->
-                                                <form method="POST" style="display: inline;" onsubmit="return confirmComplete()">
-                                                    <input type="hidden" name="consultation_id" value="<?= $c['id']; ?>">
-                                                    <input type="hidden" name="action" value="complete">
-                                                    <button type="submit" class="btn-complete" title="Mark as Completed">
-                                                        <i class="fas fa-flag-checkered"></i>
-                                                    </button>
-                                                </form>
-
                                                 <!-- DISAPPROVE BUTTON - ICON -->
                                                 <form method="POST" style="display: inline;" onsubmit="return confirmDisapprove()">
                                                     <input type="hidden" name="consultation_id" value="<?= $c['id']; ?>">
                                                     <input type="hidden" name="action" value="disapprove">
                                                     <button type="submit" class="btn-disapprove" title="Disapprove Consultation">
                                                         <i class="fas fa-times"></i>
-                                                    </button>
-                                                </form>
-
-                                                <!-- DELETE BUTTON - ICON -->
-                                                <form method="POST" style="display: inline;" onsubmit="return confirmDelete()">
-                                                    <input type="hidden" name="consultation_id" value="<?= $c['id']; ?>">
-                                                    <input type="hidden" name="action" value="delete">
-                                                    <button type="submit" class="btn-delete" title="Delete Consultation">
-                                                        <i class="fas fa-trash"></i>
                                                     </button>
                                                 </form>
                                             </div>
@@ -1126,19 +1080,9 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             });
         }
 
-        // Delete confirmation function
-        function confirmDelete() {
-            return confirm('Are you sure you want to delete this approved consultation? This action cannot be undone.');
-        }
-
-        // Complete confirmation function
-        function confirmComplete() {
-            return confirm('Are you sure you want to mark this consultation as completed?');
-        }
-
         // Disapprove confirmation function
         function confirmDisapprove() {
-            return confirm('Are you sure you want to disapprove this consultation? This will move it to rejected status.');
+            return confirm('Are you sure you want to disapprove this consultation?');
         }
     </script>
 </body>
