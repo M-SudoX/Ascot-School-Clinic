@@ -17,15 +17,16 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// ✅ NEW: FETCH CONSULTATION STATUS COUNTS FOR NOTIFICATIONS
+// ✅ UPDATED: FETCH CONSULTATION STATUS COUNTS FOR NOTIFICATIONS (UNVIEWED ONLY)
 try {
-    $status_counts_stmt = $pdo->prepare("
-        SELECT status, COUNT(*) as count 
-        FROM consultation_requests 
-        WHERE student_id = ? 
-        AND status IN ('Approved', 'Disapproved', 'Rescheduled', 'Cancelled', 'No Show')
-        GROUP BY status
-    ");
+   $status_counts_stmt = $pdo->prepare("
+    SELECT status, COUNT(*) as count 
+    FROM consultation_requests 
+    WHERE student_id = ? 
+    AND status IN ('Approved', 'Disapproved', 'Rescheduled', 'Cancelled', 'No Show')
+    AND is_viewed = FALSE
+    GROUP BY status
+");
     $status_counts_stmt->execute([$student_id]);
     $status_counts = $status_counts_stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -285,6 +286,69 @@ if (isset($_GET['cancel'])) {
 }
 
 /* ===============================
+   ✅ MARK CONSULTATION AS VIEWED
+================================= */
+if (isset($_GET['mark_viewed'])) {
+    $id = $_GET['mark_viewed'];
+    
+    try {
+        // ✅ VERIFY OWNERSHIP BEFORE MARKING AS VIEWED
+        $check_stmt = $pdo->prepare("SELECT student_id FROM consultation_requests WHERE id = ? AND student_id = ?");
+        $check_stmt->execute([$id, $student_id]);
+        
+        if (!$check_stmt->fetch()) {
+            $_SESSION['error_message'] = 'Consultation not found or you are not authorized.';
+            header("Location: schedule_consultation.php");
+            exit();
+        }
+        
+        $stmt = $pdo->prepare("UPDATE consultation_requests SET is_viewed = TRUE WHERE id = ?");
+        $stmt->execute([$id]);
+        
+        $_SESSION['success_message'] = 'Consultation marked as viewed!';
+    } catch (PDOException $e) {
+        $_SESSION['error_message'] = 'Error updating consultation: ' . $e->getMessage();
+    }
+
+    header("Location: schedule_consultation.php");
+    exit();
+}
+
+/* ===============================
+   ✅ MARK ALL AS VIEWED
+================================= */
+if (isset($_GET['mark_all_viewed'])) {
+    try {
+        $stmt = $pdo->prepare("UPDATE consultation_requests SET is_viewed = TRUE WHERE student_id = ? AND is_viewed = FALSE");
+        $stmt->execute([$student_id]);
+        
+        $_SESSION['success_message'] = 'All consultations marked as viewed!';
+    } catch (PDOException $e) {
+        $_SESSION['error_message'] = 'Error updating consultations: ' . $e->getMessage();
+    }
+
+    header("Location: schedule_consultation.php");
+    exit();
+}
+
+/* ===============================
+   ✅ AJAX: MARK AS VIEWED
+================================= */
+if (isset($_GET['mark_viewed_ajax'])) {
+    $id = $_GET['mark_viewed_ajax'];
+    
+    try {
+        $stmt = $pdo->prepare("UPDATE consultation_requests SET is_viewed = TRUE WHERE id = ? AND student_id = ?");
+        $stmt->execute([$id, $student_id]);
+        
+        echo json_encode(['success' => true]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+    exit();
+}
+
+/* ===============================
    ✅ DISPLAY MESSAGES - FIXED VARIABLES
 ================================= */
 if (isset($_SESSION['success_message'])) {
@@ -312,7 +376,7 @@ $cancelled_count_main = 0; // ✅ PALITAN: ibang variable name
 $no_show_count_main = 0; // ✅ PALITAN: ibang variable name
 
 try {
-    $stmt = $pdo->prepare("SELECT * FROM consultation_requests WHERE student_id = ? ORDER BY date DESC");
+    $stmt = $pdo->prepare("SELECT *, is_viewed FROM consultation_requests WHERE student_id = ? ORDER BY date DESC");
     $stmt->execute([$student_id]);
     $consultations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -1360,7 +1424,6 @@ $current_time = date('H:i');
     letter-spacing: 0.5px;
 }
 
-
     /* Action Buttons - ENHANCED */
     .btn-action {
         border: none;
@@ -1385,6 +1448,37 @@ $current_time = date('H:i');
         transform: scale(1.1);
         background: white;
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    /* NEW BADGE STYLES */
+    .new-badge {
+        background: linear-gradient(135deg, var(--danger), #c82333);
+        color: white;
+        border-radius: 12px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        margin-right: 0.5rem;
+        animation: pulse 2s infinite;
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+    }
+
+    /* MARK ALL AS VIEWED BUTTON */
+    .btn-mark-all-viewed {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        color: white;
+        font-weight: 600;
+        font-size: 0.8rem;
+        transition: var(--transition);
+        margin-left: auto;
+    }
+
+    .btn-mark-all-viewed:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
 
     /* Modal Styles - ENHANCED */
@@ -1926,6 +2020,12 @@ $current_time = date('H:i');
                             <?php if ($total_notifications > 0): ?>
                                 <span class="notification-count"><?= $total_notifications ?> new</span>
                             <?php endif; ?>
+                            
+                            <?php if ($consultation_notifications > 0): ?>
+                                <button type="button" class="btn-mark-all-viewed" onclick="markAllAsViewed()" style="margin-left: auto; font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                                    <i class="fas fa-check-double"></i> Mark All
+                                </button>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="notification-items">
@@ -2298,6 +2398,15 @@ $current_time = date('H:i');
             <div class="consultation-schedule fade-in">
                 <h3 class="schedule-title"><i class="fas fa-calendar-alt me-2"></i>YOUR CONSULTATION SCHEDULE</h3>
                 
+                <?php if ($consultation_notifications > 0): ?>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5>Consultation Updates</h5>
+                    <button type="button" class="btn btn-mark-all-viewed" onclick="markAllAsViewed()">
+                        <i class="fas fa-check-double me-1"></i> Mark All as Viewed
+                    </button>
+                </div>
+                <?php endif; ?>
+                
                 <?php if (empty($consultations)): ?>
                     <div class="empty-state">
                         <i class="fas fa-calendar-times"></i>
@@ -2329,8 +2438,12 @@ $current_time = date('H:i');
                                                 </span>
                                             </td>
                                             <td>
+                                                <?php if (!$c['is_viewed'] && in_array($c['status'], ['Approved', 'Disapproved', 'Rescheduled', 'Cancelled', 'No Show'])): ?>
+                                                    <span class="new-badge" title="New Update">NEW</span>
+                                                <?php endif; ?>
+                                                
                                                 <button class="btn-action btn-view" 
-                                                        onclick='viewConsultation(<?= json_encode($c); ?>)'
+                                                        onclick='viewConsultation(<?= json_encode($c); ?>, <?= $c['is_viewed'] ? 'true' : 'false'; ?>)'
                                                         title="View Details">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
@@ -3059,7 +3172,7 @@ $current_time = date('H:i');
             });
         });
 
-        function viewConsultation(c) {
+        function viewConsultation(c, isViewed) {
             const body = document.getElementById('viewBody');
             body.innerHTML = `
                 <div class="consultation-details">
@@ -3081,11 +3194,61 @@ $current_time = date('H:i');
                             <div class="alert alert-info">${c.notes}</div>
                         </div>
                     </div>` : ''}
+                    
+                    ${!isViewed && ['Approved', 'Disapproved', 'Rescheduled', 'Cancelled', 'No Show'].includes(c.status) ? `
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-info-circle"></i> This is a new update. It will be marked as viewed.
+                            </div>
+                        </div>
+                    </div>` : ''}
                 </div>
             `;
+            
             viewModal.show();
+            
+            // Auto-mark as viewed when modal is shown (for unviewed consultations with status updates)
+            if (!isViewed && ['Approved', 'Disapproved', 'Rescheduled', 'Cancelled', 'No Show'].includes(c.status)) {
+                markAsViewed(c.id);
+            }
         }
 
+        function markAsViewed(consultationId) {
+            // Use Fetch API to mark as viewed without page reload
+            fetch(`?mark_viewed_ajax=${consultationId}`, {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the NEW badge
+                    const rows = document.querySelectorAll('tr');
+                    rows.forEach(row => {
+                        const viewButton = row.querySelector('.btn-view');
+                        if (viewButton && viewButton.onclick && viewButton.onclick.toString().includes(consultationId)) {
+                            const badge = row.querySelector('.new-badge');
+                            if (badge) {
+                                badge.remove();
+                            }
+                        }
+                    });
+                    
+                    // Reload the page after 1 second to update notification counts
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function markAllAsViewed() {
+            if (confirm('Are you sure you want to mark all consultations as viewed?')) {
+                window.location.href = '?mark_all_viewed=1';
+            }
+        }
+        
         function openEditModal(c) {
             document.getElementById('edit_consultation_id').value = c.id;
             document.getElementById('edit_date').value = c.date;
