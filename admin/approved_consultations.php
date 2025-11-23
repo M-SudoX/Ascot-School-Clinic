@@ -8,7 +8,6 @@ if (!isset($_SESSION['admin_id'])) {
     exit();
 }
 
-// ===============================
 // ✅ HANDLE ACTIONS FOR APPROVED CONSULTATIONS
 // ===============================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -18,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action && $id) {
         try {
             if ($action === 'disapprove') {
+                // ✅ PALITAN: Ito ang tamang code - 'Disapproved' ang status
                 $stmt = $pdo->prepare("UPDATE consultation_requests SET status = 'Disapproved' WHERE id = ?");
                 $stmt->execute([$id]);
                 $_SESSION['success_message'] = "Consultation disapproved successfully.";

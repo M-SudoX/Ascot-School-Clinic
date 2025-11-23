@@ -23,7 +23,7 @@ try {
         SELECT status, COUNT(*) as count 
         FROM consultation_requests 
         WHERE student_id = ? 
-        AND status IN ('Approved', 'Rejected', 'Rescheduled', 'Cancelled')
+        AND status IN ('Approved', 'Disapproved', 'Rescheduled', 'Cancelled', 'No Show')
         GROUP BY status
     ");
     $status_counts_stmt->execute([$student_id]);
@@ -31,9 +31,10 @@ try {
     
     // Initialize counts
     $approved_count = 0;
-    $rejected_count = 0;
+    $disapproved_count = 0;
     $rescheduled_count = 0;
     $cancelled_count = 0;
+    $no_show_count = 0;
     $consultation_notifications = 0;
     
     // Process counts
@@ -42,8 +43,8 @@ try {
             case 'Approved':
                 $approved_count = $status_count['count'];
                 break;
-            case 'Rejected':
-                $rejected_count = $status_count['count'];
+            case 'Disapproved':
+                $disapproved_count = $status_count['count'];
                 break;
             case 'Rescheduled':
                 $rescheduled_count = $status_count['count'];
@@ -51,17 +52,16 @@ try {
             case 'Cancelled':
                 $cancelled_count = $status_count['count'];
                 break;
+            case 'No Show':
+                $no_show_count = $status_count['count'];
+                break;
         }
     }
     
-    $consultation_notifications = $approved_count + $rejected_count + $rescheduled_count + $cancelled_count;
+    $consultation_notifications = $approved_count + $disapproved_count + $rescheduled_count + $cancelled_count + $no_show_count;
     
 } catch (PDOException $e) {
-    $approved_count = 0;
-    $rejected_count = 0;
-    $rescheduled_count = 0;
-    $cancelled_count = 0;
-    $consultation_notifications = 0;
+    // Error handling
 }
 
 // ✅ UPDATED: FETCH ANNOUNCEMENT COUNTS FOR NOTIFICATIONS - TANGGALIN ANG EXPIRED ANNOUNCEMENTS
@@ -300,22 +300,49 @@ if (isset($_SESSION['error_message'])) {
    ✅ FETCH CONSULTATIONS
 ================================= */
 $student_id = $_SESSION['student_id'];
+
+// ✅ FIX: INITIALIZE ALL VARIABLES FIRST
+$consultations = [];
+$consultation_count = 0;
+$pending_count = 0;
+$approved_count_main = 0; // ✅ PALITAN: ibang variable name
+$disapproved_count_main = 0; // ✅ PALITAN: ibang variable name
+$rescheduled_count_main = 0; // ✅ PALITAN: ibang variable name
+$cancelled_count_main = 0; // ✅ PALITAN: ibang variable name
+$no_show_count_main = 0; // ✅ PALITAN: ibang variable name
+
 try {
     $stmt = $pdo->prepare("SELECT * FROM consultation_requests WHERE student_id = ? ORDER BY date DESC");
     $stmt->execute([$student_id]);
     $consultations = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // ✅ Get consultation count for display
-    $active_consultations = array_filter($consultations, function($c) {
-        return in_array($c['status'], ['Pending', 'Approved']);
-    });
-    $consultation_count = count($active_consultations);
+    // ✅ FIX: PROPERLY CALCULATE COUNTS
+    $consultation_count = count($consultations);
     
-    // ✅ NEW: Check for pending appointments specifically
-    $pending_consultations = array_filter($consultations, function($c) {
+    // Count by status
+    $pending_count = count(array_filter($consultations, function($c) {
         return $c['status'] === 'Pending';
-    });
-    $pending_count = count($pending_consultations);
+    }));
+    
+    $approved_count_main = count(array_filter($consultations, function($c) {
+        return $c['status'] === 'Approved';
+    }));
+    
+    $disapproved_count_main = count(array_filter($consultations, function($c) {
+        return $c['status'] === 'Disapproved';
+    }));
+    
+    $rescheduled_count_main = count(array_filter($consultations, function($c) {
+        return $c['status'] === 'Rescheduled';
+    }));
+    
+    $cancelled_count_main = count(array_filter($consultations, function($c) {
+        return $c['status'] === 'Cancelled';
+    }));
+    
+    $no_show_count_main = count(array_filter($consultations, function($c) {
+        return $c['status'] === 'No Show';
+    }));
     
 } catch (PDOException $e) {
     $consultations = [];
@@ -672,6 +699,10 @@ $current_time = date('H:i');
         border-left-color: var(--success);
         background: rgba(40, 167, 69, 0.05);
     }
+    .notification-item.no-show {
+    border-left-color: #6c757d;
+    background: rgba(108, 117, 125, 0.05);
+}
 
     /* ✅ INIWASAN: WALANG STYLE PARA SA EXPIRED ANNOUNCEMENTS */
 
@@ -705,6 +736,9 @@ $current_time = date('H:i');
     .notification-icon.new-announcement {
         background: var(--success);
     }
+    .notification-icon.no-show {
+    background: #6c757d;
+}
 
     /* ✅ INIWASAN: WALANG ICON PARA SA EXPIRED ANNOUNCEMENTS */
 
@@ -904,6 +938,9 @@ $current_time = date('H:i');
     .notification-badge.cancelled {
         background: linear-gradient(135deg, var(--secondary), #6f42c1);
     }
+    .notification-badge.no-show {
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+}
 
     .notification-badge.total {
         background: linear-gradient(135deg, var(--primary), var(--primary-dark));
@@ -1311,6 +1348,18 @@ $current_time = date('H:i');
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
+    .status-no-show { 
+    background: linear-gradient(135deg, #e9ecef, #dee2e6); 
+    color: #495057; 
+    padding: 0.75rem 1.25rem; 
+    border-radius: 25px; 
+    font-size: 0.85rem; 
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(73, 80, 87, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 
     /* Action Buttons - ENHANCED */
     .btn-action {
@@ -1881,63 +1930,75 @@ $current_time = date('H:i');
                         
                         <div class="notification-items">
                             <?php if ($total_notifications > 0): ?>
-                                <!-- Consultation Notifications Section -->
-                                <?php if ($consultation_notifications > 0): ?>
-                                <div class="notification-section">
-                                    <div class="notification-section-header">
-                                        <h6><i class="fas fa-calendar-check me-2"></i> Consultation Updates</h6>
-                                        <span class="notification-section-count"><?= $consultation_notifications ?></span>
-                                    </div>
-                                    
-                                    <?php if ($approved_count > 0): ?>
-                                        <div class="notification-item approved">
-                                            <div class="notification-icon approved">
-                                                <i class="fas fa-check-circle"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $approved_count ?> Consultation<?= $approved_count > 1 ? 's' : '' ?> Approved</p>
-                                                <small>Your consultation request has been approved</small>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                    
-                                    <?php if ($rejected_count > 0): ?>
-                                        <div class="notification-item rejected">
-                                            <div class="notification-icon rejected">
-                                                <i class="fas fa-times-circle"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $rejected_count ?> Consultation<?= $rejected_count > 1 ? 's' : '' ?> Rejected</p>
-                                                <small>Your consultation request has been rejected</small>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                    
-                                    <?php if ($rescheduled_count > 0): ?>
-                                        <div class="notification-item rescheduled">
-                                            <div class="notification-icon rescheduled">
-                                                <i class="fas fa-calendar-alt"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $rescheduled_count ?> Consultation<?= $rescheduled_count > 1 ? 's' : '' ?> Rescheduled</p>
-                                                <small>Your consultation has been rescheduled</small>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                    
-                                    <?php if ($cancelled_count > 0): ?>
-                                        <div class="notification-item cancelled">
-                                            <div class="notification-icon cancelled">
-                                                <i class="fas fa-ban"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $cancelled_count ?> Consultation<?= $cancelled_count > 1 ? 's' : '' ?> Cancelled</p>
-                                                <small>Your consultation has been cancelled</small>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                                <?php endif; ?>
+                               <!-- Consultation Notifications Section -->
+<?php if ($consultation_notifications > 0): ?>
+<div class="notification-section">
+    <div class="notification-section-header">
+        <h6><i class="fas fa-calendar-check me-2"></i> Consultation Updates</h6>
+        <span class="notification-section-count"><?= $consultation_notifications ?></span>
+    </div>
+    
+    <?php if ($approved_count > 0): ?>
+        <div class="notification-item approved">
+            <div class="notification-icon approved">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="notification-content">
+                <p><?= $approved_count ?> Consultation<?= $approved_count > 1 ? 's' : '' ?> Approved</p>
+                <small>Your consultation request has been approved</small>
+            </div>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($disapproved_count > 0): ?>
+        <div class="notification-item rejected">
+            <div class="notification-icon rejected">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="notification-content">
+                <p><?= $disapproved_count ?> Consultation<?= $disapproved_count > 1 ? 's' : '' ?> Disapproved</p>
+                <small>Your consultation request has been disapproved</small>
+            </div>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($rescheduled_count > 0): ?>
+        <div class="notification-item rescheduled">
+            <div class="notification-icon rescheduled">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="notification-content">
+                <p><?= $rescheduled_count ?> Consultation<?= $rescheduled_count > 1 ? 's' : '' ?> Rescheduled</p>
+                <small>Your consultation has been rescheduled</small>
+            </div>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($cancelled_count > 0): ?>
+        <div class="notification-item cancelled">
+            <div class="notification-icon cancelled">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div class="notification-content">
+                <p><?= $cancelled_count ?> Consultation<?= $cancelled_count > 1 ? 's' : '' ?> Cancelled</p>
+                <small>Your consultation has been cancelled</small>
+            </div>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($no_show_count > 0): ?>
+        <div class="notification-item no-show">
+            <div class="notification-icon no-show">
+                <i class="fas fa-user-times"></i>
+            </div>
+            <div class="notification-content">
+                <p><?= $no_show_count ?> Consultation<?= $no_show_count > 1 ? 's' : '' ?> Marked as No Show</p>
+                <small>You missed your scheduled consultation</small>
+            </div>
+        </div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
 
                                 <!-- ✅ UPDATED: ANNOUNCEMENT NOTIFICATIONS SECTION - NEW ANNOUNCEMENTS LANG -->
                                 <?php if ($announcement_notifications > 0): ?>
@@ -2061,46 +2122,55 @@ $current_time = date('H:i');
                 <h3><i class="fas fa-calendar-plus me-3"></i>Schedule Consultation</h3>
                 <p>Book your medical consultation with our healthcare professionals</p>
                 
-                <!-- ✅ UPDATED: STATUS NOTIFICATION BADGES -->
-                <?php if ($total_notifications > 0): ?>
-                <div class="d-flex justify-content-center gap-3 mt-3 flex-wrap">
-                    <?php if ($approved_count > 0): ?>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="notification-badge approved" title="Approved consultations">
-                                <?= $approved_count ?>
-                            </span>
-                            <small class="text-dark fw-bold">Approved</small>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if ($rejected_count > 0): ?>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="notification-badge rejected" title="Rejected consultations">
-                                <?= $rejected_count ?>
-                            </span>
-                            <small class="text-dark fw-bold">Rejected</small>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if ($rescheduled_count > 0): ?>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="notification-badge rescheduled" title="Rescheduled consultations">
-                                <?= $rescheduled_count ?>
-                            </span>
-                            <small class="text-dark fw-bold">Rescheduled</small>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if ($cancelled_count > 0): ?>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="notification-badge cancelled" title="Cancelled consultations">
-                                <?= $cancelled_count ?>
-                            </span>
-                            <small class="text-dark fw-bold">Cancelled</small>
-                        </div>
-                    <?php endif; ?>
-                </div>
-                <?php endif; ?>
+               <!-- ✅ UPDATED: STATUS NOTIFICATION BADGES -->
+<?php if ($total_notifications > 0): ?>
+<div class="d-flex justify-content-center gap-3 mt-3 flex-wrap">
+    <?php if ($approved_count_main > 0): ?>
+        <div class="d-flex align-items-center gap-2">
+            <span class="notification-badge approved" title="Approved consultations">
+                <?= $approved_count_main ?>
+            </span>
+            <small class="text-dark fw-bold">Approved</small>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($disapproved_count_main > 0): ?>
+        <div class="d-flex align-items-center gap-2">
+            <span class="notification-badge rejected" title="Disapproved consultations">
+                <?= $disapproved_count_main ?>
+            </span>
+            <small class="text-dark fw-bold">Disapproved</small>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($rescheduled_count_main > 0): ?>
+        <div class="d-flex align-items-center gap-2">
+            <span class="notification-badge rescheduled" title="Rescheduled consultations">
+                <?= $rescheduled_count_main ?>
+            </span>
+            <small class="text-dark fw-bold">Rescheduled</small>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($cancelled_count_main > 0): ?>
+        <div class="d-flex align-items-center gap-2">
+            <span class="notification-badge cancelled" title="Cancelled consultations">
+                <?= $cancelled_count_main ?>
+            </span>
+            <small class="text-dark fw-bold">Cancelled</small>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($no_show_count_main > 0): ?>
+        <div class="d-flex align-items-center gap-2">
+            <span class="notification-badge no-show" title="No Show consultations">
+                <?= $no_show_count_main ?>
+            </span>
+            <small class="text-dark fw-bold">No Show</small>
+        </div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
             </div>
 
             <!-- ✅ NEW: PENDING APPOINTMENT RESTRICTION -->

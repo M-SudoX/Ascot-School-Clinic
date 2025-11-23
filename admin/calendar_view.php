@@ -33,6 +33,18 @@ ORDER BY c.date, c.time ASC
 $stmt = $pdo->prepare($query);
 $stmt->execute();
 $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ✅ FETCH ANNOUNCEMENT COUNT FOR SIDEBAR BADGE
+$announcement_query = "SELECT COUNT(*) as announcement_count FROM announcements WHERE status = 'active' AND is_archived = 0";
+$announcement_stmt = $pdo->prepare($announcement_query);
+$announcement_stmt->execute();
+$announcement_count = $announcement_stmt->fetch(PDO::FETCH_ASSOC)['announcement_count'];
+
+// ✅ FETCH NEW ANNOUNCEMENTS COUNT (TODAY)
+$new_announcements_query = "SELECT COUNT(*) as new_announcements_count FROM announcements WHERE DATE(created_at) = CURDATE() AND status = 'active'";
+$new_announcements_stmt = $pdo->prepare($new_announcements_query);
+$new_announcements_stmt->execute();
+$new_announcements_count = $new_announcements_stmt->fetch(PDO::FETCH_ASSOC)['new_announcements_count'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -181,20 +193,21 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             height: 100%;
         }
 
-        .nav-item {
-            display: flex;
-            align-items: center;
-            padding: 0.9rem 1.25rem;
-            color: #555;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            border: none;
-            background: none;
-            width: 100%;
-            text-align: left;
-            cursor: pointer;
-            font-weight: 500;
-        }
+       .nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.9rem 1.25rem;
+    color: #555;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-weight: 500;
+    position: relative; /* IDAGDAG ITO */
+}
 
         .nav-item:hover {
             background: #f8f9fa;
@@ -283,6 +296,105 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin-left: 260px;
             margin-top: 0;
         }
+        .nav-item.logout:hover {
+    background: rgba(220, 53, 69, 0.1);
+}
+
+/* ✅ IDAGDAG DITO ANG MGA BAGONG BADGE STYLES */
+/* WORDPRESS-STYLE NOTIFICATION BADGE */
+.wp-badge {
+    background: #dc3545;
+    color: white !important;
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-left: auto;
+    margin-right: 10px;
+    animation: pulse 2s infinite;
+}
+
+/* Number count badge */
+.count-badge {
+    background: #dc3545;
+    color: white !important;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-left: auto;
+    margin-right: 10px;
+}
+
+/* Different color badges */
+.info-badge {
+    background: #17a2b8;
+    color: white !important;
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-left: auto;
+    margin-right: 10px;
+}
+
+.success-badge {
+    background: #28a745;
+    color: white !important;
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-left: auto;
+    margin-right: 10px;
+}
+
+.warning-badge {
+    background: #ffc107;
+    color: #212529 !important;
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-left: auto;
+    margin-right: 10px;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Notification badge for submenu items */
+.submenu-badge {
+    background: #dc3545;
+    color: white !important;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    margin-left: auto;
+}
+
+/* Main Content - SAME AS ADMIN DASHBOARD */
+.main-content {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-x: hidden;
+    margin-left: 260px;
+    margin-top: 0;
+}
 
         /* Sidebar Overlay for Mobile - SAME AS ADMIN DASHBOARD */
         .sidebar-overlay {
@@ -1559,22 +1671,28 @@ $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
 
                 <div class="nav-group">
-                    <button class="nav-item dropdown-btn" data-target="announcementMenu">
-                        <i class="fas fa-bullhorn"></i>
-                        <span>Announcement</span>
-                        <i class="fas fa-chevron-down arrow"></i>
-                    </button>
-                    <div class="submenu" id="announcementMenu">
-                        <a href="new_announcement.php" class="submenu-item">
-                            <i class="fas fa-plus-circle"></i>
-                            New Announcement
-                        </a>
-                        <a href="announcement_history.php" class="submenu-item">
-                            <i class="fas fa-history"></i>
-                            History
-                        </a>
-                    </div>
-                </div>
+    <button class="nav-item dropdown-btn" data-target="announcementMenu">
+        <i class="fas fa-bullhorn"></i>
+        <span>Announcement</span>
+        <i class="fas fa-chevron-down arrow"></i>
+        <?php if ($new_announcements_count > 0): ?>
+            <span class="success-badge">NEW</span>
+        <?php endif; ?>
+    </button>
+    <div class="submenu" id="announcementMenu">
+        <a href="new_announcement.php" class="submenu-item">
+            <i class="fas fa-plus-circle"></i>
+            New Announcement
+        </a>
+        <a href="announcement_history.php" class="submenu-item">
+            <i class="fas fa-history"></i>
+            History
+            <?php if ($announcement_count > 0): ?>
+                <span class="submenu-badge"><?php echo $announcement_count; ?></span>
+            <?php endif; ?>
+        </a>
+    </div>
+</div>
                 
                 <a href="../logout.php" class="nav-item logout">
                     <i class="fas fa-sign-out-alt"></i>

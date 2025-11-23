@@ -924,6 +924,328 @@ function getProfileStatus($student) {
                 transform: translateY(0);
             }
         }
+        /* ✅ ENHANCED: BELL NOTIFICATION STYLES */
+.notification-bell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.notification-bell:hover {
+    transform: scale(1.1) rotate(10deg);
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.notification-bell i {
+    font-size: 1.4rem;
+    color: #555;
+    transition: all 0.3s ease;
+}
+
+.notification-bell:hover i {
+    color: var(--primary);
+}
+
+.bell-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: linear-gradient(135deg, var(--danger), #c82333);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+    border: 2px solid white;
+    animation: pulse 2s infinite;
+}
+@media (max-width: 768px) {
+    /* ... existing mobile styles ... */
+    
+    .notification-dropdown {
+        width: 320px;
+        right: -50px;
+    }
+
+    .notification-dropdown::before {
+        right: 60px;
+    }
+}
+
+@media (max-width: 576px) {
+    /* ... existing small screen styles ... */
+    
+    .notification-dropdown {
+        width: 280px;
+        right: -30px;
+    }
+
+    .notification-dropdown::before {
+        right: 40px;
+    }
+
+    .notification-bell {
+        width: 45px;
+        height: 45px;
+    }
+
+    .notification-bell i {
+        font-size: 1.2rem;
+    }
+
+    .bell-badge {
+        width: 20px;
+        height: 20px;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    /* ... existing extra small screen styles ... */
+    
+    .notification-dropdown {
+        width: 250px;
+        right: -20px;
+    }
+
+    .notification-dropdown::before {
+        right: 30px;
+    }
+}
+
+@media (max-width: 375px) {
+    /* ... existing mobile styles ... */
+    
+    .notification-dropdown {
+        width: 220px;
+        right: -10px;
+    }
+
+    .notification-dropdown::before {
+        right: 20px;
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.6);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
+    }
+}
+
+/* ✅ ENHANCED: NOTIFICATION DROPDOWN */
+.notification-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 380px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 1.5rem;
+    z-index: 1040;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+}
+
+.notification-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(10px);
+}
+
+.notification-dropdown::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    right: 20px;
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.98);
+    transform: rotate(45deg);
+    border-left: 1px solid rgba(255,255,255,0.3);
+    border-top: 1px solid rgba(255,255,255,0.3);
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid rgba(248,249,250,0.8);
+}
+
+.notification-header h5 {
+    color: #555;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.notification-count {
+    background: var(--primary);
+    color: white;
+    border-radius: 20px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.notification-items {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-section {
+    margin-bottom: 1.5rem;
+}
+
+.notification-section:last-child {
+    margin-bottom: 0;
+}
+
+.notification-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(248,249,250,0.8);
+}
+
+.notification-section-header h6 {
+    color: #555;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.notification-section-count {
+    background: var(--primary);
+    color: white;
+    border-radius: 20px;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.notification-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+    border-left: 4px solid;
+}
+
+.notification-item:hover {
+    background: rgba(248,249,250,0.8);
+    transform: translateX(5px);
+}
+
+.notification-item.approved {
+    border-left-color: var(--warning);
+    background: rgba(255, 193, 7, 0.05);
+}
+
+.notification-item.new-announcement {
+    border-left-color: var(--success);
+    background: rgba(40, 167, 69, 0.05);
+}
+
+.notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: white;
+}
+
+.notification-icon.approved {
+    background: var(--warning);
+}
+
+.notification-icon.new-announcement {
+    background: var(--success);
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-content p {
+    margin: 0;
+    font-weight: 600;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.notification-content small {
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+.notification-empty {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.notification-empty i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.notification-empty p {
+    margin: 0;
+    font-weight: 600;
+}
+
+/* Header left alignment */
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
 
         .fade-in {
             animation: fadeInUp 0.6s ease-out;
@@ -939,10 +1261,11 @@ function getProfileStatus($student) {
     <!-- Sidebar Overlay for Mobile - SAME AS STUDENT -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - SAME AS STUDENT -->
-    <header class="top-header">
-        <div class="container-fluid">
-            <div class="header-content">
+    <!-- Header - WITH NOTIFICATION BELL -->
+<header class="top-header">
+    <div class="container-fluid">
+        <div class="header-content">
+            <div class="header-left">
                 <img src="../img/logo.png" alt="ASCOT Logo" class="logo-img">
                 <div class="school-info">
                     <div class="republic">Republic of the Philippines</div>
@@ -950,8 +1273,103 @@ function getProfileStatus($student) {
                     <div class="clinic-title">ONLINE SCHOOL CLINIC</div>
                 </div>
             </div>
+
+            <!-- NOTIFICATION BELL -->
+            <div class="notification-wrapper" style="position: relative;">
+                <div class="notification-bell" id="notificationBell">
+                    <i class="fas fa-bell"></i>
+                    <?php 
+                    // Fetch counts for notifications
+                    $pending_count_stmt = $pdo->prepare("SELECT COUNT(*) as count FROM consultation_requests WHERE status = 'Pending'");
+                    $pending_count_stmt->execute();
+                    $pending_count = $pending_count_stmt->fetch(PDO::FETCH_ASSOC)['count'];
+                    
+                    $new_announcements_stmt = $pdo->prepare("SELECT COUNT(*) as count FROM announcements WHERE DATE(created_at) = CURDATE() AND status = 'active'");
+                    $new_announcements_stmt->execute();
+                    $new_announcements_count = $new_announcements_stmt->fetch(PDO::FETCH_ASSOC)['count'];
+                    
+                    $total_notifications = $pending_count + $new_announcements_count;
+                    ?>
+                    <?php if ($total_notifications > 0): ?>
+                        <div class="bell-badge" id="bellBadge">
+                            <?php echo $total_notifications; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- NOTIFICATION DROPDOWN -->
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        <h5><i class="fas fa-bell"></i> Notifications</h5>
+                        <?php if ($total_notifications > 0): ?>
+                            <span class="notification-count"><?php echo $total_notifications; ?> new</span>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <div class="notification-items">
+                        <?php if ($total_notifications > 0): ?>
+                            <!-- Pending Approvals Section -->
+                            <?php if ($pending_count > 0): ?>
+                            <div class="notification-section">
+                                <div class="notification-section-header">
+                                    <h6><i class="fas fa-calendar-check me-2"></i> Pending Approvals</h6>
+                                    <span class="notification-section-count"><?php echo $pending_count; ?></span>
+                                </div>
+                                
+                                <div class="notification-item approved">
+                                    <div class="notification-icon approved">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <div class="notification-content">
+                                        <p><?php echo $pending_count; ?> Consultation Request<?php echo $pending_count > 1 ? 's' : '' ?> Pending</p>
+                                        <small>Needs your approval</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <!-- New Announcements Section -->
+                            <?php if ($new_announcements_count > 0): ?>
+                            <div class="notification-section">
+                                <div class="notification-section-header">
+                                    <h6><i class="fas fa-bullhorn me-2"></i> Announcements</h6>
+                                    <span class="notification-section-count"><?php echo $new_announcements_count; ?></span>
+                                </div>
+                                
+                                <div class="notification-item new-announcement">
+                                    <div class="notification-icon new-announcement">
+                                        <i class="fas fa-bullhorn"></i>
+                                    </div>
+                                    <div class="notification-content">
+                                        <p><?php echo $new_announcements_count; ?> New Announcement<?php echo $new_announcements_count > 1 ? 's' : '' ?></p>
+                                        <small>Created today</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <div class="notification-empty">
+                                <i class="fas fa-bell-slash"></i>
+                                <p>No new notifications</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <?php if ($total_notifications > 0): ?>
+                        <div class="text-center mt-3">
+                            <a href="approvals.php" class="btn btn-primary btn-sm me-2">
+                                <i class="fas fa-check-circle me-1"></i> View Approvals
+                            </a>
+                            <a href="announcement_history.php" class="btn btn-success btn-sm">
+                                <i class="fas fa-bullhorn me-1"></i> Announcements
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
-    </header>
+    </div>
+</header>
 
     <div class="dashboard-container">
         <!-- Sidebar - ADMIN MENU ITEMS WITH STUDENT STYLING -->
@@ -1357,6 +1775,66 @@ function getProfileStatus($student) {
     <script src="../assets/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // ✅ NOTIFICATION BELL FUNCTIONALITY
+const notificationBell = document.getElementById('notificationBell');
+const notificationDropdown = document.getElementById('notificationDropdown');
+const bellBadge = document.getElementById('bellBadge');
+
+// Toggle notification dropdown
+if (notificationBell) {
+    notificationBell.addEventListener('click', function(e) {
+        e.stopPropagation();
+        notificationDropdown.classList.toggle('active');
+        
+        // Add animation to bell when clicked
+        this.style.transform = 'scale(1.1) rotate(15deg)';
+        setTimeout(() => {
+            this.style.transform = 'scale(1.1) rotate(-5deg)';
+        }, 150);
+        setTimeout(() => {
+            this.style.transform = 'scale(1.1) rotate(0deg)';
+        }, 300);
+        
+        // Remove pulse animation when clicked
+        if (bellBadge) {
+            bellBadge.style.animation = 'none';
+            setTimeout(() => {
+                if (bellBadge) {
+                    bellBadge.style.animation = 'pulse 2s infinite';
+                }
+            }, 100);
+        }
+    });
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    if (notificationBell && !notificationBell.contains(e.target) && 
+        notificationDropdown && !notificationDropdown.contains(e.target)) {
+        notificationDropdown.classList.remove('active');
+    }
+});
+
+// Close dropdown when pressing Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && notificationDropdown) {
+        notificationDropdown.classList.remove('active');
+    }
+});
+
+// Notification item interactions
+const notificationItems = document.querySelectorAll('.notification-item');
+notificationItems.forEach(item => {
+    item.addEventListener('click', function() {
+        if (this.classList.contains('new-announcement')) {
+            window.location.href = 'announcement_history.php';
+        } else {
+            window.location.href = 'approvals.php';
+        }
+    });
+    
+    item.style.cursor = 'pointer';
+});
         document.addEventListener('DOMContentLoaded', function() {
             // DROPDOWN TOGGLE FUNCTIONALITY FOR SIDEBAR MENUS
             document.querySelectorAll('.dropdown-btn').forEach(button => {
