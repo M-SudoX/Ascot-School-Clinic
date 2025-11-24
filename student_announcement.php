@@ -1,17 +1,55 @@
 <?php
-// ==================== SESSION AT SECURITY ====================
+// ==================== SESSION AND SECURITY ====================
 session_start();
 require 'includes/db_connect.php';
 require 'includes/activity_logger.php';
 
-// ✅ SECURITY CHECK: TINITIGNAN KUNG NAKA-LOGIN ANG USER
+// ✅ SECURITY CHECK: Ensure student is logged in
 if (!isset($_SESSION['student_id'])) {
     header("Location: student_login.php");
     exit();
 }
 
 $student_id = $_SESSION['student_id'];
-$student_number = $_SESSION['student_number'] ?? ($_SESSION['student_id'] ?? 'N/A');
+$student_number = $_SESSION['student_number'] ?? '';
+
+// ==================== 🟢 AJAX HANDLER (FIX: UPDATE DB & SESSION) ====================
+// Ito ang sasalo ng signal galing sa JavaScript para i-update ang status
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'mark_read') {
+    try {
+        // 1. Update Consultation Requests sa Database (Gawin viewed = TRUE)
+        $updateStmt = $pdo->prepare("UPDATE consultation_requests SET is_viewed = TRUE WHERE student_id = ?");
+        $updateStmt->execute([$student_id]);
+
+        // 2. Update Announcements sa Session (Gamitin ang Database Time para accurate)
+        $timeStmt = $pdo->query("SELECT NOW()");
+        $dbCurrentTime = $timeStmt->fetchColumn();
+
+        $_SESSION['announcements_last_viewed'] = $dbCurrentTime;
+        
+        echo "success";
+    } catch (Exception $e) {
+        echo "error";
+    }
+    exit; // Tigil dito para hindi mag-load ang buong HTML
+}
+// ====================================================================================
+
+// ✅ FETCH USER INFO IF NOT IN SESSION (Fallback)
+if (empty($student_number)) {
+    $stmt = $pdo->prepare("SELECT student_number, fullname FROM users WHERE id = ?");
+    $stmt->execute([$student_id]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $student_number = $user['student_number'] ?? '';
+    if(isset($user['fullname'])) $_SESSION['fullname'] = $user['fullname'];
+    $_SESSION['student_number'] = $student_number;
+}
+
+if (!$student_number) {
+    die("Student record not found.");
+}
+
+// ==================== ANNOUNCEMENT SPECIFIC LOGIC ====================
 
 // ✅ NEW: AUTO-EXPIRE ANNOUNCEMENTS ON PAGE LOAD
 function expireAnnouncements($pdo) {
@@ -28,13 +66,7 @@ function expireAnnouncements($pdo) {
             AND status = 'active'
         ");
         $stmt->execute([$currentDateTime]);
-        
-        $expiredCount = $stmt->rowCount();
-        if ($expiredCount > 0) {
-            error_log("Automatically expired $expiredCount announcements at $currentDateTime");
-        }
-        
-        return $expiredCount;
+        return $stmt->rowCount();
     } catch (PDOException $e) {
         error_log("Error expiring announcements: " . $e->getMessage());
         return 0;
@@ -42,73 +74,7 @@ function expireAnnouncements($pdo) {
 }
 
 // ✅ RUN AUTO-EXPIRATION ON EVERY PAGE LOAD
-$expiredCount = expireAnnouncements($pdo);
-
-// ✅ NEW: FETCH CONSULTATION STATUS COUNTS FOR NOTIFICATIONS
-try {
-    $status_counts_stmt = $pdo->prepare("
-        SELECT status, COUNT(*) as count 
-        FROM consultation_requests 
-        WHERE student_id = ? 
-        AND status IN ('Approved', 'Rejected', 'Rescheduled', 'Cancelled')
-        GROUP BY status
-    ");
-    $status_counts_stmt->execute([$student_id]);
-    $status_counts = $status_counts_stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Initialize counts
-    $approved_count = 0;
-    $rejected_count = 0;
-    $rescheduled_count = 0;
-    $cancelled_count = 0;
-    $consultation_notifications = 0;
-    
-    // Process counts
-    foreach ($status_counts as $status_count) {
-        switch ($status_count['status']) {
-            case 'Approved':
-                $approved_count = $status_count['count'];
-                break;
-            case 'Rejected':
-                $rejected_count = $status_count['count'];
-                break;
-            case 'Rescheduled':
-                $rescheduled_count = $status_count['count'];
-                break;
-            case 'Cancelled':
-                $cancelled_count = $status_count['count'];
-                break;
-        }
-    }
-    
-    $consultation_notifications = $approved_count + $rejected_count + $rescheduled_count + $cancelled_count;
-    
-} catch (PDOException $e) {
-    $approved_count = 0;
-    $rejected_count = 0;
-    $rescheduled_count = 0;
-    $cancelled_count = 0;
-    $consultation_notifications = 0;
-}
-
-$stmt = $pdo->prepare("SELECT fullname, student_number, course_year, cellphone_number 
-                       FROM student_information 
-                       WHERE student_number = :student_number LIMIT 1");
-$stmt->execute([':student_number' => $student_number]);
-$student_info = $stmt->fetch(PDO::FETCH_ASSOC);
-
-// ✅ ERROR HANDLING: BACKUP SYSTEM KUNG WALANG MAKUHA SA DATABASE
-if (!$student_info) {
-    $student_info = [
-        'fullname' => $_SESSION['fullname'] ?? 'N/A',
-        'student_number' => $student_number,
-        'course_year' => 'Not set',
-        'cellphone_number' => 'Not set'
-    ];
-} else {
-    $_SESSION['fullname'] = $student_info['fullname'];
-    $_SESSION['student_number'] = $student_info['student_number'];
-}
+expireAnnouncements($pdo);
 
 // Function to check file paths
 function checkMediaFile($filename) {
@@ -157,10 +123,8 @@ function getTimeRemaining($expiry_date) {
 // Function to check if announcement is expired
 function isExpired($expiry_date) {
     if (empty($expiry_date)) return false;
-    
     $now = new DateTime();
     $expiry = new DateTime($expiry_date);
-    
     return $expiry <= $now;
 }
 
@@ -168,8 +132,7 @@ function isExpired($expiry_date) {
 try {
     // Get ALL active announcements that should be shown to students
     $stmt = $pdo->prepare("
-        SELECT a.* 
-        FROM announcements a
+        SELECT a.* FROM announcements a
         WHERE a.post_on_front = 1 
         AND a.is_active = 1
         AND (a.expiry_date IS NULL OR a.expiry_date > NOW())
@@ -181,8 +144,7 @@ try {
     
     // Get expired announcements
     $expired_stmt = $pdo->prepare("
-        SELECT a.* 
-        FROM announcements a
+        SELECT a.* FROM announcements a
         WHERE a.post_on_front = 1 
         AND (a.is_active = 0 OR a.expiry_date <= NOW())
         ORDER BY a.created_at DESC
@@ -190,38 +152,81 @@ try {
     ");
     $expired_stmt->execute();
     $expired_announcements = $expired_stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // ✅ UPDATED: COUNT ONLY NEW ANNOUNCEMENTS (last 7 days) - WALANG EXPIRED
-    $new_announcements_stmt = $pdo->prepare("
-        SELECT COUNT(*) as count 
-        FROM announcements 
-        WHERE post_on_front = 1 
-        AND is_active = 1
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        AND (expiry_date IS NULL OR expiry_date > NOW())
+} catch (PDOException $e) {
+    $announcements = [];
+    $expired_announcements = [];
+}
+
+// ==================== NOTIFICATION LOGIC (UPDATED) ====================
+
+// ✅ FETCH CONSULTATION STATUS COUNTS (UNVIEWED ONLY)
+try {
+    $status_counts_stmt = $pdo->prepare("
+        SELECT status, COUNT(*) as count 
+        FROM consultation_requests 
+        WHERE student_id = ? 
+        AND status IN ('Approved', 'Disapproved', 'Rescheduled', 'Cancelled', 'No Show')
+        AND is_viewed = FALSE
+        GROUP BY status
     ");
-    $new_announcements_stmt->execute();
+    $status_counts_stmt->execute([$student_id]);
+    $status_counts = $status_counts_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Initialize counts
+    $approved_count = 0;
+    $disapproved_count = 0;
+    $rescheduled_count = 0;
+    $cancelled_count = 0;
+    $no_show_count = 0;
+    
+    // Process counts
+    foreach ($status_counts as $status_count) {
+        switch ($status_count['status']) {
+            case 'Approved': $approved_count = $status_count['count']; break;
+            case 'Disapproved': $disapproved_count = $status_count['count']; break;
+            case 'Rescheduled': $rescheduled_count = $status_count['count']; break;
+            case 'Cancelled': $cancelled_count = $status_count['count']; break;
+            case 'No Show': $no_show_count = $status_count['count']; break;
+        }
+    }
+    
+    $consultation_notifications = $approved_count + $disapproved_count + $rescheduled_count + $cancelled_count + $no_show_count;
+    
+} catch (PDOException $e) {
+    $consultation_notifications = 0;
+}
+
+// ✅ UPDATED: FETCH ANNOUNCEMENT COUNTS (Active & New Only)
+try {
+    // Build query base
+    $sql = "SELECT COUNT(*) as count 
+            FROM announcements 
+            WHERE post_on_front = 1 
+            AND is_active = 1
+            AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            AND (expiry_date IS NULL OR expiry_date > NOW())";
+            
+    // FIX: Check session timestamp para hindi na mag-notify kung na-view na
+    if (isset($_SESSION['announcements_last_viewed'])) {
+        $sql .= " AND created_at > :last_viewed";
+        $new_announcements_stmt = $pdo->prepare($sql);
+        $new_announcements_stmt->execute([':last_viewed' => $_SESSION['announcements_last_viewed']]);
+    } else {
+        $new_announcements_stmt = $pdo->prepare($sql);
+        $new_announcements_stmt->execute();
+    }
+
     $new_announcements_count = $new_announcements_stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // ✅ REMOVED: Expired announcements are no longer counted in notifications
-    
-    // ✅ UPDATED: TOTAL ANNOUNCEMENT NOTIFICATIONS (only new announcements)
     $announcement_notifications = $new_announcements_count;
-    
-    // ✅ UPDATED: TOTAL ALL NOTIFICATIONS
     $total_notifications = $consultation_notifications + $announcement_notifications;
     
 } catch (PDOException $e) {
-    error_log("Error fetching announcements: " . $e->getMessage());
-    $announcements = [];
-    $expired_announcements = [];
-    $new_announcements_count = 0;
     $announcement_notifications = 0;
     $total_notifications = $consultation_notifications;
 }
-
-// Use PDO - Secure database access
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -229,9 +234,7 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Announcements - ASCOT Clinic</title>
     
-    <!-- Bootstrap -->
     <link href="assets/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link href="assets/webfonts/all.min.css" rel="stylesheet">
     
     <style>
@@ -267,11 +270,9 @@ try {
             padding-top: 80px;
             line-height: 1.6;
             min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Header Styles - ENHANCED */
+        /* Header Styles */
         .top-header {
             background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
             padding: 0.75rem 0;
@@ -345,7 +346,7 @@ try {
             letter-spacing: 0.5px;
         }
 
-        /* ✅ NEW: BELL NOTIFICATION STYLES */
+        /* Bell Notification Styles */
         .notification-bell {
             position: relative;
             display: flex;
@@ -397,21 +398,12 @@ try {
         }
 
         @keyframes pulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
-            }
-            50% {
-                transform: scale(1.1);
-                box-shadow: 0 4px 12px rgba(220, 53, 69, 0.6);
-            }
-            100% {
-                transform: scale(1);
-                box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
-            }
+            0% { transform: scale(1); box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4); }
+            50% { transform: scale(1.1); box-shadow: 0 4px 12px rgba(220, 53, 69, 0.6); }
+            100% { transform: scale(1); box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4); }
         }
 
-        /* ✅ UPDATED: NOTIFICATION DROPDOWN (WALANG EXPIRED ANNOUNCEMENTS) */
+        /* Notification Dropdown */
         .notification-dropdown {
             position: absolute;
             top: 100%;
@@ -481,13 +473,8 @@ try {
             overflow-y: auto;
         }
 
-        .notification-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .notification-section:last-child {
-            margin-bottom: 0;
-        }
+        .notification-section { margin-bottom: 1.5rem; }
+        .notification-section:last-child { margin-bottom: 0; }
 
         .notification-section-header {
             display: flex;
@@ -532,32 +519,12 @@ try {
             transform: translateX(5px);
         }
 
-        .notification-item.approved {
-            border-left-color: var(--success);
-            background: rgba(40, 167, 69, 0.05);
-        }
-
-        .notification-item.rejected {
-            border-left-color: var(--danger);
-            background: rgba(220, 53, 69, 0.05);
-        }
-
-        .notification-item.rescheduled {
-            border-left-color: var(--warning);
-            background: rgba(255, 193, 7, 0.05);
-        }
-
-        .notification-item.cancelled {
-            border-left-color: var(--secondary);
-            background: rgba(118, 75, 162, 0.05);
-        }
-
-        .notification-item.new-announcement {
-            border-left-color: var(--success);
-            background: rgba(40, 167, 69, 0.05);
-        }
-
-        /* ✅ REMOVED: Expired announcement notification item styles */
+        .notification-item.approved { border-left-color: var(--success); background: rgba(40, 167, 69, 0.05); }
+        .notification-item.disapproved { border-left-color: var(--danger); background: rgba(220, 53, 69, 0.05); }
+        .notification-item.rescheduled { border-left-color: var(--warning); background: rgba(255, 193, 7, 0.05); }
+        .notification-item.cancelled { border-left-color: var(--secondary); background: rgba(118, 75, 162, 0.05); }
+        .notification-item.no-show { border-left-color: #6c757d; background: rgba(108, 117, 125, 0.05); }
+        .notification-item.new-announcement { border-left-color: var(--success); background: rgba(40, 167, 69, 0.05); }
 
         .notification-icon {
             width: 40px;
@@ -570,27 +537,12 @@ try {
             color: white;
         }
 
-        .notification-icon.approved {
-            background: var(--success);
-        }
-
-        .notification-icon.rejected {
-            background: var(--danger);
-        }
-
-        .notification-icon.rescheduled {
-            background: var(--warning);
-        }
-
-        .notification-icon.cancelled {
-            background: var(--secondary);
-        }
-
-        .notification-icon.new-announcement {
-            background: var(--success);
-        }
-
-        /* ✅ REMOVED: Expired announcement icon styles */
+        .notification-icon.approved { background: var(--success); }
+        .notification-icon.disapproved { background: var(--danger); }
+        .notification-icon.rescheduled { background: var(--warning); }
+        .notification-icon.cancelled { background: var(--secondary); }
+        .notification-icon.no-show { background: #6c757d; }
+        .notification-icon.new-announcement { background: var(--success); }
 
         .notification-content {
             flex: 1;
@@ -625,7 +577,7 @@ try {
             font-weight: 600;
         }
 
-        /* Mobile Menu Toggle - ENHANCED */
+        /* Mobile Menu Toggle */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
@@ -647,16 +599,15 @@ try {
         .mobile-menu-toggle:hover {
             transform: scale(1.05);
             background: var(--primary-dark);
-            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
         }
 
-        /* Dashboard Container - ENHANCED */
+        /* Dashboard Container */
         .dashboard-container {
             display: flex;
             min-height: calc(100vh - 80px);
         }
 
-        /* Sidebar Styles - ENHANCED */
+        /* Sidebar Styles */
         .sidebar {
             width: 280px;
             background: rgba(255, 255, 255, 0.95);
@@ -687,10 +638,7 @@ try {
             color: var(--text-dark);
             text-decoration: none;
             transition: var(--transition);
-            border: none;
-            background: none;
             width: 100%;
-            text-align: left;
             cursor: pointer;
             font-weight: 600;
             border-radius: 0 12px 12px 0;
@@ -716,9 +664,7 @@ try {
             transform: translateX(5px);
         }
 
-        .nav-item:hover::before {
-            width: 100%;
-        }
+        .nav-item:hover::before { width: 100%; }
 
         .nav-item.active {
             background: linear-gradient(90deg, rgba(255,218,106,0.15) 0%, transparent 100%);
@@ -726,22 +672,11 @@ try {
             border-left: 6px solid var(--accent);
         }
 
-        .nav-item.active::before {
-            width: 100%;
-        }
-
         .nav-item i {
             width: 24px;
             margin-right: 1rem;
             font-size: 1.2rem;
             color: inherit;
-            transition: var(--transition);
-        }
-
-        .nav-item span {
-            flex: 1;
-            color: inherit;
-            font-size: 0.95rem;
         }
 
         .nav-item.logout {
@@ -755,7 +690,7 @@ try {
             color: var(--danger);
         }
 
-        /* ✅ NEW: SIDEBAR NOTIFICATION BADGES */
+        /* Sidebar Notification Badges */
         .notification-badge {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
@@ -772,44 +707,16 @@ try {
             box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
             transition: var(--transition);
         }
+        
+        .notification-badge.announcement { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
 
-        .notification-badge.approved {
-            background: linear-gradient(135deg, var(--success), #218838);
-        }
-
-        .notification-badge.rejected {
-            background: linear-gradient(135deg, var(--danger), #c82333);
-        }
-
-        .notification-badge.rescheduled {
-            background: linear-gradient(135deg, var(--warning), #e0a800);
-        }
-
-        .notification-badge.cancelled {
-            background: linear-gradient(135deg, var(--secondary), #6f42c1);
-        }
-
-        .notification-badge.total {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            font-size: 0.75rem;
-            min-width: 24px;
-            height: 24px;
-        }
-
-        .nav-item:hover .notification-badge {
-            transform: scale(1.1);
-        }
-
-        /* Main Content - ENHANCED */
         .main-content {
             flex: 1;
             padding: 2rem;
             overflow-x: hidden;
             margin-left: 280px;
-            margin-top: 0;
         }
 
-        /* Sidebar Overlay for Mobile - ENHANCED */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -822,11 +729,9 @@ try {
             z-index: 1019;
         }
 
-        .sidebar-overlay.active {
-            display: block;
-        }
+        .sidebar-overlay.active { display: block; }
 
-        /* WELCOME SECTION - ENHANCED */
+        /* Welcome Section */
         .welcome-section {
             background: linear-gradient(135deg, var(--accent-light) 0%, rgba(255,247,218,0.9) 100%);
             border-radius: var(--border-radius);
@@ -839,24 +744,11 @@ try {
             overflow: hidden;
         }
 
-        .welcome-section::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 20px 20px;
-            opacity: 0.3;
-        }
-
         .welcome-content h1 {
             color: var(--text-dark);
             font-weight: 800;
             font-size: 2.2rem;
             margin-bottom: 0.5rem;
-            position: relative;
         }
 
         .welcome-content p {
@@ -866,7 +758,7 @@ try {
             font-weight: 500;
         }
 
-        /* ANNOUNCEMENT TABS - ENHANCED */
+        /* ANNOUNCEMENT TABS */
         .announcement-tabs {
             background: rgba(255,255,255,0.95);
             backdrop-filter: blur(20px);
@@ -918,22 +810,16 @@ try {
             background: transparent;
         }
 
-        .nav-tabs .nav-link.active::before {
-            width: 100%;
-        }
+        .nav-tabs .nav-link.active::before { width: 100%; }
 
         .nav-tabs .nav-link:hover {
-            border: none;
             color: var(--text-dark);
             background: rgba(255,255,255,0.5);
-            transform: translateY(-1px);
         }
 
-        .tab-content {
-            padding: 2.5rem;
-        }
+        .tab-content { padding: 2.5rem; }
 
-        /* Announcement Cards - ENHANCED */
+        /* Announcement Cards */
         .announcement-card {
             background: rgba(255,255,255,0.95);
             backdrop-filter: blur(10px);
@@ -950,21 +836,6 @@ try {
         .announcement-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-        }
-
-        .announcement-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            transition: left 0.6s ease;
-        }
-
-        .announcement-card:hover::before {
-            left: 100%;
         }
 
         .announcement-card.expired {
@@ -1000,21 +871,10 @@ try {
             transition: var(--transition);
         }
 
-        .announcement-card:hover .announcement-icon {
-            transform: scale(1.1) rotate(5deg);
-        }
+        .announcement-icon.expired { background: linear-gradient(135deg, var(--gray), #6c757d); }
+        .announcement-icon.expiring-soon { background: linear-gradient(135deg, var(--warning), #e0a800); }
 
-        .announcement-icon.expired {
-            background: linear-gradient(135deg, var(--gray), #6c757d);
-        }
-
-        .announcement-icon.expiring-soon {
-            background: linear-gradient(135deg, var(--warning), #e0a800);
-        }
-
-        .announcement-meta {
-            flex: 1;
-        }
+        .announcement-meta { flex: 1; }
 
         .announcement-meta h4 {
             color: var(--text-dark);
@@ -1033,10 +893,6 @@ try {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
-        }
-
-        .announcement-date i {
-            margin-right: 0.5rem;
         }
 
         .expiry-info {
@@ -1076,52 +932,15 @@ try {
             letter-spacing: 0.5px;
         }
 
-        .badge-success {
-            background: rgba(40, 167, 69, 0.1);
-            color: #155724;
-            border: 1px solid rgba(40, 167, 69, 0.2);
-        }
+        .badge-success { background: rgba(40, 167, 69, 0.1); color: #155724; border: 1px solid rgba(40, 167, 69, 0.2); }
+        .badge-warning { background: rgba(255, 193, 7, 0.1); color: #856404; border: 1px solid rgba(255, 193, 7, 0.2); }
+        .badge-danger { background: rgba(220, 53, 69, 0.1); color: var(--danger); border: 1px solid rgba(220, 53, 69, 0.2); }
+        .badge-info { background: rgba(23, 162, 184, 0.1); color: #0c5460; border: 1px solid rgba(23, 162, 184, 0.2); }
+        .badge-secondary { background: rgba(108, 117, 125, 0.1); color: var(--gray); border: 1px solid rgba(108, 117, 125, 0.2); }
+        .badge-primary { background: rgba(255, 218, 106, 0.2); color: var(--text-dark); border: 1px solid rgba(255, 218, 106, 0.3); }
 
-        .badge-warning {
-            background: rgba(255, 193, 7, 0.1);
-            color: #856404;
-            border: 1px solid rgba(255, 193, 7, 0.2);
-        }
-
-        .badge-danger {
-            background: rgba(220, 53, 69, 0.1);
-            color: var(--danger);
-            border: 1px solid rgba(220, 53, 69, 0.2);
-        }
-
-        .badge-info {
-            background: rgba(23, 162, 184, 0.1);
-            color: #0c5460;
-            border: 1px solid rgba(23, 162, 184, 0.2);
-        }
-
-        .badge-secondary {
-            background: rgba(108, 117, 125, 0.1);
-            color: var(--gray);
-            border: 1px solid rgba(108, 117, 125, 0.2);
-        }
-
-        .badge-primary {
-            background: rgba(255, 218, 106, 0.2);
-            color: var(--text-dark);
-            border: 1px solid rgba(255, 218, 106, 0.3);
-        }
-
-        .announcement-body {
-            margin-bottom: 1.5rem;
-        }
-
-        .announcement-body p {
-            color: var(--text-dark);
-            line-height: 1.7;
-            margin: 0;
-            font-size: 1rem;
-        }
+        .announcement-body { margin-bottom: 1.5rem; }
+        .announcement-body p { color: var(--text-dark); line-height: 1.7; margin: 0; font-size: 1rem; }
 
         .announcement-footer {
             border-top: 1px solid rgba(233, 236, 239, 0.8);
@@ -1143,68 +962,16 @@ try {
             transition: var(--transition);
         }
 
-        .announcement-category:hover {
-            background: rgba(255, 218, 106, 0.2);
-            color: var(--text-dark);
-        }
+        .announcement-category:hover { background: rgba(255, 218, 106, 0.2); color: var(--text-dark); }
 
-        .announcement-category i {
-            margin-right: 0.5rem;
-        }
+        .status-active { color: var(--success); font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+        .status-expired { color: var(--danger); font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
 
-        .status-active {
-            color: var(--success);
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+        .no-announcements { text-align: center; padding: 4rem 2rem; color: var(--text-light); }
+        .no-announcements i { font-size: 4rem; margin-bottom: 1.5rem; opacity: 0.7; }
+        .no-announcements h4 { margin-bottom: 1rem; font-weight: 600; font-size: 1.5rem; }
 
-        .status-inactive {
-            color: var(--gray);
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .status-expired {
-            color: var(--danger);
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .no-announcements {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: var(--text-light);
-        }
-
-        .no-announcements i {
-            font-size: 4rem;
-            margin-bottom: 1.5rem;
-            color: #dee2e6;
-            display: block;
-            opacity: 0.7;
-        }
-
-        .no-announcements h4 {
-            color: var(--text-light);
-            margin-bottom: 1rem;
-            font-weight: 600;
-            font-size: 1.5rem;
-        }
-
-        .no-announcements p {
-            color: #999;
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin: 0;
-        }
-
-        /* Media Styles - ENHANCED */
+        /* Media Styles */
         .announcement-media {
             margin-top: 1.5rem;
             border-radius: 12px;
@@ -1212,33 +979,10 @@ try {
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             transition: var(--transition);
         }
-
-        .announcement-media:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-
-        .announcement-image {
-            width: 100%;
-            height: auto;
-            max-height: 400px;
-            object-fit: contain;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-            background: #f8f9fa;
-        }
-
-        .announcement-image:hover {
-            transform: scale(1.02);
-        }
-
-        .announcement-video {
-            width: 100%;
-            height: auto;
-            max-height: 400px;
-            background: #000;
-            border-radius: 8px;
-        }
+        .announcement-media:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+        .announcement-image { width: 100%; height: auto; max-height: 400px; object-fit: contain; cursor: pointer; transition: transform 0.3s ease; background: #f8f9fa; }
+        .announcement-image:hover { transform: scale(1.02); }
+        .announcement-video { width: 100%; height: auto; max-height: 400px; background: #000; border-radius: 8px; }
 
         .announcement-pdf-preview {
             background: linear-gradient(135deg, var(--accent), #ffd24a);
@@ -1250,486 +994,46 @@ try {
             transition: var(--transition);
             margin-top: 1.5rem;
             box-shadow: 0 4px 15px rgba(255,218,106,0.4);
-            position: relative;
-            overflow: hidden;
         }
+        .announcement-pdf-preview:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(255,218,106,0.6); }
+        .announcement-pdf-preview i { font-size: 3rem; margin-bottom: 1rem; display: block; }
 
-        .announcement-pdf-preview::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            transition: left 0.6s ease;
-        }
+        /* Modal */
+        .modal-content { border-radius: var(--border-radius); border: none; box-shadow: var(--shadow); backdrop-filter: blur(20px); background: rgba(255,255,255,0.95); }
+        .modal-header { background: linear-gradient(135deg, var(--accent), #ffd24a); color: var(--text-dark); border-bottom: none; padding: 1.5rem 2rem; }
 
-        .announcement-pdf-preview:hover::before {
-            left: 100%;
-        }
+        /* Countdown */
+        .countdown-timer { display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 700; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.85rem; }
+        .countdown-expiring { background: #fff3cd; color: #856404; animation: pulse 2s infinite; border: 1px solid #ffeaa7; }
+        .countdown-expired { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
-        .announcement-pdf-preview:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(255,218,106,0.6);
-        }
-
-        .announcement-pdf-preview i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            display: block;
-        }
-
-        .announcement-pdf-preview h5 {
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-            font-size: 1.2rem;
-        }
-
-        .announcement-pdf-preview p {
-            margin: 0;
-            opacity: 0.9;
-            font-size: 0.95rem;
-        }
-
-        /* Modal enhancements - ENHANCED */
-        .modal-content {
-            border-radius: var(--border-radius);
-            border: none;
-            box-shadow: var(--shadow);
-            backdrop-filter: blur(20px);
-            background: rgba(255,255,255,0.95);
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, var(--accent), #ffd24a);
-            color: var(--text-dark);
-            border-bottom: none;
-            border-radius: var(--border-radius) var(--border-radius) 0 0;
-            padding: 1.5rem 2rem;
-        }
-
-        .modal-header .btn-close {
-            filter: invert(0.3);
-            opacity: 0.8;
-            transition: var(--transition);
-        }
-
-        .modal-header .btn-close:hover {
-            opacity: 1;
-            transform: scale(1.1);
-        }
-
-        /* Countdown timer styles - ENHANCED */
-        .countdown-timer {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 700;
-            padding: 0.5rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            transition: var(--transition);
-        }
-
-        .countdown-expiring {
-            background: #fff3cd;
-            color: #856404;
-            animation: pulse 2s infinite;
-            border: 1px solid #ffeaa7;
-        }
-
-        .countdown-expired {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        @keyframes pulse {
-            0% { background-color: #fff3cd; }
-            50% { background-color: #ffeaa7; }
-            100% { background-color: #fff3cd; }
-        }
-
-        /* Responsive Design - ENHANCED */
-        @media (max-width: 1200px) {
-            .sidebar {
-                width: 260px;
-            }
-            
-            .main-content {
-                margin-left: 260px;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .school-name {
-                font-size: 1rem;
-            }
-
-            .logo-img {
-                width: 50px;
-                height: 50px;
-            }
-
-            .tab-content {
-                padding: 2rem;
-            }
-
-            .announcement-header {
-                gap: 1.25rem;
-            }
-
-            .announcement-icon {
-                width: 55px;
-                height: 55px;
-                font-size: 1.3rem;
-            }
-
-            .notification-dropdown {
-                width: 350px;
-            }
-        }
-
+        /* Responsive */
+        @media (max-width: 1200px) { .sidebar { width: 260px; } .main-content { margin-left: 260px; } }
         @media (max-width: 768px) {
-            body {
-                padding-top: 70px;
-            }
-            
-            .top-header {
-                height: 70px;
-                padding: 0.5rem 0;
-            }
-            
-            .mobile-menu-toggle {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                top: 85px;
-                left: 20px;
-            }
-
-            .sidebar {
-                position: fixed;
-                left: 0;
-                top: 70px;
-                height: calc(100vh - 70px);
-                z-index: 1020;
-                transform: translateX(-100%);
-                overflow-y: auto;
-                width: 300px;
-                background: rgba(255, 255, 255, 0.98);
-                backdrop-filter: blur(30px);
-            }
-
-            .sidebar.active {
-                transform: translateX(0);
-            }
-
-            .sidebar-overlay {
-                top: 70px;
-            }
-
-            .sidebar-overlay.active {
-                display: block;
-            }
-
-            .main-content {
-                padding: 1.5rem;
-                width: 100%;
-                margin-left: 0;
-            }
-
-            .header-content {
-                padding: 0 1rem;
-            }
-
-            .school-name {
-                font-size: 0.9rem;
-            }
-
-            .republic, .clinic-title {
-                font-size: 0.65rem;
-            }
-
-            .announcement-header {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .announcement-icon {
-                align-self: flex-start;
-            }
-            
-            .announcement-footer {
-                flex-direction: column;
-                gap: 1rem;
-                align-items: flex-start;
-            }
-
-            .announcement-meta h4 {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .nav-tabs .nav-link {
-                padding: 1.25rem 1.5rem;
-                font-size: 0.95rem;
-            }
-
-            .tab-content {
-                padding: 1.5rem;
-            }
-
-            .welcome-section {
-                padding: 2rem;
-            }
-
-            .welcome-content h1 {
-                font-size: 1.8rem;
-            }
-
-            .notification-dropdown {
-                width: 320px;
-                right: -50px;
-            }
-
-            .notification-dropdown::before {
-                right: 60px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .tab-content {
-                padding: 1.25rem;
-            }
-            
-            .nav-tabs .nav-link {
-                padding: 1rem 1.25rem;
-                font-size: 0.9rem;
-            }
-
-            .announcement-card {
-                padding: 1.5rem;
-            }
-
-            .welcome-section {
-                padding: 1.5rem;
-            }
-
-            .welcome-content h1 {
-                font-size: 1.5rem;
-            }
-
-            .main-content {
-                padding: 1.25rem;
-            }
-            
-            .mobile-menu-toggle {
-                top: 80px;
-                width: 45px;
-                height: 45px;
-            }
-
-            .announcement-pdf-preview {
-                padding: 2rem;
-            }
-
-            .announcement-pdf-preview i {
-                font-size: 2.5rem;
-            }
-
-            .notification-dropdown {
-                width: 280px;
-                right: -30px;
-            }
-
-            .notification-dropdown::before {
-                right: 40px;
-            }
-
-            .notification-bell {
-                width: 45px;
-                height: 45px;
-            }
-
-            .notification-bell i {
-                font-size: 1.2rem;
-            }
-
-            .bell-badge {
-                width: 20px;
-                height: 20px;
-                font-size: 0.7rem;
-            }
+            body { padding-top: 70px; }
+            .top-header { height: 70px; padding: 0.5rem 0; }
+            .mobile-menu-toggle { display: flex; top: 85px; left: 20px; }
+            .sidebar { left: 0; top: 70px; height: calc(100vh - 70px); transform: translateX(-100%); width: 300px; }
+            .sidebar.active { transform: translateX(0); }
+            .main-content { padding: 1.5rem; margin-left: 0; }
+            .notification-dropdown { width: 320px; right: -50px; }
+            .notification-dropdown::before { right: 60px; }
         }
         
-        @media (max-width: 480px) {
-            .logo-img {
-                width: 40px;
-                height: 40px;
-            }
-            
-            .school-name {
-                font-size: 0.8rem;
-            }
-            
-            .republic, .clinic-title {
-                font-size: 0.6rem;
-            }
-            
-            .mobile-menu-toggle {
-                width: 45px;
-                height: 45px;
-                top: 80px;
-                left: 15px;
-            }
-            
-            .main-content {
-                padding: 1rem;
-            }
-
-            .announcement-card {
-                padding: 1.25rem;
-            }
-
-            .welcome-section {
-                padding: 1.25rem;
-            }
-
-            .notification-dropdown {
-                width: 250px;
-                right: -20px;
-            }
-
-            .notification-dropdown::before {
-                right: 30px;
-            }
-        }
-
-        @media (max-width: 375px) {
-            .mobile-menu-toggle {
-                top: 75px;
-                left: 15px;
-                width: 40px;
-                height: 40px;
-            }
-            
-            .main-content {
-                padding: 0.75rem;
-            }
-
-            .announcement-card {
-                padding: 1rem;
-            }
-
-            .tab-content {
-                padding: 1rem;
-            }
-
-            .notification-dropdown {
-                width: 220px;
-                right: -10px;
-            }
-
-            .notification-dropdown::before {
-                right: 20px;
-            }
-        }
-
-        /* ANIMATIONS - ENHANCED */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .fade-in {
-            animation: fadeInUp 0.8s ease-out;
-        }
-
-        .slide-in-left {
-            animation: slideInLeft 0.6s ease-out;
-        }
-
-        .stagger-animation > * {
-            opacity: 0;
-            animation: fadeInUp 0.6s ease-out forwards;
-        }
-
+        /* Animations */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeInUp 0.8s ease-out; }
+        .stagger-animation > * { opacity: 0; animation: fadeInUp 0.6s ease-out forwards; }
         .stagger-animation > *:nth-child(1) { animation-delay: 0.1s; }
         .stagger-animation > *:nth-child(2) { animation-delay: 0.2s; }
         .stagger-animation > *:nth-child(3) { animation-delay: 0.3s; }
-        .stagger-animation > *:nth-child(4) { animation-delay: 0.4s; }
-
-        /* Loading States */
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
-        }
-
-        /* Focus States for Accessibility */
-        .focus-visible {
-            outline: 3px solid var(--primary);
-            outline-offset: 2px;
-        }
-
-        /* Scrollbar Styling */
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 10px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, var(--primary-dark), #6a4a9a);
-        }
-
-        /* Touch Device Improvements */
-        .touch-device .announcement-card {
-            padding: 1.5rem;
-        }
-
-        .touch-device .announcement-icon {
-            width: 55px;
-            height: 55px;
-        }
     </style>
 </head>
-<body>
-    <!-- Mobile Menu Toggle Button - ENHANCED -->
-    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
-        <i class="fas fa-bars"></i>
-    </button>
 
-    <!-- Sidebar Overlay for Mobile - ENHANCED -->
+<body>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu"><i class="fas fa-bars"></i></button>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - ENHANCED -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -1742,29 +1046,24 @@ try {
                     </div>
                 </div>
 
-                <!-- ✅ UPDATED: BELL NOTIFICATION (WALANG EXPIRED ANNOUNCEMENTS) -->
                 <div class="notification-wrapper" style="position: relative;">
                     <div class="notification-bell" id="notificationBell">
                         <i class="fas fa-bell"></i>
                         <?php if ($total_notifications > 0): ?>
-                            <div class="bell-badge" id="bellBadge">
-                                <?= $total_notifications ?>
-                            </div>
+                            <div class="bell-badge" id="bellBadge"><?= $total_notifications ?></div>
                         <?php endif; ?>
                     </div>
 
-                    <!-- ✅ UPDATED: NOTIFICATION DROPDOWN (WALANG EXPIRED ANNOUNCEMENTS) -->
                     <div class="notification-dropdown" id="notificationDropdown">
                         <div class="notification-header">
                             <h5><i class="fas fa-bell"></i> Notifications</h5>
                             <?php if ($total_notifications > 0): ?>
-                                <span class="notification-count"><?= $total_notifications ?> new</span>
+                                <span class="notification-count" id="notificationCount"><?= $total_notifications ?> new</span>
                             <?php endif; ?>
                         </div>
                         
                         <div class="notification-items">
                             <?php if ($total_notifications > 0): ?>
-                                <!-- Consultation Notifications Section -->
                                 <?php if ($consultation_notifications > 0): ?>
                                 <div class="notification-section">
                                     <div class="notification-section-header">
@@ -1774,75 +1073,53 @@ try {
                                     
                                     <?php if ($approved_count > 0): ?>
                                         <div class="notification-item approved">
-                                            <div class="notification-icon approved">
-                                                <i class="fas fa-check-circle"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $approved_count ?> Consultation<?= $approved_count > 1 ? 's' : '' ?> Approved</p>
-                                                <small>Your consultation request has been approved</small>
-                                            </div>
+                                            <div class="notification-icon approved"><i class="fas fa-check-circle"></i></div>
+                                            <div class="notification-content"><p><?= $approved_count ?> Approved</p><small>Request approved</small></div>
                                         </div>
                                     <?php endif; ?>
                                     
-                                    <?php if ($rejected_count > 0): ?>
-                                        <div class="notification-item rejected">
-                                            <div class="notification-icon rejected">
-                                                <i class="fas fa-times-circle"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $rejected_count ?> Consultation<?= $rejected_count > 1 ? 's' : '' ?> Rejected</p>
-                                                <small>Your consultation request has been rejected</small>
-                                            </div>
+                                    <?php if ($disapproved_count > 0): ?>
+                                        <div class="notification-item disapproved">
+                                            <div class="notification-icon disapproved"><i class="fas fa-times-circle"></i></div>
+                                            <div class="notification-content"><p><?= $disapproved_count ?> Disapproved</p><small>Request disapproved</small></div>
                                         </div>
                                     <?php endif; ?>
                                     
                                     <?php if ($rescheduled_count > 0): ?>
                                         <div class="notification-item rescheduled">
-                                            <div class="notification-icon rescheduled">
-                                                <i class="fas fa-calendar-alt"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $rescheduled_count ?> Consultation<?= $rescheduled_count > 1 ? 's' : '' ?> Rescheduled</p>
-                                                <small>Your consultation has been rescheduled</small>
-                                            </div>
+                                            <div class="notification-icon rescheduled"><i class="fas fa-calendar-alt"></i></div>
+                                            <div class="notification-content"><p><?= $rescheduled_count ?> Rescheduled</p><small>Consultation rescheduled</small></div>
                                         </div>
                                     <?php endif; ?>
                                     
                                     <?php if ($cancelled_count > 0): ?>
                                         <div class="notification-item cancelled">
-                                            <div class="notification-icon cancelled">
-                                                <i class="fas fa-ban"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $cancelled_count ?> Consultation<?= $cancelled_count > 1 ? 's' : '' ?> Cancelled</p>
-                                                <small>Your consultation has been cancelled</small>
-                                            </div>
+                                            <div class="notification-icon cancelled"><i class="fas fa-ban"></i></div>
+                                            <div class="notification-content"><p><?= $cancelled_count ?> Cancelled</p><small>Consultation cancelled</small></div>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if ($no_show_count > 0): ?>
+                                        <div class="notification-item no-show">
+                                            <div class="notification-icon no-show"><i class="fas fa-user-times"></i></div>
+                                            <div class="notification-content"><p><?= $no_show_count ?> No Show</p><small>Marked as no show</small></div>
                                         </div>
                                     <?php endif; ?>
                                 </div>
                                 <?php endif; ?>
 
-                                <!-- Announcement Notifications Section -->
                                 <?php if ($announcement_notifications > 0): ?>
                                 <div class="notification-section">
                                     <div class="notification-section-header">
                                         <h6><i class="fas fa-bullhorn me-2"></i> Announcement Updates</h6>
                                         <span class="notification-section-count"><?= $announcement_notifications ?></span>
                                     </div>
-                                    
                                     <?php if ($new_announcements_count > 0): ?>
                                         <div class="notification-item new-announcement">
-                                            <div class="notification-icon new-announcement">
-                                                <i class="fas fa-bell"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $new_announcements_count ?> New Announcement<?= $new_announcements_count > 1 ? 's' : '' ?></p>
-                                                <small>Posted in the last 7 days</small>
-                                            </div>
+                                            <div class="notification-icon new-announcement"><i class="fas fa-bell"></i></div>
+                                            <div class="notification-content"><p><?= $new_announcements_count ?> New Announcement<?= $new_announcements_count > 1 ? 's' : '' ?></p><small>Posted recently</small></div>
                                         </div>
                                     <?php endif; ?>
-                                    
-                                    <!-- ✅ REMOVED: Expired announcements notification items -->
                                 </div>
                                 <?php endif; ?>
                             <?php else: ?>
@@ -1855,12 +1132,8 @@ try {
                         
                         <?php if ($total_notifications > 0): ?>
                             <div class="text-center mt-3">
-                                <a href="schedule_consultation.php" class="btn btn-primary btn-sm me-2">
-                                    <i class="fas fa-calendar me-1"></i> Consultations
-                                </a>
-                                <a href="student_announcement.php" class="btn btn-success btn-sm">
-                                    <i class="fas fa-bullhorn me-1"></i> Announcements
-                                </a>
+                                <a href="schedule_consultation.php" class="btn btn-primary btn-sm me-2"><i class="fas fa-calendar me-1"></i> Consultations</a>
+                                <a href="student_announcement.php" class="btn btn-success btn-sm"><i class="fas fa-bullhorn me-1"></i> Announcements</a>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -1869,7 +1142,6 @@ try {
         </div>
     </header>
 
-    <!-- Image Modal -->
     <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -1885,61 +1157,39 @@ try {
     </div>
 
     <div class="dashboard-container">
-        <!-- Sidebar - ENHANCED -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="student_dashboard.php" class="nav-item">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
+                    <i class="fas fa-home"></i><span>Dashboard</span>
                 </a>
-
                 <a href="update_profile.php" class="nav-item">
-                    <i class="fas fa-user-edit"></i>
-                    <span>Update Profile</span>
+                    <i class="fas fa-user-edit"></i><span>Update Profile</span>
                 </a>
-
                 <a href="schedule_consultation.php" class="nav-item">
-                    <i class="fas fa-calendar-plus"></i>
-                    <span>Schedule Consultation</span>
-                    <!-- ✅ UPDATED: NOTIFICATION BADGES -->
+                    <i class="fas fa-calendar-plus"></i><span>Schedule Consultation</span>
                     <?php if ($consultation_notifications > 0): ?>
-                        <div class="notification-badge total" title="Consultation updates: <?= $consultation_notifications ?>">
-                            <?= $consultation_notifications ?>
-                        </div>
+                        <div class="notification-badge total"><?= $consultation_notifications ?></div>
                     <?php endif; ?>
                 </a>
-
                 <a href="student_report.php" class="nav-item">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Report</span>
+                    <i class="fas fa-chart-bar"></i><span>Report</span>
                 </a>
-
                 <a href="student_announcement.php" class="nav-item active">
-                    <i class="fas fa-bullhorn"></i>
-                    <span>Announcement</span>
-                    <!-- ✅ UPDATED: ANNOUNCEMENT NOTIFICATION BADGE IN SIDEBAR -->
+                    <i class="fas fa-bullhorn"></i><span>Announcement</span>
                     <?php if ($announcement_notifications > 0): ?>
-                        <div class="notification-badge" title="Announcement updates: <?= $announcement_notifications ?>">
-                            <?= $announcement_notifications ?>
-                        </div>
+                        <div class="notification-badge announcement"><?= $announcement_notifications ?></div>
                     <?php endif; ?>
                 </a>
-
                 <a href="activity_logs.php" class="nav-item">
-                    <i class="fas fa-clipboard-list"></i>
-                    <span>Activity Logs</span>
+                    <i class="fas fa-clipboard-list"></i><span>Activity Logs</span>
                 </a>
-                
                 <a href="logout.php" class="nav-item logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
+                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
                 </a>
             </nav>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <!-- WELCOME SECTION - ENHANCED -->
             <div class="welcome-section fade-in">
                 <div class="welcome-content">
                     <h1>Announcements 📢</h1>
@@ -1947,7 +1197,6 @@ try {
                 </div>
             </div>
 
-            <!-- ANNOUNCEMENT TABS - ENHANCED -->
             <div class="announcement-tabs fade-in">
                 <ul class="nav nav-tabs" id="announcementTabs" role="tablist">
                     <li class="nav-item" role="presentation">
@@ -1968,7 +1217,6 @@ try {
                 </ul>
                 
                 <div class="tab-content" id="announcementTabsContent">
-                    <!-- ACTIVE ANNOUNCEMENTS TAB -->
                     <div class="tab-pane fade show active" id="active" role="tabpanel">
                         <?php if (empty($announcements)): ?>
                             <div class="no-announcements">
@@ -1986,45 +1234,21 @@ try {
                                 ?>
                                     <div class="announcement-card <?php echo $cardClass; ?>" data-announcement-id="<?php echo $announcement['id']; ?>" data-expiry="<?php echo $announcement['expiry_date']; ?>">
                                         <div class="announcement-header">
-                                            <div class="announcement-icon <?php echo $cardClass; ?>">
-                                                <i class="fas fa-bullhorn"></i>
-                                            </div>
+                                            <div class="announcement-icon <?php echo $cardClass; ?>"><i class="fas fa-bullhorn"></i></div>
                                             <div class="announcement-meta">
                                                 <h4>
                                                     <?php echo htmlspecialchars($announcement['title']); ?>
-                                                    <?php if ($isNew): ?>
-                                                        <span class="badge badge-success">
-                                                            <i class="fas fa-star me-1"></i> New
-                                                        </span>
-                                                    <?php endif; ?>
-                                                    <span class="badge badge-primary">
-                                                        <i class="fas fa-users me-1"></i> All Students
-                                                    </span>
-                                                    <?php if ($isExpiringSoon): ?>
-                                                        <span class="badge badge-warning">
-                                                            <i class="fas fa-clock me-1"></i> Expiring Soon
-                                                        </span>
-                                                    <?php endif; ?>
+                                                    <?php if ($isNew): ?><span class="badge badge-success"><i class="fas fa-star me-1"></i> New</span><?php endif; ?>
+                                                    <?php if ($isExpiringSoon): ?><span class="badge badge-warning"><i class="fas fa-clock me-1"></i> Expiring Soon</span><?php endif; ?>
                                                 </h4>
                                                 <div class="announcement-date">
-                                                    <span>
-                                                        <i class="fas fa-calendar-alt me-1"></i>
-                                                        Posted: <?php echo date('F j, Y g:i A', strtotime($announcement['created_at'])); ?>
-                                                    </span>
-                                                    
-                                                    <!-- EXPIRY INFORMATION -->
+                                                    <span><i class="fas fa-calendar-alt me-1"></i> Posted: <?php echo date('F j, Y g:i A', strtotime($announcement['created_at'])); ?></span>
                                                     <div class="expiry-info <?php echo empty($announcement['expiry_date']) ? 'no-expiry' : ($isExpiringSoon ? 'expiring' : ''); ?>">
                                                         <i class="fas fa-clock me-1"></i>
-                                                        <?php if (empty($announcement['expiry_date'])): ?>
-                                                            No expiry date
-                                                        <?php else: ?>
-                                                            Expires: <?php echo date('F j, Y g:i A', strtotime($announcement['expiry_date'])); ?>
+                                                        <?php if (empty($announcement['expiry_date'])): ?> No expiry date
+                                                        <?php else: ?> Expires: <?php echo date('F j, Y g:i A', strtotime($announcement['expiry_date'])); ?>
                                                             <?php if ($timeRemaining && $timeRemaining !== 'expired'): ?>
-                                                                - <span class="countdown-timer <?php echo $isExpiringSoon ? 'countdown-expiring' : ''; ?>" 
-                                                                       data-expiry="<?php echo $announcement['expiry_date']; ?>">
-                                                                    <i class="fas fa-hourglass-half me-1"></i>
-                                                                    <?php echo $timeRemaining; ?>
-                                                                </span>
+                                                                - <span class="countdown-timer <?php echo $isExpiringSoon ? 'countdown-expiring' : ''; ?>" data-expiry="<?php echo $announcement['expiry_date']; ?>"><i class="fas fa-hourglass-half me-1"></i> <?php echo $timeRemaining; ?></span>
                                                             <?php endif; ?>
                                                         <?php endif; ?>
                                                     </div>
@@ -2034,7 +1258,6 @@ try {
                                         <div class="announcement-body">
                                             <p><?php echo nl2br(htmlspecialchars($announcement['content'])); ?></p>
                                             
-                                            <!-- MEDIA DISPLAY -->
                                             <?php if (!empty($announcement['attachment'])): 
                                                 $fileCheck = checkMediaFile($announcement['attachment']);
                                                 $actualPath = $fileCheck['path'];
@@ -2043,54 +1266,27 @@ try {
                                                 $videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'webm'];
                                                 $pdfExtensions = ['pdf'];
                                             ?>
-
                                                 <?php if (in_array($fileExtension, $imageExtensions)): ?>
                                                     <div class="announcement-media">
-                                                        <img src="<?php echo $actualPath; ?>" 
-                                                             alt="Announcement Image" 
-                                                             class="announcement-image"
-                                                             onclick="openImageModal('<?php echo $actualPath; ?>')">
+                                                        <img src="<?php echo $actualPath; ?>" alt="Announcement Image" class="announcement-image" onclick="openImageModal('<?php echo $actualPath; ?>')">
                                                     </div>
-                                                    
                                                 <?php elseif (in_array($fileExtension, $videoExtensions)): ?>
                                                     <div class="announcement-media">
                                                         <video class="announcement-video" controls>
                                                             <source src="<?php echo $actualPath; ?>" type="video/<?php echo $fileExtension; ?>">
-                                                            Your browser does not support the video tag.
                                                         </video>
                                                     </div>
-                                                    
-                                                <?php elseif (in_array($fileExtension, $pdfExtensions)): ?>
-                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')">
-                                                        <i class="fas fa-file-pdf"></i>
-                                                        <h5>PDF Document</h5>
-                                                        <p>Click to view the document</p>
-                                                    </div>
-                                                    
                                                 <?php else: ?>
-                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, var(--accent), #ffd24a);">
-                                                        <i class="fas fa-file"></i>
-                                                        <h5>Document File</h5>
-                                                        <p>Click to view the file</p>
+                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')">
+                                                        <i class="fas fa-file<?php echo in_array($fileExtension, $pdfExtensions) ? '-pdf' : ''; ?>"></i>
+                                                        <h5>Document File</h5><p>Click to view</p>
                                                     </div>
                                                 <?php endif; ?>
-                                                
                                             <?php endif; ?>
                                         </div>
                                         <div class="announcement-footer">
-                                            <span class="announcement-category">
-                                                <i class="fas fa-user me-1"></i>
-                                                Sent by: <?php echo htmlspecialchars($announcement['sent_by'] ?? 'Admin'); ?>
-                                            </span>
-                                            <span class="status-active">
-                                                <i class="fas fa-circle me-1"></i> Active
-                                                <?php if ($isExpiringSoon): ?>
-                                                    <span class="badge badge-warning ms-2">Expiring Soon</span>
-                                                <?php endif; ?>
-                                                <?php if ($isNew): ?>
-                                                    <span class="badge badge-success ms-2">New</span>
-                                                <?php endif; ?>
-                                            </span>
+                                            <span class="announcement-category"><i class="fas fa-user me-1"></i> Sent by: <?php echo htmlspecialchars($announcement['sent_by'] ?? 'Admin'); ?></span>
+                                            <span class="status-active"><i class="fas fa-circle me-1"></i> Active</span>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -2098,7 +1294,6 @@ try {
                         <?php endif; ?>
                     </div>
                     
-                    <!-- EXPIRED ANNOUNCEMENTS TAB -->
                     <div class="tab-pane fade" id="archive" role="tabpanel">
                         <?php if (empty($expired_announcements)): ?>
                             <div class="no-announcements">
@@ -2108,100 +1303,26 @@ try {
                             </div>
                         <?php else: ?>
                             <div class="stagger-animation">
-                                <?php foreach ($expired_announcements as $announcement): 
-                                    $isActuallyExpired = isExpired($announcement['expiry_date']);
-                                ?>
+                                <?php foreach ($expired_announcements as $announcement): ?>
                                     <div class="announcement-card expired">
                                         <div class="announcement-header">
-                                            <div class="announcement-icon expired">
-                                                <i class="fas fa-archive"></i>
-                                            </div>
+                                            <div class="announcement-icon expired"><i class="fas fa-archive"></i></div>
                                             <div class="announcement-meta">
-                                                <h4>
-                                                    <?php echo htmlspecialchars($announcement['title']); ?>
-                                                    <span class="badge badge-secondary">
-                                                        <i class="fas fa-users me-1"></i> All Students
-                                                    </span>
-                                                    <span class="badge badge-danger">
-                                                        <i class="fas fa-ban me-1"></i> Expired
-                                                    </span>
-                                                </h4>
+                                                <h4><?php echo htmlspecialchars($announcement['title']); ?> <span class="badge badge-danger"><i class="fas fa-ban me-1"></i> Expired</span></h4>
                                                 <div class="announcement-date">
-                                                    <span>
-                                                        <i class="fas fa-calendar-alt me-1"></i>
-                                                        Posted: <?php echo date('F j, Y g:i A', strtotime($announcement['created_at'])); ?>
-                                                    </span>
-                                                    
-                                                    <!-- EXPIRY INFORMATION FOR EXPIRED ANNOUNCEMENTS -->
-                                                    <?php if (!empty($announcement['expiry_date'])): ?>
-                                                        <div class="expiry-info expired">
-                                                            <i class="fas fa-clock me-1"></i>
-                                                            Expired: <?php echo date('F j, Y g:i A', strtotime($announcement['expiry_date'])); ?>
-                                                        </div>
-                                                    <?php else: ?>
-                                                        <div class="expiry-info expired">
-                                                            <i class="fas fa-ban me-1"></i>
-                                                            Manually deactivated
-                                                        </div>
-                                                    <?php endif; ?>
+                                                    <span><i class="fas fa-calendar-alt me-1"></i> Posted: <?php echo date('F j, Y g:i A', strtotime($announcement['created_at'])); ?></span>
+                                                    <div class="expiry-info expired">
+                                                        <i class="fas fa-clock me-1"></i> Expired: <?php echo !empty($announcement['expiry_date']) ? date('F j, Y g:i A', strtotime($announcement['expiry_date'])) : 'Manually deactivated'; ?>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="announcement-body">
                                             <p><?php echo nl2br(htmlspecialchars($announcement['content'])); ?></p>
-                                            
-                                            <!-- MEDIA DISPLAY FOR EXPIRED ANNOUNCEMENTS -->
-                                            <?php if (!empty($announcement['attachment'])): 
-                                                $fileCheck = checkMediaFile($announcement['attachment']);
-                                                $actualPath = $fileCheck['path'];
-                                                $fileExtension = strtolower(pathinfo($announcement['attachment'], PATHINFO_EXTENSION));
-                                                $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-                                                $videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'webm'];
-                                                $pdfExtensions = ['pdf'];
-                                            ?>
-
-                                                <?php if (in_array($fileExtension, $imageExtensions)): ?>
-                                                    <div class="announcement-media">
-                                                        <img src="<?php echo $actualPath; ?>" 
-                                                             alt="Expired Announcement Image" 
-                                                             class="announcement-image"
-                                                             onclick="openImageModal('<?php echo $actualPath; ?>')"
-                                                             style="opacity: 0.7;">
-                                                    </div>
-                                                    
-                                                <?php elseif (in_array($fileExtension, $videoExtensions)): ?>
-                                                    <div class="announcement-media">
-                                                        <video class="announcement-video" controls style="opacity: 0.7;">
-                                                            <source src="<?php echo $actualPath; ?>" type="video/<?php echo $fileExtension; ?>">
-                                                            Your browser does not support the video tag.
-                                                        </video>
-                                                    </div>
-                                                    
-                                                <?php elseif (in_array($fileExtension, $pdfExtensions)): ?>
-                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, var(--accent), #ffd24a); opacity: 0.8;">
-                                                        <i class="fas fa-file-pdf"></i>
-                                                        <h5>PDF Document</h5>
-                                                        <p>Click to view the document</p>
-                                                    </div>
-                                                    
-                                                <?php else: ?>
-                                                    <div class="announcement-pdf-preview" onclick="window.open('<?php echo $actualPath; ?>', '_blank')" style="background: linear-gradient(135deg, var(--accent), #ffd24a); opacity: 0.8;">
-                                                        <i class="fas fa-file"></i>
-                                                        <h5>Document File</h5>
-                                                        <p>Click to view the file</p>
-                                                    </div>
-                                                <?php endif; ?>
-                                                
-                                            <?php endif; ?>
                                         </div>
                                         <div class="announcement-footer">
-                                            <span class="announcement-category">
-                                                <i class="fas fa-user me-1"></i>
-                                                Sent by: <?php echo htmlspecialchars($announcement['sent_by'] ?? 'Admin'); ?>
-                                            </span>
-                                            <span class="status-expired">
-                                                <i class="fas fa-circle me-1"></i> Expired
-                                            </span>
+                                            <span class="announcement-category"><i class="fas fa-user me-1"></i> Sent by: <?php echo htmlspecialchars($announcement['sent_by'] ?? 'Admin'); ?></span>
+                                            <span class="status-expired"><i class="fas fa-circle me-1"></i> Expired</span>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -2213,54 +1334,65 @@ try {
         </main>
     </div>
 
-    <!-- JS -->
     <script src="assets/js/bootstrap.bundle.min.js"></script>
-    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ✅ UPDATED: BELL NOTIFICATION FUNCTIONALITY
+            // BELL NOTIFICATION - Updated Logic for Persistence
             const notificationBell = document.getElementById('notificationBell');
             const notificationDropdown = document.getElementById('notificationDropdown');
             const bellBadge = document.getElementById('bellBadge');
+            const notificationCount = document.getElementById('notificationCount'); // Ensure this ID exists in HTML
 
-            // Toggle notification dropdown
-            notificationBell.addEventListener('click', function(e) {
-                e.stopPropagation();
-                notificationDropdown.classList.toggle('active');
-                
-                // Add animation to bell when clicked
-                this.style.transform = 'scale(1.1) rotate(15deg)';
-                setTimeout(() => {
-                    this.style.transform = 'scale(1.1) rotate(-5deg)';
-                }, 150);
-                setTimeout(() => {
-                    this.style.transform = 'scale(1.1) rotate(0deg)';
-                }, 300);
-                
-                // Remove pulse animation when clicked
-                if (bellBadge) {
-                    bellBadge.style.animation = 'none';
-                    setTimeout(() => {
-                        bellBadge.style.animation = 'pulse 2s infinite';
-                    }, 100);
-                }
-            });
+            if (notificationBell) {
+                notificationBell.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    notificationDropdown.classList.toggle('active');
+                    
+                    this.style.transform = 'scale(1.1)';
+                    setTimeout(() => { this.style.transform = 'scale(1)'; }, 200);
+                    
+                    // Hide Badge Visually
+                    if (bellBadge) {
+                        bellBadge.style.display = 'none';
+                    }
+                    if (notificationCount) {
+                        notificationCount.style.display = 'none';
+                    }
 
-            // Close dropdown when clicking outside
+                    // Send AJAX Request to Update DB & Session
+                    const formData = new FormData();
+                    formData.append('action', 'mark_read');
+
+                    fetch('student_announcement.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.text())
+                    .then(data => {
+                        // console.log(data); // For debugging
+                    })
+                    .catch(error => console.error('Error:', error));
+                });
+            }
+
             document.addEventListener('click', function(e) {
-                if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                if (notificationBell && !notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
                     notificationDropdown.classList.remove('active');
                 }
             });
 
-            // Close dropdown when pressing Escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    notificationDropdown.classList.remove('active');
-                }
+            const notificationItems = document.querySelectorAll('.notification-item');
+            notificationItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (this.classList.contains('new-announcement')) {
+                        window.location.href = 'student_announcement.php';
+                    } else {
+                        window.location.href = 'schedule_consultation.php';
+                    }
+                });
             });
 
-            // MOBILE MENU FUNCTIONALITY - ENHANCED
+            // MOBILE MENU
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -2271,19 +1403,11 @@ try {
                 const icon = mobileMenuToggle.querySelector('i');
                 icon.classList.toggle('fa-bars');
                 icon.classList.toggle('fa-times');
-                
-                // Add animation class
-                if (sidebar.classList.contains('active')) {
-                    sidebar.classList.add('slide-in-left');
-                } else {
-                    sidebar.classList.remove('slide-in-left');
-                }
             }
 
             mobileMenuToggle.addEventListener('click', toggleMobileMenu);
             sidebarOverlay.addEventListener('click', toggleMobileMenu);
 
-            // Close sidebar when clicking nav items on mobile
             if (window.innerWidth <= 768) {
                 document.querySelectorAll('.nav-item').forEach(item => {
                     item.addEventListener('click', function() {
@@ -2294,16 +1418,15 @@ try {
                 });
             }
 
-            // Image Modal Functionality
+            // IMAGE MODAL
             window.openImageModal = function(filePath) {
                 const modalImage = document.getElementById('modalImage');
                 modalImage.src = filePath;
-                
                 const imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
                 imageModal.show();
             }
 
-            // Tab persistence
+            // TAB PERSISTENCE
             const announcementTabs = document.getElementById('announcementTabs');
             if (announcementTabs) {
                 announcementTabs.addEventListener('click', function(e) {
@@ -2312,8 +1435,6 @@ try {
                         localStorage.setItem('activeAnnouncementTab', tabId);
                     }
                 });
-
-                // Restore active tab
                 const activeTab = localStorage.getItem('activeAnnouncementTab') || 'active';
                 const tabButton = document.querySelector(`[data-bs-target="#${activeTab}"]`);
                 if (tabButton) {
@@ -2322,238 +1443,29 @@ try {
                 }
             }
 
-            // ✅ UPDATED: REAL-TIME ANNOUNCEMENT EXPIRATION CHECK
+            // REAL-TIME EXPIRATION CHECK
             function checkAnnouncementExpirations() {
                 const activeAnnouncements = document.querySelectorAll('.announcement-card:not(.expired)');
                 const now = new Date();
                 
                 activeAnnouncements.forEach(card => {
                     const expiryDate = card.getAttribute('data-expiry');
-                    
                     if (expiryDate && expiryDate !== 'null') {
                         const expiry = new Date(expiryDate);
-                        
                         if (expiry <= now) {
-                            // Announcement has expired - move to expired section
-                            moveAnnouncementToExpired(card);
+                            window.location.reload(); // Reload to update status
                         }
                     }
                 });
             }
-
-            // ✅ UPDATED: MOVE EXPIRED ANNOUNCEMENT TO EXPIRED SECTION
-            function moveAnnouncementToExpired(card) {
-                // Add expired styling
-                card.classList.add('expired');
-                card.classList.remove('expiring-soon');
-                
-                // Update the icon
-                const icon = card.querySelector('.announcement-icon');
-                if (icon) {
-                    icon.classList.add('expired');
-                    icon.classList.remove('expiring-soon');
-                    icon.innerHTML = '<i class="fas fa-archive"></i>';
-                }
-                
-                // Update status
-                const status = card.querySelector('.status-active');
-                if (status) {
-                    status.className = 'status-expired';
-                    status.innerHTML = '<i class="fas fa-circle me-1"></i> Expired';
-                }
-                
-                // Update expiry info
-                const expiryInfo = card.querySelector('.expiry-info');
-                if (expiryInfo) {
-                    expiryInfo.className = 'expiry-info expired';
-                    expiryInfo.innerHTML = '<i class="fas fa-clock me-1"></i> Expired: ' + 
-                        new Date(card.getAttribute('data-expiry')).toLocaleString();
-                }
-                
-                // Remove countdown timer
-                const countdown = card.querySelector('.countdown-timer');
-                if (countdown) {
-                    countdown.remove();
-                }
-                
-                // Remove expiring badges
-                const expiringBadges = card.querySelectorAll('.badge-warning');
-                expiringBadges.forEach(badge => badge.remove());
-                
-                // Add expired badge
-                const title = card.querySelector('h4');
-                if (title) {
-                    const expiredBadge = document.createElement('span');
-                    expiredBadge.className = 'badge badge-danger';
-                    expiredBadge.innerHTML = '<i class="fas fa-ban me-1"></i> Expired';
-                    title.appendChild(expiredBadge);
-                }
-                
-                // Show notification
-                showExpirationNotification(card);
-            }
-
-            // ✅ UPDATED: SHOW EXPIRATION NOTIFICATION
-            function showExpirationNotification(card) {
-                const title = card.querySelector('h4').textContent.split('Expired')[0].trim();
-                
-                // Create notification
-                const notification = document.createElement('div');
-                notification.className = 'alert alert-warning alert-dismissible fade show position-fixed';
-                notification.style.cssText = 'top: 100px; right: 20px; z-index: 1060; min-width: 300px;';
-                notification.innerHTML = `
-                    <i class="fas fa-clock me-2"></i>
-                    <strong>Announcement Expired:</strong> "${title}" has expired and moved to archive.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                
-                document.body.appendChild(notification);
-                
-                // Auto-remove after 5 seconds
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.remove();
-                    }
-                }, 5000);
-            }
-
-            // Real-time countdown update for expiring announcements
-            function updateCountdownTimers() {
-                const timers = document.querySelectorAll('.countdown-timer');
-                
-                timers.forEach(timer => {
-                    const expiryDate = new Date(timer.getAttribute('data-expiry'));
-                    const now = new Date();
-                    
-                    if (expiryDate <= now) {
-                        timer.innerHTML = '<i class="fas fa-ban me-1"></i> Expired';
-                        timer.className = 'countdown-timer countdown-expired';
-                        
-                        // Also move the parent announcement to expired
-                        const card = timer.closest('.announcement-card');
-                        if (card && !card.classList.contains('expired')) {
-                            moveAnnouncementToExpired(card);
-                        }
-                        return;
-                    }
-                    
-                    const timeDiff = expiryDate - now;
-                    const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-                    
-                    let remainingText = '';
-                    if (days > 0) {
-                        remainingText = `${days} day${days > 1 ? 's' : ''} remaining`;
-                    } else if (hours > 0) {
-                        remainingText = `${hours} hour${hours > 1 ? 's' : ''} remaining`;
-                    } else {
-                        remainingText = `${minutes} minute${minutes > 1 ? 's' : ''} remaining`;
-                    }
-                    
-                    timer.innerHTML = `<i class="fas fa-hourglass-half me-1"></i> ${remainingText}`;
-                    
-                    // Update class if it's expiring soon (less than 1 day)
-                    if (days === 0) {
-                        timer.className = 'countdown-timer countdown-expiring';
-                    }
-                });
-            }
-
-            // Update countdown and check expirations every 30 seconds
-            function updateAnnouncements() {
-                updateCountdownTimers();
-                checkAnnouncementExpirations();
-            }
-
-            // Initial update
-            updateAnnouncements();
             
-            // Set up interval for real-time updates
-            setInterval(updateAnnouncements, 30000); // Check every 30 seconds
+            setInterval(checkAnnouncementExpirations, 30000);
 
-            // LOADING ANIMATIONS
-            const staggerElements = document.querySelectorAll('.stagger-animation > *');
-            staggerElements.forEach((element, index) => {
-                element.style.animationDelay = `${index * 0.1}s`;
-            });
-
+            // ANIMATIONS
             const fadeElements = document.querySelectorAll('.fade-in');
             fadeElements.forEach((element, index) => {
-                element.style.animationDelay = `${index * 0.15}s`;
+                element.style.animationDelay = `${index * 0.1}s`;
             });
-
-            // ENHANCED INTERACTIONS
-            const announcementCards = document.querySelectorAll('.announcement-card');
-            announcementCards.forEach(card => {
-                card.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-8px)';
-                });
-                
-                card.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(-5px)';
-                });
-            });
-
-            // FOCUS MANAGEMENT FOR ACCESSIBILITY
-            const focusableElements = document.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-            focusableElements.forEach(element => {
-                element.addEventListener('focus', function() {
-                    this.classList.add('focus-visible');
-                });
-                
-                element.addEventListener('blur', function() {
-                    this.classList.remove('focus-visible');
-                });
-            });
-
-            // TOUCH DEVICE ENHANCEMENTS
-            if ('ontouchstart' in window) {
-                document.body.classList.add('touch-device');
-                
-                // Increase tap targets
-                const tapTargets = document.querySelectorAll('.nav-item, .announcement-card, .announcement-pdf-preview, .notification-bell');
-                tapTargets.forEach(target => {
-                    target.style.minHeight = '44px';
-                });
-            }
-
-            // RESIZE HANDLER
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 768 && sidebar.classList.contains('active')) {
-                    toggleMobileMenu();
-                }
-                
-                // Close notification dropdown on mobile when resizing
-                if (window.innerWidth <= 768) {
-                    notificationDropdown.classList.remove('active');
-                }
-            });
-
-            // ✅ UPDATED: NOTIFICATION ITEM INTERACTIONS
-            const notificationItems = document.querySelectorAll('.notification-item');
-            notificationItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    if (this.classList.contains('new-announcement')) {
-                        window.location.href = 'student_announcement.php';
-                    } else {
-                        window.location.href = 'schedule_consultation.php';
-                    }
-                });
-                
-                item.style.cursor = 'pointer';
-            });
-        });
-
-        // Keyboard navigation for modal
-        document.addEventListener('keydown', function(e) {
-            const imageModal = document.getElementById('imageModal');
-            if (imageModal.classList.contains('show') && e.key === 'Escape') {
-                const modal = bootstrap.Modal.getInstance(imageModal);
-                if (modal) {
-                    modal.hide();
-                }
-            }
         });
     </script>
 </body>

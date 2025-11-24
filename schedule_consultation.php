@@ -3,419 +3,15 @@ session_start();
 require 'includes/db_connect.php';
 require 'includes/activity_logger.php';
 
+// ✅ SECURITY CHECK
 if (!isset($_SESSION['student_id'])) {
     header("Location: student_login.php");
     exit();
 }
 
 $student_id = $_SESSION['student_id'];
-$success_message = '';
-$error_message = '';
 
-// ✅ FIX #1: CSRF TOKEN GENERATION
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
-// ✅ UPDATED: FETCH CONSULTATION STATUS COUNTS FOR NOTIFICATIONS (UNVIEWED ONLY)
-try {
-   $status_counts_stmt = $pdo->prepare("
-    SELECT status, COUNT(*) as count 
-    FROM consultation_requests 
-    WHERE student_id = ? 
-    AND status IN ('Approved', 'Disapproved', 'Rescheduled', 'Cancelled', 'No Show')
-    AND is_viewed = FALSE
-    GROUP BY status
-");
-    $status_counts_stmt->execute([$student_id]);
-    $status_counts = $status_counts_stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Initialize counts
-    $approved_count = 0;
-    $disapproved_count = 0;
-    $rescheduled_count = 0;
-    $cancelled_count = 0;
-    $no_show_count = 0;
-    $consultation_notifications = 0;
-    
-    // Process counts
-    foreach ($status_counts as $status_count) {
-        switch ($status_count['status']) {
-            case 'Approved':
-                $approved_count = $status_count['count'];
-                break;
-            case 'Disapproved':
-                $disapproved_count = $status_count['count'];
-                break;
-            case 'Rescheduled':
-                $rescheduled_count = $status_count['count'];
-                break;
-            case 'Cancelled':
-                $cancelled_count = $status_count['count'];
-                break;
-            case 'No Show':
-                $no_show_count = $status_count['count'];
-                break;
-        }
-    }
-    
-    $consultation_notifications = $approved_count + $disapproved_count + $rescheduled_count + $cancelled_count + $no_show_count;
-    
-} catch (PDOException $e) {
-    // Error handling
-}
-
-// ✅ UPDATED: FETCH ANNOUNCEMENT COUNTS FOR NOTIFICATIONS - TANGGALIN ANG EXPIRED ANNOUNCEMENTS
-try {
-    // COUNT NEW ANNOUNCEMENTS (last 7 days) - ISAMA LANG ANG ACTIVE AT HINDI EXPIRED
-    $new_announcements_stmt = $pdo->prepare("
-        SELECT COUNT(*) as count 
-        FROM announcements 
-        WHERE post_on_front = 1 
-        AND is_active = 1
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        AND (expiry_date IS NULL OR expiry_date > NOW())
-    ");
-    $new_announcements_stmt->execute();
-    $new_announcements_count = $new_announcements_stmt->fetch(PDO::FETCH_ASSOC)['count'];
-    
-    // ✅ INIWASAN: HUWAG NA BILANGIN ANG EXPIRED ANNOUNCEMENTS SA NOTIFICATION COUNT
-    $expired_announcements_count = 0; // Hindi na kasama sa count
-    
-    // ✅ UPDATED: TOTAL ANNOUNCEMENT NOTIFICATIONS - NEW ANNOUNCEMENTS LANG
-    $announcement_notifications = $new_announcements_count; // Tanggal na ang expired announcements
-    
-    // TOTAL ALL NOTIFICATIONS
-    $total_notifications = $consultation_notifications + $announcement_notifications;
-    
-} catch (PDOException $e) {
-    $new_announcements_count = 0;
-    $expired_announcements_count = 0;
-    $announcement_notifications = 0;
-    $total_notifications = $consultation_notifications;
-}
-
-/* ===============================
-   ✅ CREATE NEW CONSULTATION
-================================= */
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create') {
-    
-    // ✅ FIX #2: CSRF TOKEN VALIDATION
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        $_SESSION['error_message'] = 'Invalid security token. Please try again.';
-        header("Location: schedule_consultation.php");
-        exit();
-    }
-    
-    $student_id = $_SESSION['student_id'];
-    $date = $_POST['date'] ?? '';
-    $time = $_POST['time'] ?? '';
-    $concern = $_POST['concern'] ?? '';
-    $notes = $_POST['notes'] ?? '';
-    
-    // ✅ FIX #3: INPUT LENGTH VALIDATION
-    if (strlen($concern) > 255) {
-        $_SESSION['error_message'] = 'Concern is too long. Maximum 255 characters allowed.';
-        header("Location: schedule_consultation.php");
-        exit();
-    }
-    
-    if (strlen($notes) > 1000) {
-        $_SESSION['error_message'] = 'Notes are too long. Maximum 1000 characters allowed.';
-        header("Location: schedule_consultation.php");
-        exit();
-    }
-    
-    // Handle "Other" concern
-    if ($concern === 'Other' && !empty($_POST['other_concern'])) {
-        $concern = $_POST['other_concern'];
-        // Validate other concern length too
-        if (strlen($concern) > 255) {
-            $_SESSION['error_message'] = 'Other concern is too long. Maximum 255 characters allowed.';
-            header("Location: schedule_consultation.php");
-            exit();
-        }
-    }
-
-    // ✅ VALIDATION: Check if the selected date/time is in the past
-    $selected_datetime = strtotime($date . ' ' . $time);
-    $current_datetime = time();
-    
-    if ($selected_datetime <= $current_datetime) {
-        $_SESSION['error_message'] = 'You cannot schedule a consultation for a past date/time. Please select a future date and time.';
-        header("Location: schedule_consultation.php");
-        exit();
-    }
-
-   // ✅ FIX #5: CONSULTATION LIMIT CHECK (MAX 3)
-  try {
-    $limit_stmt = $pdo->prepare("SELECT COUNT(*) as consultation_count FROM consultation_requests WHERE student_id = ? AND status IN ('Pending', 'Approved')");
-    $limit_stmt->execute([$student_id]);
-    $consultation_count = $limit_stmt->fetch(PDO::FETCH_ASSOC)['consultation_count'];
-    
-    if ($consultation_count >= 3) {
-        $_SESSION['error_message'] = 'You have reached the maximum limit of 3 active consultations. Please wait for some to be completed or cancel existing ones.';
-        header("Location: schedule_consultation.php");
-        exit();
-    }
-    
-    // ✅ NEW: CHECK FOR PENDING APPOINTMENTS
-    $pending_stmt = $pdo->prepare("SELECT COUNT(*) as pending_count FROM consultation_requests WHERE student_id = ? AND status = 'Pending'");
-    $pending_stmt->execute([$student_id]);
-    $pending_count = $pending_stmt->fetch(PDO::FETCH_ASSOC)['pending_count'];
-    
-    if ($pending_count > 0) {
-        $_SESSION['error_message'] = 'You still have pending consultation requests. Please wait for your pending appointments to be processed before scheduling new ones.';
-        header("Location: schedule_consultation.php");
-        exit();
-    }
-        
-        $stmt = $pdo->prepare("INSERT INTO consultation_requests (student_id, date, time, requested, notes, status) VALUES (?, ?, ?, ?, ?, 'Pending')");
-        $stmt->execute([$student_id, $date, $time, $concern, $notes]);
-        
-        // ✅ SPECIFIC ACTION: Consultation Scheduled
-        logActivity($pdo, $student_id, "Scheduled consultation: " . $concern);
-        
-        $_SESSION['success_message'] = 'Your consultation request has been submitted successfully!';
-    } catch (PDOException $e) {
-        $_SESSION['error_message'] = 'Database Error: ' . $e->getMessage();
-    }
-
-    header("Location: schedule_consultation.php");
-    exit();
-}
-
-/* ===============================
-   ✅ EDIT CONSULTATION
-================================= */
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit') {
-    
-    // ✅ FIX #2: CSRF TOKEN VALIDATION
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        $_SESSION['error_message'] = 'Invalid security token. Please try again.';
-        header("Location: schedule_consultation.php");
-        exit();
-    }
-    
-    $id = $_POST['consultation_id'];
-    $date = $_POST['edit_date'];
-    $time = $_POST['edit_time'];
-    $concern = $_POST['edit_concern'];
-    $notes = $_POST['edit_notes'];
-
-    // ✅ FIX #3: INPUT LENGTH VALIDATION
-    if (strlen($concern) > 255) {
-        $_SESSION['error_message'] = 'Concern is too long. Maximum 255 characters allowed.';
-        header("Location: schedule_consultation.php");
-        exit();
-    }
-    
-    if (strlen($notes) > 1000) {
-        $_SESSION['error_message'] = 'Notes are too long. Maximum 1000 characters allowed.';
-        header("Location: schedule_consultation.php");
-        exit();
-    }
-
-    // ✅ VALIDATION: Check if the selected date/time is in the past
-    $selected_datetime = strtotime($date . ' ' . $time);
-    $current_datetime = time();
-    
-    if ($selected_datetime <= $current_datetime) {
-        $_SESSION['error_message'] = 'You cannot schedule a consultation for a past date/time. Please select a future date and time.';
-        header("Location: schedule_consultation.php");
-        exit();
-    }
-
-    try {
-        // ✅ FIX #4: VERIFY OWNERSHIP BEFORE EDITING
-        $check_stmt = $pdo->prepare("SELECT id FROM consultation_requests WHERE id = ? AND student_id = ? AND status IN ('Pending', 'Approved')");
-        $check_stmt->execute([$id, $student_id]);
-        
-        if (!$check_stmt->fetch()) {
-            $_SESSION['error_message'] = 'Consultation not found or you are not authorized to edit it.';
-            header("Location: schedule_consultation.php");
-            exit();
-        }
-        
-        $stmt = $pdo->prepare("UPDATE consultation_requests SET date = ?, time = ?, requested = ?, notes = ? WHERE id = ? AND status IN ('Pending', 'Approved')");
-        $stmt->execute([$date, $time, $concern, $notes, $id]);
-        
-        // ✅ SPECIFIC ACTION: Consultation Edited
-        logActivity($pdo, $student_id, "Edited consultation: " . $concern);
-        
-        $_SESSION['success_message'] = 'Consultation updated successfully!';
-    } catch (PDOException $e) {
-        $_SESSION['error_message'] = 'Error updating consultation: ' . $e->getMessage();
-    }
-
-    header("Location: schedule_consultation.php");
-    exit();
-}
-
-/* ===============================
-   ✅ CANCEL CONSULTATION
-================================= */
-if (isset($_GET['cancel'])) {
-    $id = $_GET['cancel'];
-    
-    try {
-        // ✅ FIX #4: VERIFY OWNERSHIP BEFORE CANCELLING
-        $check_stmt = $pdo->prepare("SELECT requested FROM consultation_requests WHERE id = ? AND student_id = ? AND status = 'Pending'");
-        $check_stmt->execute([$id, $student_id]);
-        $consultation = $check_stmt->fetch();
-        
-        if (!$consultation) {
-            $_SESSION['error_message'] = 'Consultation not found or you are not authorized to cancel it.';
-            header("Location: schedule_consultation.php");
-            exit();
-        }
-        
-        $stmt = $pdo->prepare("DELETE FROM consultation_requests WHERE id = ? AND status = 'Pending'");
-        $stmt->execute([$id]);
-        
-        // ✅ SPECIFIC ACTION: Consultation Cancelled
-        logActivity($pdo, $student_id, "Cancelled consultation: " . $consultation['requested']);
-        
-        $_SESSION['success_message'] = 'Consultation cancelled and deleted successfully!';
-    } catch (PDOException $e) {
-        $_SESSION['error_message'] = 'Error deleting consultation: ' . $e->getMessage();
-    }
-
-    header("Location: schedule_consultation.php");
-    exit();
-}
-
-/* ===============================
-   ✅ MARK CONSULTATION AS VIEWED
-================================= */
-if (isset($_GET['mark_viewed'])) {
-    $id = $_GET['mark_viewed'];
-    
-    try {
-        // ✅ VERIFY OWNERSHIP BEFORE MARKING AS VIEWED
-        $check_stmt = $pdo->prepare("SELECT student_id FROM consultation_requests WHERE id = ? AND student_id = ?");
-        $check_stmt->execute([$id, $student_id]);
-        
-        if (!$check_stmt->fetch()) {
-            $_SESSION['error_message'] = 'Consultation not found or you are not authorized.';
-            header("Location: schedule_consultation.php");
-            exit();
-        }
-        
-        $stmt = $pdo->prepare("UPDATE consultation_requests SET is_viewed = TRUE WHERE id = ?");
-        $stmt->execute([$id]);
-        
-        $_SESSION['success_message'] = 'Consultation marked as viewed!';
-    } catch (PDOException $e) {
-        $_SESSION['error_message'] = 'Error updating consultation: ' . $e->getMessage();
-    }
-
-    header("Location: schedule_consultation.php");
-    exit();
-}
-
-/* ===============================
-   ✅ MARK ALL AS VIEWED
-================================= */
-if (isset($_GET['mark_all_viewed'])) {
-    try {
-        $stmt = $pdo->prepare("UPDATE consultation_requests SET is_viewed = TRUE WHERE student_id = ? AND is_viewed = FALSE");
-        $stmt->execute([$student_id]);
-        
-        $_SESSION['success_message'] = 'All consultations marked as viewed!';
-    } catch (PDOException $e) {
-        $_SESSION['error_message'] = 'Error updating consultations: ' . $e->getMessage();
-    }
-
-    header("Location: schedule_consultation.php");
-    exit();
-}
-
-/* ===============================
-   ✅ AJAX: MARK AS VIEWED
-================================= */
-if (isset($_GET['mark_viewed_ajax'])) {
-    $id = $_GET['mark_viewed_ajax'];
-    
-    try {
-        $stmt = $pdo->prepare("UPDATE consultation_requests SET is_viewed = TRUE WHERE id = ? AND student_id = ?");
-        $stmt->execute([$id, $student_id]);
-        
-        echo json_encode(['success' => true]);
-    } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-    }
-    exit();
-}
-
-/* ===============================
-   ✅ DISPLAY MESSAGES - FIXED VARIABLES
-================================= */
-if (isset($_SESSION['success_message'])) {
-    $success_message = $_SESSION['success_message'];
-    unset($_SESSION['success_message']);
-}
-if (isset($_SESSION['error_message'])) {
-    $error_message = $_SESSION['error_message'];
-    unset($_SESSION['error_message']);
-}
-
-/* ===============================
-   ✅ FETCH CONSULTATIONS
-================================= */
-$student_id = $_SESSION['student_id'];
-
-// ✅ FIX: INITIALIZE ALL VARIABLES FIRST
-$consultations = [];
-$consultation_count = 0;
-$pending_count = 0;
-$approved_count_main = 0; // ✅ PALITAN: ibang variable name
-$disapproved_count_main = 0; // ✅ PALITAN: ibang variable name
-$rescheduled_count_main = 0; // ✅ PALITAN: ibang variable name
-$cancelled_count_main = 0; // ✅ PALITAN: ibang variable name
-$no_show_count_main = 0; // ✅ PALITAN: ibang variable name
-
-try {
-    $stmt = $pdo->prepare("SELECT *, is_viewed FROM consultation_requests WHERE student_id = ? ORDER BY date DESC");
-    $stmt->execute([$student_id]);
-    $consultations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // ✅ FIX: PROPERLY CALCULATE COUNTS
-    $consultation_count = count($consultations);
-    
-    // Count by status
-    $pending_count = count(array_filter($consultations, function($c) {
-        return $c['status'] === 'Pending';
-    }));
-    
-    $approved_count_main = count(array_filter($consultations, function($c) {
-        return $c['status'] === 'Approved';
-    }));
-    
-    $disapproved_count_main = count(array_filter($consultations, function($c) {
-        return $c['status'] === 'Disapproved';
-    }));
-    
-    $rescheduled_count_main = count(array_filter($consultations, function($c) {
-        return $c['status'] === 'Rescheduled';
-    }));
-    
-    $cancelled_count_main = count(array_filter($consultations, function($c) {
-        return $c['status'] === 'Cancelled';
-    }));
-    
-    $no_show_count_main = count(array_filter($consultations, function($c) {
-        return $c['status'] === 'No Show';
-    }));
-    
-} catch (PDOException $e) {
-    $consultations = [];
-    $consultation_count = 0;
-    $pending_count = 0;
-    $error_message = "Error fetching consultations: " . $e->getMessage();
-}
-
-// ✅ Helper functions
+// ==================== 🟢 HELPER FUNCTIONS ====================
 function formatTime($time) { 
     return date('g:i A', strtotime($time)); 
 }
@@ -424,9 +20,249 @@ function formatDate($date) {
     return date('M d', strtotime($date)); 
 }
 
-// ✅ Get current date and time for validation
+// ==================== 🟢 AJAX HANDLER (MARK AS READ) ====================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'mark_read') {
+    try {
+        $updateStmt = $pdo->prepare("UPDATE consultation_requests SET is_viewed = TRUE WHERE student_id = ?");
+        $updateStmt->execute([$student_id]);
+        
+        $timeStmt = $pdo->query("SELECT NOW()");
+        $dbCurrentTime = $timeStmt->fetchColumn();
+
+        $_SESSION['announcements_last_viewed'] = $dbCurrentTime;
+        echo "success";
+    } catch (Exception $e) { echo "error"; }
+    exit;
+}
+
+$success_message = '';
+$error_message = '';
+
+// ✅ CSRF TOKEN
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+// ==================== 🔔 INITIALIZE VARIABLES (PARA WALANG ERROR) ====================
+// Notification Counts (Unviewed)
+$approved_count = 0;
+$rejected_count = 0;
+$rescheduled_count = 0;
+$completed_count = 0; // ✅ ADDED: Completed Count variable
+$cancelled_count = 0;
+$no_show_count = 0;
+$consultation_notifications = 0;
+$announcement_notifications = 0;
+$new_announcements_count = 0;
+$total_notifications = 0;
+
+// Dashboard Badge Counts (All)
+$pending_count = 0;
+$approved_count_main = 0;
+$rejected_count_main = 0;
+$rescheduled_count_main = 0;
+$completed_count_main = 0; // ✅ ADDED: Completed Main Count
+$cancelled_count_main = 0;
+$no_show_count_main = 0;
+
+// Data Array
+$consultations = [];
+
+// ==================== 🔔 FETCH NOTIFICATION COUNTS ====================
+try {
+    // 1. Consultations Notifications
+    // ✅ UPDATED: Added 'Completed' to the IN clause
+    $status_counts_stmt = $pdo->prepare("
+        SELECT status, COUNT(*) as count 
+        FROM consultation_requests 
+        WHERE student_id = ? 
+        AND status IN ('Approved', 'Rejected', 'Rescheduled', 'Cancelled', 'No Show', 'Completed') 
+        AND is_viewed = FALSE 
+        GROUP BY status
+    ");
+    $status_counts_stmt->execute([$student_id]);
+    $status_counts = $status_counts_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    foreach ($status_counts as $sc) {
+        switch ($sc['status']) {
+            case 'Approved': $approved_count = $sc['count']; break;
+            case 'Rejected': $rejected_count = $sc['count']; break;
+            case 'Rescheduled': $rescheduled_count = $sc['count']; break;
+            case 'Completed': $completed_count = $sc['count']; break; // ✅ ADDED: Capture Completed Count
+            case 'Cancelled': $cancelled_count = $sc['count']; break;
+            case 'No Show': $no_show_count = $sc['count']; break;
+        }
+    }
+    
+    // ✅ UPDATED: Added completed_count to total
+    $consultation_notifications = $approved_count + $rejected_count + $rescheduled_count + $completed_count + $cancelled_count + $no_show_count;
+
+    // 2. Announcements Notifications
+    $sql = "SELECT COUNT(*) as count FROM announcements WHERE post_on_front = 1 AND is_active = 1 AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND (expiry_date IS NULL OR expiry_date > NOW())";
+    if (isset($_SESSION['announcements_last_viewed'])) {
+        $sql .= " AND created_at > :last_viewed";
+        $new_announcements_stmt = $pdo->prepare($sql);
+        $new_announcements_stmt->execute([':last_viewed' => $_SESSION['announcements_last_viewed']]);
+    } else {
+        $new_announcements_stmt = $pdo->prepare($sql);
+        $new_announcements_stmt->execute();
+    }
+    $new_announcements_count = $new_announcements_stmt->fetch(PDO::FETCH_ASSOC)['count'];
+    $announcement_notifications = $new_announcements_count;
+    
+    $total_notifications = $consultation_notifications + $announcement_notifications;
+
+} catch (PDOException $e) {}
+
+// ==================== 📥 FORM HANDLERS ====================
+
+// 1. CREATE
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create') {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        $_SESSION['error_message'] = 'Invalid token.'; header("Location: schedule_consultation.php"); exit();
+    }
+    
+    $date = $_POST['date'] ?? '';
+    $time = $_POST['time'] ?? '';
+    $concern = $_POST['concern'] ?? '';
+    $notes = $_POST['notes'] ?? '';
+    
+    if ($concern === 'Other' && !empty($_POST['other_concern'])) { $concern = $_POST['other_concern']; }
+
+    if (strlen($concern) > 255 || strlen($notes) > 1000) {
+        $_SESSION['error_message'] = 'Input too long.'; header("Location: schedule_consultation.php"); exit();
+    }
+    if (strtotime($date . ' ' . $time) <= time()) {
+        $_SESSION['error_message'] = 'Cannot select past date/time.'; header("Location: schedule_consultation.php"); exit();
+    }
+
+    try {
+        $pending_stmt = $pdo->prepare("SELECT COUNT(*) as pending_count FROM consultation_requests WHERE student_id = ? AND status = 'Pending'");
+        $pending_stmt->execute([$student_id]);
+        if ($pending_stmt->fetch(PDO::FETCH_ASSOC)['pending_count'] > 0) {
+            $_SESSION['error_message'] = 'You have a pending request.'; header("Location: schedule_consultation.php"); exit();
+        }
+        
+        $stmt = $pdo->prepare("INSERT INTO consultation_requests (student_id, date, time, requested, notes, status) VALUES (?, ?, ?, ?, ?, 'Pending')");
+        $stmt->execute([$student_id, $date, $time, $concern, $notes]);
+        logActivity($pdo, $student_id, "Scheduled consultation: " . $concern);
+        $_SESSION['success_message'] = 'Request submitted successfully!';
+    } catch (PDOException $e) { $_SESSION['error_message'] = 'Error: ' . $e->getMessage(); }
+    header("Location: schedule_consultation.php"); exit();
+}
+
+// 2. EDIT
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit') {
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) { header("Location: schedule_consultation.php"); exit(); }
+    
+    $id = $_POST['consultation_id'];
+    $date = $_POST['edit_date'];
+    $time = $_POST['edit_time'];
+    $concern = $_POST['edit_concern'];
+    $notes = $_POST['edit_notes'];
+
+    if (strtotime($date . ' ' . $time) <= time()) {
+        $_SESSION['error_message'] = 'Cannot select past date/time.'; header("Location: schedule_consultation.php"); exit();
+    }
+
+    try {
+        $check = $pdo->prepare("SELECT id FROM consultation_requests WHERE id = ? AND student_id = ? AND status IN ('Pending', 'Approved')");
+        $check->execute([$id, $student_id]);
+        if ($check->fetch()) {
+            $stmt = $pdo->prepare("UPDATE consultation_requests SET date = ?, time = ?, requested = ?, notes = ? WHERE id = ?");
+            $stmt->execute([$date, $time, $concern, $notes, $id]);
+            logActivity($pdo, $student_id, "Edited consultation: " . $concern);
+            $_SESSION['success_message'] = 'Updated successfully!';
+        }
+    } catch (PDOException $e) { $_SESSION['error_message'] = 'Error updating.'; }
+    header("Location: schedule_consultation.php"); exit();
+}
+
+// 3. CANCEL
+if (isset($_GET['cancel'])) {
+    $id = $_GET['cancel'];
+    try {
+        $check = $pdo->prepare("SELECT requested FROM consultation_requests WHERE id = ? AND student_id = ? AND status = 'Pending'");
+        $check->execute([$id, $student_id]);
+        $row = $check->fetch();
+        if ($row) {
+            $stmt = $pdo->prepare("DELETE FROM consultation_requests WHERE id = ?");
+            $stmt->execute([$id]);
+            logActivity($pdo, $student_id, "Cancelled consultation: " . $row['requested']);
+            $_SESSION['success_message'] = 'Consultation cancelled.';
+        }
+    } catch (PDOException $e) { $_SESSION['error_message'] = 'Error deleting.'; }
+    header("Location: schedule_consultation.php"); exit();
+}
+
+// 4. REMOVE REJECTED
+if (isset($_GET['remove'])) {
+    $id = $_GET['remove'];
+    try {
+        $check = $pdo->prepare("SELECT id FROM consultation_requests WHERE id = ? AND student_id = ? AND status = 'Rejected'");
+        $check->execute([$id, $student_id]);
+        
+        if ($check->fetch()) {
+            $stmt = $pdo->prepare("DELETE FROM consultation_requests WHERE id = ?");
+            $stmt->execute([$id]);
+            $_SESSION['success_message'] = 'Rejected consultation removed from list.';
+        } else {
+            $_SESSION['error_message'] = 'Unable to remove. Record not found or not rejected.';
+        }
+    } catch (PDOException $e) {
+        $_SESSION['error_message'] = 'Error removing record: ' . $e->getMessage();
+    }
+    header("Location: schedule_consultation.php");
+    exit();
+}
+
+// 5. MARK ALL VIEWED
+if (isset($_GET['mark_all_viewed'])) {
+    try {
+        $stmt = $pdo->prepare("UPDATE consultation_requests SET is_viewed = TRUE WHERE student_id = ? AND is_viewed = FALSE");
+        $stmt->execute([$student_id]);
+        $_SESSION['success_message'] = 'All notifications marked as read.';
+    } catch (PDOException $e) {}
+    header("Location: schedule_consultation.php"); exit();
+}
+
+// 6. AJAX MARK SINGLE VIEWED
+if (isset($_GET['mark_viewed_ajax'])) {
+    $id = $_GET['mark_viewed_ajax'];
+    try {
+        $stmt = $pdo->prepare("UPDATE consultation_requests SET is_viewed = TRUE WHERE id = ? AND student_id = ?");
+        $stmt->execute([$id, $student_id]);
+        echo json_encode(['success' => true]);
+    } catch (PDOException $e) { echo json_encode(['success' => false]); }
+    exit();
+}
+
+if (isset($_SESSION['success_message'])) { $success_message = $_SESSION['success_message']; unset($_SESSION['success_message']); }
+if (isset($_SESSION['error_message'])) { $error_message = $_SESSION['error_message']; unset($_SESSION['error_message']); }
+
+// ==================== 📊 FETCH TABLE DATA ====================
+try {
+    $stmt = $pdo->prepare("SELECT *, is_viewed FROM consultation_requests WHERE student_id = ? ORDER BY date DESC");
+    $stmt->execute([$student_id]);
+    $consultations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    foreach($consultations as $c) { 
+        switch($c['status']) {
+            case 'Pending': $pending_count++; break;
+            case 'Approved': $approved_count_main++; break;
+            case 'Rejected': $rejected_count_main++; break;
+            case 'Rescheduled': $rescheduled_count_main++; break;
+            case 'Completed': $completed_count_main++; break; // ✅ ADDED: Count for dashboard
+            case 'Cancelled': $cancelled_count_main++; break;
+            case 'No Show': $no_show_count_main++; break;
+        }
+    }
+    
+} catch (PDOException $e) { 
+    // Variables are already initialized to 0
+}
+
 $current_date = date('Y-m-d');
-$current_time = date('H:i');
 ?>
 
 <!DOCTYPE html>
@@ -436,1560 +272,179 @@ $current_time = date('H:i');
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Schedule Consultation - ASCOT Clinic</title>
   
-  <!-- Bootstrap -->
   <link href="assets/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome -->
   <link href="assets/webfonts/all.min.css" rel="stylesheet">
   
   <style>
-    :root {
-        --primary: #667eea;
-        --primary-dark: #5a6fd8;
-        --secondary: #764ba2;
-        --success: #28a745;
-        --info: #17a2b8;
-        --warning: #ffc107;
-        --danger: #dc3545;
-        --light: #f8f9fa;
-        --dark: #343a40;
-        --gray: #6c757d;
-        --accent: #ffda6a;
-        --accent-light: #fff7da;
-        --text-dark: #2c3e50;
-        --text-light: #6c757d;
-        --border-radius: 16px;
-        --shadow: 0 8px 32px rgba(0,0,0,0.1);
-        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-        padding-top: 80px;
-        line-height: 1.6;
-        min-height: 100vh;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
-
-    /* Header Styles - ENHANCED */
-    .top-header {
-        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
-        padding: 0.75rem 0;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 1030;
-        height: 80px;
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255,255,255,0.2);
-    }
-
-    .header-content {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        height: 100%;
-    }
-
-    .header-left {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        flex: 1;
-    }
-
-    .logo-img {
-        width: 60px;
-        height: 60px;
-        object-fit: contain;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-        transition: var(--transition);
-    }
-
-    .logo-img:hover {
-        transform: scale(1.05);
-    }
-
-    .school-info {
-        flex: 1;
-    }
-
-    .republic {
-        font-size: 0.7rem;
-        opacity: 0.9;
-        letter-spacing: 0.5px;
-        color: var(--text-dark);
-        font-weight: 600;
-    }
-
-    .school-name {
-        font-size: 1.1rem;
-        font-weight: 800;
-        margin: 0.1rem 0;
-        line-height: 1.2;
-        color: var(--text-dark);
-        background: linear-gradient(135deg, var(--text-dark), #495057);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .clinic-title {
-        font-size: 0.8rem;
-        opacity: 0.9;
-        font-weight: 600;
-        color: var(--text-dark);
-        letter-spacing: 0.5px;
-    }
-
-    /* ✅ NEW: BELL NOTIFICATION STYLES */
-    .notification-bell {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 50px;
-        height: 50px;
-        background: rgba(255, 255, 255, 0.9);
-        border-radius: 50%;
-        cursor: pointer;
-        transition: var(--transition);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        border: 2px solid rgba(255,255,255,0.3);
-    }
-
-    .notification-bell:hover {
-        transform: scale(1.1) rotate(10deg);
-        background: rgba(255, 255, 255, 1);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-    }
-
-    .notification-bell i {
-        font-size: 1.4rem;
-        color: var(--text-dark);
-        transition: var(--transition);
-    }
-
-    .notification-bell:hover i {
-        color: var(--primary);
-    }
-
-    .bell-badge {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        background: linear-gradient(135deg, var(--danger), #c82333);
-        color: white;
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.75rem;
-        font-weight: 800;
-        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
-        border: 2px solid white;
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-        0% {
-            transform: scale(1);
-            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
-        }
-        50% {
-            transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.6);
-        }
-        100% {
-            transform: scale(1);
-            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
-        }
-    }
-
-    /* ✅ UPDATED: NOTIFICATION DROPDOWN - WALANG EXPIRED ANNOUNCEMENTS */
-    .notification-dropdown {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        width: 380px;
-        background: rgba(255, 255, 255, 0.98);
-        backdrop-filter: blur(20px);
-        border-radius: var(--border-radius);
-        box-shadow: var(--shadow);
-        border: 1px solid rgba(255,255,255,0.3);
-        padding: 1.5rem;
-        z-index: 1040;
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(-10px);
-        transition: var(--transition);
-    }
-
-    .notification-dropdown.active {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(10px);
-    }
-
-    .notification-dropdown::before {
-        content: '';
-        position: absolute;
-        top: -10px;
-        right: 20px;
-        width: 20px;
-        height: 20px;
-        background: rgba(255, 255, 255, 0.98);
-        transform: rotate(45deg);
-        border-left: 1px solid rgba(255,255,255,0.3);
-        border-top: 1px solid rgba(255,255,255,0.3);
-    }
-
-    .notification-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid rgba(248,249,250,0.8);
-    }
-
-    .notification-header h5 {
-        color: var(--text-dark);
-        font-weight: 700;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .notification-count {
-        background: var(--primary);
-        color: white;
-        border-radius: 20px;
-        padding: 0.25rem 0.75rem;
-        font-size: 0.8rem;
-        font-weight: 700;
-    }
-
-    .notification-items {
-        max-height: 400px;
-        overflow-y: auto;
-    }
-
-    .notification-section {
-        margin-bottom: 1.5rem;
-    }
-
-    .notification-section:last-child {
-        margin-bottom: 0;
-    }
-
-    .notification-section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1rem;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid rgba(248,249,250,0.8);
-    }
-
-    .notification-section-header h6 {
-        color: var(--text-dark);
-        font-weight: 600;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .notification-section-count {
-        background: var(--primary);
-        color: white;
-        border-radius: 20px;
-        padding: 0.2rem 0.6rem;
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-
-    .notification-item {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        border-radius: 12px;
-        margin-bottom: 0.75rem;
-        transition: var(--transition);
-        border-left: 4px solid;
-    }
-
-    .notification-item:hover {
-        background: rgba(248,249,250,0.8);
-        transform: translateX(5px);
-    }
-
-    .notification-item.approved {
-        border-left-color: var(--success);
-        background: rgba(40, 167, 69, 0.05);
-    }
-
-    .notification-item.rejected {
-        border-left-color: var(--danger);
-        background: rgba(220, 53, 69, 0.05);
-    }
-
-    .notification-item.rescheduled {
-        border-left-color: var(--warning);
-        background: rgba(255, 193, 7, 0.05);
-    }
-
-    .notification-item.cancelled {
-        border-left-color: var(--secondary);
-        background: rgba(118, 75, 162, 0.05);
-    }
-
-    .notification-item.new-announcement {
-        border-left-color: var(--success);
-        background: rgba(40, 167, 69, 0.05);
-    }
-    .notification-item.no-show {
-    border-left-color: #6c757d;
-    background: rgba(108, 117, 125, 0.05);
-}
-
-    /* ✅ INIWASAN: WALANG STYLE PARA SA EXPIRED ANNOUNCEMENTS */
-
-    .notification-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.1rem;
-        color: white;
-    }
-
-    .notification-icon.approved {
-        background: var(--success);
-    }
-
-    .notification-icon.rejected {
-        background: var(--danger);
-    }
-
-    .notification-icon.rescheduled {
-        background: var(--warning);
-    }
-
-    .notification-icon.cancelled {
-        background: var(--secondary);
-    }
-
-    .notification-icon.new-announcement {
-        background: var(--success);
-    }
-    .notification-icon.no-show {
-    background: #6c757d;
-}
-
-    /* ✅ INIWASAN: WALANG ICON PARA SA EXPIRED ANNOUNCEMENTS */
-
-    .notification-content {
-        flex: 1;
-    }
-
-    .notification-content p {
-        margin: 0;
-        font-weight: 600;
-        color: var(--text-dark);
-        font-size: 0.9rem;
-    }
-
-    .notification-content small {
-        color: var(--text-light);
-        font-size: 0.8rem;
-    }
-
-    .notification-empty {
-        text-align: center;
-        padding: 2rem;
-        color: var(--text-light);
-    }
-
-    .notification-empty i {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-
-    .notification-empty p {
-        margin: 0;
-        font-weight: 600;
-    }
-
-    /* Mobile Menu Toggle - ENHANCED */
-    .mobile-menu-toggle {
-        display: none;
-        position: fixed;
-        top: 95px;
-        left: 20px;
-        z-index: 1025;
-        background: var(--primary);
-        color: white;
-        border: none;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        box-shadow: var(--shadow);
-        cursor: pointer;
-        transition: var(--transition);
-        backdrop-filter: blur(10px);
-    }
-
-    .mobile-menu-toggle:hover {
-        transform: scale(1.05);
-        background: var(--primary-dark);
-        box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
-    }
-
-    /* Dashboard Container - ENHANCED */
-    .dashboard-container {
-        display: flex;
-        min-height: calc(100vh - 80px);
-    }
-
-    /* Sidebar Styles - ENHANCED */
-    .sidebar {
-        width: 280px;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(20px);
-        box-shadow: 2px 0 20px rgba(0,0,0,0.08);
-        padding: 2rem 0;
-        transition: transform 0.3s ease;
-        position: fixed;
-        top: 80px;
-        left: 0;
-        bottom: 0;
-        overflow-y: auto;
-        z-index: 1020;
-        border-right: 1px solid rgba(255,255,255,0.2);
-    }
-
-    .sidebar-nav {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        gap: 0.5rem;
-    }
-
-    .nav-item {
-        display: flex;
-        align-items: center;
-        padding: 1rem 1.5rem;
-        color: var(--text-dark);
-        text-decoration: none;
-        transition: var(--transition);
-        border: none;
-        background: none;
-        width: 100%;
-        text-align: left;
-        cursor: pointer;
-        font-weight: 600;
-        border-radius: 0 12px 12px 0;
-        margin: 0.25rem 0;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .nav-item::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        height: 100%;
-        width: 0;
-        background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%);
-        transition: var(--transition);
-    }
-
-    .nav-item:hover {
-        background: rgba(255, 255, 255, 0.8);
-        color: var(--primary);
-        transform: translateX(5px);
-    }
-
-    .nav-item:hover::before {
-        width: 100%;
-    }
-
-    .nav-item.active {
-        background: linear-gradient(90deg, rgba(255,218,106,0.15) 0%, transparent 100%);
-        color: var(--text-dark);
-        border-left: 6px solid var(--accent);
-    }
-
-    .nav-item.active::before {
-        width: 100%;
-    }
-
-    .nav-item i {
-        width: 24px;
-        margin-right: 1rem;
-        font-size: 1.2rem;
-        color: inherit;
-        transition: var(--transition);
-    }
-
-    .nav-item span {
-        flex: 1;
-        color: inherit;
-        font-size: 0.95rem;
-    }
-
-    .nav-item.logout {
-        color: var(--danger);
-        margin-top: auto;
-        border-left: 6px solid transparent;
-    }
-
-    .nav-item.logout:hover {
-        background: rgba(220, 53, 69, 0.1);
-        color: var(--danger);
-    }
-
-    /* ✅ NEW: SIDEBAR NOTIFICATION BADGES */
-    .notification-badge {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        color: white;
-        border-radius: 20px;
-        padding: 0.25rem 0.5rem;
-        font-size: 0.7rem;
-        font-weight: 700;
-        min-width: 20px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: auto;
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-        transition: var(--transition);
-    }
-
-    .notification-badge.approved {
-        background: linear-gradient(135deg, var(--success), #218838);
-    }
-
-    .notification-badge.rejected {
-        background: linear-gradient(135deg, var(--danger), #c82333);
-    }
-
-    .notification-badge.rescheduled {
-        background: linear-gradient(135deg, var(--warning), #e0a800);
-    }
-
-    .notification-badge.cancelled {
-        background: linear-gradient(135deg, var(--secondary), #6f42c1);
-    }
-    .notification-badge.no-show {
-    background: linear-gradient(135deg, #6c757d, #5a6268);
-}
-
-    .notification-badge.total {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        font-size: 0.75rem;
-        min-width: 24px;
-        height: 24px;
-    }
-
-    .nav-item:hover .notification-badge {
-        transform: scale(1.1);
-    }
-
-    /* Main Content - ENHANCED */
-    .main-content {
-        flex: 1;
-        padding: 2rem;
-        overflow-x: hidden;
-        margin-left: 280px;
-        margin-top: 0;
-    }
-
-    /* Sidebar Overlay for Mobile - ENHANCED */
-    .sidebar-overlay {
-        display: none;
-        position: fixed;
-        top: 80px;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        backdrop-filter: blur(5px);
-        z-index: 1019;
-    }
-
-    .sidebar-overlay.active {
-        display: block;
-    }
-
-    /* HEADER INFO SECTION - ENHANCED */
-    .header-info-section {
-        background: linear-gradient(135deg, rgba(255, 218, 106, 0.95) 0%, rgba(255, 247, 222, 0.98) 100%);
-        padding: 2.5rem;
-        border-radius: var(--border-radius);
-        margin-bottom: 2rem;
-        box-shadow: var(--shadow);
-        border: 1px solid rgba(255,255,255,0.3);
-        text-align: center;
-        backdrop-filter: blur(10px);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .header-info-section::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-        background-size: 20px 20px;
-        opacity: 0.3;
-    }
-
-    .header-info-section h3 {
-        color: var(--text-dark);
-        font-weight: 800;
-        font-size: 2.2rem;
-        margin-bottom: 1rem;
-        background: linear-gradient(135deg, var(--text-dark), #495057);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        position: relative;
-        z-index: 2;
-    }
-
-    .header-info-section p {
-        color: var(--text-light);
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin: 0;
-        position: relative;
-        z-index: 2;
-        letter-spacing: 0.5px;
-    }
-
-    /* Pending Restriction Alert */
-    .pending-restriction-alert {
-        background: linear-gradient(135deg, rgba(255, 193, 7, 0.95) 0%, rgba(255, 220, 106, 0.98) 100%);
-        border: 2px solid #ffc107;
-        color: #856404;
-        padding: 1.5rem;
-        border-radius: var(--border-radius);
-        margin-bottom: 1.5rem;
-        box-shadow: var(--shadow);
-        border-left: 6px solid #ffc107;
-    }
-
-    .pending-restriction-alert h5 {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        color: #856404;
-    }
-
-    .pending-restriction-alert p {
-        margin: 0;
-        font-weight: 600;
-        font-size: 0.95rem;
-    }
-
-    /* Consultation Form Container - ENHANCED */
-    .consultation-form-container {
-        background: rgba(255,255,255,0.95);
-        backdrop-filter: blur(20px);
-        border-radius: var(--border-radius);
-        padding: 2.5rem;
-        box-shadow: var(--shadow);
-        border: 1px solid rgba(255,255,255,0.3);
-        margin-bottom: 2rem;
-        position: relative;
-        overflow: hidden;
-        transition: var(--transition);
-    }
-
-    .consultation-form-container:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-    }
-
-    .consultation-form-container::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-        transition: left 0.6s ease;
-    }
-
-    .consultation-form-container:hover::before {
-        left: 100%;
-    }
-
-    .consultation-form-container::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 5px;
-        background: linear-gradient(135deg, var(--accent), #ffd24a);
-        border-radius: 5px 5px 0 0;
-    }
-
-    .consultation-form-container h4 {
-        color: var(--text-dark);
-        font-weight: 800;
-        margin-bottom: 2rem;
-        font-size: 1.6rem;
-        border-bottom: 3px solid var(--accent-light);
-        padding-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    /* Form Styles - ENHANCED */
-    .form-label {
-        font-weight: 700;
-        color: var(--text-dark);
-        margin-bottom: 0.75rem;
-        font-size: 0.95rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .form-label::before {
-        content: '•';
-        color: var(--primary);
-        font-weight: bold;
-        font-size: 1.2rem;
-    }
-
-    .form-control, .form-select {
-        border: 2px solid #e9ecef;
-        border-radius: 12px;
-        padding: 1rem 1.25rem;
-        font-size: 1rem;
-        transition: var(--transition);
-        background: rgba(255,255,255,0.9);
-        font-weight: 500;
-    }
-
-    .form-control:focus, .form-select:focus {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 0.3rem rgba(102, 126, 234, 0.15);
-        transform: translateY(-2px);
-        background: rgba(255,255,255,0.95);
-    }
-
-    .form-text {
-        font-size: 0.85rem;
-        color: var(--text-light);
-        margin-top: 0.5rem;
-        font-weight: 500;
-    }
-
-    /* Button Styles - ENHANCED */
-    .btn-primary {
-        background: linear-gradient(135deg, var(--accent), #ffd24a);
-        border: none;
-        border-radius: 25px;
-        padding: 1.25rem 3rem;
-        font-weight: 700;
-        font-size: 1.1rem;
-        transition: var(--transition);
-        display: inline-flex;
-        align-items: center;
-        gap: 0.75rem;
-        color: var(--text-dark);
-        box-shadow: 0 6px 20px rgba(255,218,106,0.4);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .btn-primary::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-        transition: left 0.6s ease;
-    }
-
-    .btn-primary:hover::before {
-        left: 100%;
-    }
-
-    .btn-primary:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(255,218,106,0.5);
-        color: var(--text-dark);
-    }
-
-    .btn-primary:disabled {
-        background: linear-gradient(135deg, #6c757d, #5a6268);
-        color: white;
-        cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-    }
-
-    .btn-primary:disabled:hover {
-        transform: none;
-        box-shadow: none;
-    }
-
-    /* Consultation Schedule Section - ENHANCED */
-    .consultation-schedule {
-        background: rgba(255,255,255,0.95);
-        backdrop-filter: blur(20px);
-        border-radius: var(--border-radius);
-        padding: 2.5rem;
-        box-shadow: var(--shadow);
-        border: 1px solid rgba(255,255,255,0.3);
-        position: relative;
-        overflow: hidden;
-        transition: var(--transition);
-    }
-
-    .consultation-schedule:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-    }
-
-    .consultation-schedule::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-        transition: left 0.6s ease;
-    }
-
-    .consultation-schedule:hover::before {
-        left: 100%;
-    }
-
-    .consultation-schedule::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 5px;
-        background: linear-gradient(135deg, var(--accent), #ffd24a);
-        border-radius: 5px 5px 0 0;
-    }
-
-    .schedule-title {
-        color: var(--text-dark);
-        font-weight: 800;
-        font-size: 1.6rem;
-        border-bottom: 3px solid var(--accent-light);
-        padding-bottom: 1rem;
-        margin-bottom: 2rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    /* Table Styles - ENHANCED */
-    .table {
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        background: rgba(255,255,255,0.9);
-    }
-
-    .table-dark {
-        background: linear-gradient(135deg, var(--text-dark), #34495e) !important;
-    }
-
-    .table th {
-        border: none;
-        font-weight: 700;
-        padding: 1.25rem 1rem;
-        background: linear-gradient(135deg, var(--text-dark), #34495e);
-        color: white;
-        font-size: 0.95rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .table td {
-        padding: 1.25rem 1rem;
-        vertical-align: middle;
-        border-color: rgba(233, 236, 239, 0.8);
-        color: var(--text-dark);
-        font-weight: 500;
-        transition: var(--transition);
-    }
-
-    .table-striped tbody tr:nth-of-type(odd) {
-        background-color: rgba(248, 249, 250, 0.7);
-    }
-
-    .table-hover tbody tr:hover {
-        background-color: rgba(102, 126, 234, 0.08);
-        transform: translateX(5px);
-    }
-
-    /* Status Badges - ENHANCED */
-    .status-pending { 
-        background: linear-gradient(135deg, #fff3cd, #ffeaa7); 
-        color: #856404; 
-        padding: 0.75rem 1.25rem; 
-        border-radius: 25px; 
-        font-size: 0.85rem; 
-        font-weight: 700;
-        box-shadow: 0 2px 8px rgba(133, 100, 4, 0.2);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .status-approved { 
-        background: linear-gradient(135deg, #d4edda, #c3e6cb); 
-        color: #155724; 
-        padding: 0.75rem 1.25rem; 
-        border-radius: 25px; 
-        font-size: 0.85rem; 
-        font-weight: 700;
-        box-shadow: 0 2px 8px rgba(21, 87, 36, 0.2);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .status-rejected { 
-        background: linear-gradient(135deg, #f8d7da, #f5c6cb); 
-        color: #721c24; 
-        padding: 0.75rem 1.25rem; 
-        border-radius: 25px; 
-        font-size: 0.85rem; 
-        font-weight: 700;
-        box-shadow: 0 2px 8px rgba(114, 28, 36, 0.2);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .status-completed { 
-        background: linear-gradient(135deg, #cce7ff, #b3d9ff); 
-        color: #004085; 
-        padding: 0.75rem 1.25rem; 
-        border-radius: 25px; 
-        font-size: 0.85rem; 
-        font-weight: 700;
-        box-shadow: 0 2px 8px rgba(0, 64, 133, 0.2);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .status-no-show { 
-    background: linear-gradient(135deg, #e9ecef, #dee2e6); 
-    color: #495057; 
-    padding: 0.75rem 1.25rem; 
-    border-radius: 25px; 
-    font-size: 0.85rem; 
-    font-weight: 700;
-    box-shadow: 0 2px 8px rgba(73, 80, 87, 0.2);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-    /* Action Buttons - ENHANCED */
-    .btn-action {
-        border: none;
-        background: rgba(255,255,255,0.9);
-        padding: 0.75rem;
-        margin: 0 0.25rem;
-        border-radius: 10px;
-        transition: var(--transition);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        width: 42px;
-        height: 42px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
+    /* Original CSS */
+    :root { --primary: #667eea; --primary-dark: #5a6fd8; --secondary: #764ba2; --success: #28a745; --info: #17a2b8; --warning: #ffc107; --danger: #dc3545; --light: #f8f9fa; --dark: #343a40; --gray: #6c757d; --accent: #ffda6a; --accent-light: #fff7da; --text-dark: #2c3e50; --text-light: #6c757d; --border-radius: 16px; --shadow: 0 8px 32px rgba(0,0,0,0.1); --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%); padding-top: 80px; line-height: 1.6; min-height: 100vh; }
+    .top-header { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%); padding: 0.75rem 0; box-shadow: 0 4px 20px rgba(0,0,0,0.08); position: fixed; top: 0; left: 0; right: 0; z-index: 1030; height: 80px; backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.2); }
+    .header-content { display: flex; align-items: center; justify-content: space-between; gap: 1rem; height: 100%; }
+    .header-left { display: flex; align-items: center; gap: 1rem; flex: 1; }
+    .logo-img { width: 60px; height: 60px; object-fit: contain; transition: var(--transition); }
+    .logo-img:hover { transform: scale(1.05); }
+    .school-info { flex: 1; }
+    .republic { font-size: 0.7rem; opacity: 0.9; font-weight: 600; color: var(--text-dark); }
+    .school-name { font-size: 1.1rem; font-weight: 800; margin: 0.1rem 0; line-height: 1.2; color: var(--text-dark); }
+    .clinic-title { font-size: 0.8rem; opacity: 0.9; font-weight: 600; color: var(--text-dark); }
     
+    /* Notification Styles */
+    .notification-bell { position: relative; display: flex; align-items: center; justify-content: center; width: 50px; height: 50px; background: rgba(255, 255, 255, 0.9); border-radius: 50%; cursor: pointer; transition: var(--transition); box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid rgba(255,255,255,0.3); }
+    .notification-bell:hover { transform: scale(1.1) rotate(10deg); background: rgba(255, 255, 255, 1); }
+    .notification-bell i { font-size: 1.4rem; color: var(--text-dark); }
+    .notification-bell:hover i { color: var(--primary); }
+    .bell-badge { position: absolute; top: -5px; right: -5px; background: linear-gradient(135deg, var(--danger), #c82333); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4); border: 2px solid white; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    
+    .notification-dropdown { position: absolute; top: 100%; right: 0; width: 380px; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px); border-radius: var(--border-radius); box-shadow: var(--shadow); border: 1px solid rgba(255,255,255,0.3); padding: 1.5rem; z-index: 1040; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: var(--transition); }
+    .notification-dropdown.active { opacity: 1; visibility: visible; transform: translateY(10px); }
+    .notification-dropdown::before { content: ''; position: absolute; top: -10px; right: 20px; width: 20px; height: 20px; background: rgba(255, 255, 255, 0.98); transform: rotate(45deg); border-left: 1px solid rgba(255,255,255,0.3); border-top: 1px solid rgba(255,255,255,0.3); }
+    .notification-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 2px solid rgba(248,249,250,0.8); }
+    .notification-header h5 { color: var(--text-dark); font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+    .notification-count { background: var(--primary); color: white; border-radius: 20px; padding: 0.25rem 0.75rem; font-size: 0.8rem; font-weight: 700; }
+    .notification-items { max-height: 400px; overflow-y: auto; }
+    .notification-section { margin-bottom: 1.5rem; }
+    .notification-section:last-child { margin-bottom: 0; }
+    .notification-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding: 0.5rem 0; border-bottom: 1px solid rgba(248,249,250,0.8); }
+    .notification-section-header h6 { color: var(--text-dark); font-weight: 600; margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+    .notification-section-count { background: var(--primary); color: white; border-radius: 20px; padding: 0.2rem 0.6rem; font-size: 0.75rem; font-weight: 700; }
+    .notification-item { display: flex; align-items: center; gap: 1rem; padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem; transition: var(--transition); border-left: 4px solid; cursor: pointer; }
+    .notification-item:hover { background: rgba(248,249,250,0.8); transform: translateX(5px); }
+    
+    .notification-item.approved { border-left-color: var(--success); background: rgba(40, 167, 69, 0.05); }
+    .notification-item.rejected { border-left-color: var(--danger); background: rgba(220, 53, 69, 0.05); }
+    .notification-item.rescheduled { border-left-color: var(--warning); background: rgba(255, 193, 7, 0.05); } 
+    .notification-item.completed { border-left-color: #004085; background: rgba(0, 64, 133, 0.05); } /* ✅ CSS for Completed Item */
+    .notification-item.cancelled { border-left-color: var(--secondary); background: rgba(118, 75, 162, 0.05); }
+    .notification-item.no-show { border-left-color: #6c757d; background: rgba(108, 117, 125, 0.05); }
+    .notification-item.new-announcement { border-left-color: var(--success); background: rgba(40, 167, 69, 0.05); }
+    
+    .notification-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: white; }
+    .notification-icon.approved { background: var(--success); }
+    .notification-icon.rejected { background: var(--danger); }
+    .notification-icon.rescheduled { background: var(--warning); }
+    .notification-icon.completed { background: #004085; } /* ✅ CSS for Completed Icon */
+    .notification-icon.cancelled { background: var(--secondary); }
+    .notification-icon.no-show { background: #6c757d; }
+    .notification-icon.new-announcement { background: var(--success); }
+    
+    .notification-content p { margin: 0; font-weight: 600; color: var(--text-dark); font-size: 0.9rem; }
+    .notification-content small { color: var(--text-light); font-size: 0.8rem; }
+    .notification-empty { text-align: center; padding: 2rem; color: var(--text-light); }
+    .notification-empty i { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5; }
+    .notification-empty p { margin: 0; font-weight: 600; }
+    
+    .mobile-menu-toggle { display: none; position: fixed; top: 95px; left: 20px; z-index: 1025; background: var(--primary); color: white; border: none; width: 50px; height: 50px; border-radius: 50%; box-shadow: var(--shadow); cursor: pointer; transition: var(--transition); backdrop-filter: blur(10px); }
+    .mobile-menu-toggle:hover { transform: scale(1.05); background: var(--primary-dark); }
+
+    .dashboard-container { display: flex; min-height: calc(100vh - 80px); }
+    .sidebar { width: 280px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); box-shadow: 2px 0 20px rgba(0,0,0,0.08); padding: 2rem 0; transition: transform 0.3s ease; position: fixed; top: 80px; left: 0; bottom: 0; overflow-y: auto; z-index: 1020; border-right: 1px solid rgba(255,255,255,0.2); }
+    .sidebar-nav { display: flex; flex-direction: column; height: 100%; gap: 0.5rem; }
+    .nav-item { display: flex; align-items: center; padding: 1rem 1.5rem; color: var(--text-dark); text-decoration: none; transition: var(--transition); width: 100%; cursor: pointer; font-weight: 600; border-radius: 0 12px 12px 0; margin: 0.25rem 0; position: relative; overflow: hidden; }
+    .nav-item::before { content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 0; background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, transparent 100%); transition: var(--transition); }
+    .nav-item:hover { background: rgba(255, 255, 255, 0.8); color: var(--primary); transform: translateX(5px); }
+    .nav-item:hover::before { width: 100%; }
+    .nav-item.active { background: linear-gradient(90deg, rgba(255,218,106,0.15) 0%, transparent 100%); color: var(--text-dark); border-left: 6px solid var(--accent); }
+    .nav-item.active::before { width: 100%; }
+    .nav-item i { width: 24px; margin-right: 1rem; font-size: 1.2rem; color: inherit; }
+    .nav-item.logout { color: var(--danger); margin-top: auto; border-left: 6px solid transparent; }
+    .nav-item.logout:hover { background: rgba(220, 53, 69, 0.1); color: var(--danger); }
+    .notification-badge { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border-radius: 20px; padding: 0.25rem 0.5rem; font-size: 0.7rem; font-weight: 700; min-width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; margin-left: auto; }
+    .notification-badge.total { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+    .nav-item:hover .notification-badge { transform: scale(1.1); }
+
+    .main-content { flex: 1; padding: 2rem; overflow-x: hidden; margin-left: 280px; }
+    .sidebar-overlay { display: none; position: fixed; top: 80px; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 1019; }
+    .sidebar-overlay.active { display: block; }
+
+    .header-info-section { background: linear-gradient(135deg, rgba(255, 218, 106, 0.95) 0%, rgba(255, 247, 222, 0.98) 100%); padding: 2.5rem; border-radius: var(--border-radius); margin-bottom: 2rem; box-shadow: var(--shadow); border: 1px solid rgba(255,255,255,0.3); text-align: center; backdrop-filter: blur(10px); position: relative; overflow: hidden; }
+    .header-info-section h3 { color: var(--text-dark); font-weight: 800; font-size: 2.2rem; margin-bottom: 1rem; }
+    .header-info-section p { color: var(--text-light); font-size: 1.1rem; font-weight: 600; margin: 0; }
+    
+    .pending-restriction-alert { background: linear-gradient(135deg, rgba(255, 193, 7, 0.95) 0%, rgba(255, 220, 106, 0.98) 100%); border: 2px solid #ffc107; color: #856404; padding: 1.5rem; border-radius: var(--border-radius); margin-bottom: 1.5rem; box-shadow: var(--shadow); border-left: 6px solid #ffc107; }
+    .pending-restriction-alert h5 { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; margin-bottom: 0.5rem; color: #856404; }
+    .pending-restriction-alert p { margin: 0; font-weight: 600; font-size: 0.95rem; }
+
+    .consultation-form-container { background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border-radius: var(--border-radius); padding: 2.5rem; box-shadow: var(--shadow); border: 1px solid rgba(255,255,255,0.3); margin-bottom: 2rem; position: relative; overflow: hidden; transition: var(--transition); }
+    .consultation-form-container:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
+    .consultation-form-container::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); transition: left 0.6s ease; }
+    .consultation-form-container:hover::before { left: 100%; }
+    .consultation-form-container::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(135deg, var(--accent), #ffd24a); border-radius: 5px 5px 0 0; }
+    .consultation-form-container h4 { color: var(--text-dark); font-weight: 800; margin-bottom: 2rem; font-size: 1.6rem; border-bottom: 3px solid var(--accent-light); padding-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
+    
+    .form-label { font-weight: 700; color: var(--text-dark); margin-bottom: 0.75rem; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; }
+    .form-label::before { content: '•'; color: var(--primary); font-weight: bold; font-size: 1.2rem; }
+    .form-control, .form-select { border: 2px solid #e9ecef; border-radius: 12px; padding: 1rem 1.25rem; font-size: 1rem; transition: var(--transition); background: rgba(255,255,255,0.9); font-weight: 500; }
+    .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 0.3rem rgba(102, 126, 234, 0.15); transform: translateY(-2px); }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #ffd24a); border: none; border-radius: 25px; padding: 1.25rem 3rem; font-weight: 700; font-size: 1.1rem; transition: var(--transition); display: inline-flex; align-items: center; gap: 0.75rem; color: var(--text-dark); position: relative; overflow: hidden; }
+    .btn-primary:hover { transform: translateY(-3px); }
+    .btn-primary:disabled { background: linear-gradient(135deg, #6c757d, #5a6268); color: white; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .consultation-schedule { background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border-radius: var(--border-radius); padding: 2.5rem; box-shadow: var(--shadow); border: 1px solid rgba(255,255,255,0.3); position: relative; overflow: hidden; transition: var(--transition); }
+    .schedule-title { color: var(--text-dark); font-weight: 800; font-size: 1.6rem; border-bottom: 3px solid var(--accent-light); padding-bottom: 1rem; margin-bottom: 2rem; }
+    
+    .table { border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); background: rgba(255,255,255,0.9); }
+    .table-dark { background: linear-gradient(135deg, var(--text-dark), #34495e) !important; }
+    .table th { border: none; font-weight: 700; padding: 1.25rem 1rem; background: linear-gradient(135deg, var(--text-dark), #34495e); color: white; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .table td { padding: 1.25rem 1rem; vertical-align: middle; border-color: rgba(233, 236, 239, 0.8); color: var(--text-dark); font-weight: 500; transition: var(--transition); }
+    .table-striped tbody tr:nth-of-type(odd) { background-color: rgba(248, 249, 250, 0.7); }
+    .table-hover tbody tr:hover { background-color: rgba(102, 126, 234, 0.08); transform: translateX(5px); }
+    
+    .status-pending { background: linear-gradient(135deg, #fff3cd, #ffeaa7); color: #856404; padding: 0.75rem 1.25rem; border-radius: 25px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; }
+    .status-approved { background: linear-gradient(135deg, #d4edda, #c3e6cb); color: #155724; padding: 0.75rem 1.25rem; border-radius: 25px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; }
+    .status-rejected { background: linear-gradient(135deg, #f8d7da, #f5c6cb); color: #721c24; padding: 0.75rem 1.25rem; border-radius: 25px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; }
+    .status-rescheduled { background: linear-gradient(135deg, #ffe8b6, #ffda6a); color: #856404; padding: 0.75rem 1.25rem; border-radius: 25px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; }
+    .status-completed { background: linear-gradient(135deg, #cce7ff, #b3d9ff); color: #004085; padding: 0.75rem 1.25rem; border-radius: 25px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; }
+    .status-no-show { background: linear-gradient(135deg, #e9ecef, #dee2e6); color: #495057; padding: 0.75rem 1.25rem; border-radius: 25px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; }
+
+    .btn-action { border: none; background: rgba(255,255,255,0.9); padding: 0.75rem; margin: 0 0.25rem; border-radius: 10px; transition: var(--transition); box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; }
     .btn-view { color: var(--info); }
     .btn-edit { color: var(--warning); }
     .btn-cancel { color: var(--danger); }
+    .btn-remove { color: var(--danger); } 
+    .btn-action:hover { transform: scale(1.1); background: white; }
+
+    .new-badge { background: linear-gradient(135deg, var(--danger), #c82333); color: white; border-radius: 12px; padding: 0.25rem 0.5rem; font-size: 0.7rem; font-weight: 700; margin-right: 0.5rem; animation: pulse 2s infinite; }
+    .btn-mark-all-viewed { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border: none; border-radius: 8px; padding: 0.5rem 1rem; color: white; font-weight: 600; font-size: 0.8rem; transition: var(--transition); margin-left: auto; }
     
-    .btn-action:hover {
-        transform: scale(1.1);
-        background: white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-
-    /* NEW BADGE STYLES */
-    .new-badge {
-        background: linear-gradient(135deg, var(--danger), #c82333);
-        color: white;
-        border-radius: 12px;
-        padding: 0.25rem 0.5rem;
-        font-size: 0.7rem;
-        font-weight: 700;
-        margin-right: 0.5rem;
-        animation: pulse 2s infinite;
-        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
-    }
-
-    /* MARK ALL AS VIEWED BUTTON */
-    .btn-mark-all-viewed {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        border: none;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        color: white;
-        font-weight: 600;
-        font-size: 0.8rem;
-        transition: var(--transition);
-        margin-left: auto;
-    }
-
-    .btn-mark-all-viewed:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
-
-    /* Modal Styles - ENHANCED */
-    .modal-content {
-        border-radius: var(--border-radius);
-        border: none;
-        box-shadow: var(--shadow);
-        overflow: hidden;
-        backdrop-filter: blur(20px);
-        background: rgba(255,255,255,0.95);
-    }
-
-    .modal-header {
-        border-bottom: 2px solid rgba(0,0,0,0.1);
-        padding: 1.5rem 2rem;
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        color: white;
-    }
-
-    .modal-header .modal-title {
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .modal-body {
-        padding: 2rem;
-    }
-
-    .modal-footer {
-        border-top: 2px solid rgba(0,0,0,0.1);
-        padding: 1.5rem 2rem;
-    }
-
-    .bg-warning {
-        background: linear-gradient(135deg, var(--warning), #e0a800) !important;
-    }
-
-    /* Alert Styles - ENHANCED */
-    .alert {
-        border-radius: 12px;
-        border: none;
-        margin: 1rem 0;
-        box-shadow: var(--shadow);
-        padding: 1.25rem 1.5rem;
-        backdrop-filter: blur(10px);
-        border-left: 6px solid;
-    }
-
-    .alert-success {
-        background: linear-gradient(135deg, rgba(39, 174, 96, 0.95) 0%, rgba(33, 154, 82, 0.98) 100%);
-        color: white;
-        border-left-color: #27ae60;
-    }
-
-    .alert-danger {
-        background: linear-gradient(135deg, rgba(231, 76, 60, 0.95) 0%, rgba(192, 57, 43, 0.98) 100%);
-        color: white;
-        border-left-color: #e74c3c;
-    }
-
-    .alert i {
-        margin-right: 0.75rem;
-        font-size: 1.2rem;
-    }
-
-    /* Empty State - ENHANCED */
-    .empty-state {
-        text-align: center;
-        padding: 3rem 2rem;
-        color: var(--text-light);
-    }
-
-    .empty-state i {
-        font-size: 4rem;
-        margin-bottom: 1.5rem;
-        color: #dee2e6;
-        opacity: 0.7;
-        display: block;
-    }
-
-    .empty-state h5 {
-        color: var(--text-light);
-        margin-bottom: 1rem;
-        font-weight: 600;
-        font-size: 1.3rem;
-    }
-
-    .empty-state p {
-        color: #999;
-        font-size: 1rem;
-        line-height: 1.6;
-        margin: 0;
-    }
-
-    /* Autocomplete Styles */
-    .autocomplete-container {
-        position: relative;
-    }
-
-    .autocomplete-suggestions {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: white;
-        border: 2px solid var(--primary);
-        border-top: none;
-        border-radius: 0 0 12px 12px;
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 1000;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-
-    .autocomplete-suggestion {
-        padding: 0.75rem 1rem;
-        cursor: pointer;
-        border-bottom: 1px solid #f0f0f0;
-        transition: var(--transition);
-        font-weight: 500;
-    }
-
-    .autocomplete-suggestion:hover,
-    .autocomplete-suggestion.active {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.05));
-        color: var(--primary);
-    }
-
-    .autocomplete-suggestion:last-child {
-        border-bottom: none;
-    }
-
-    /* Responsive Design - ENHANCED */
-    @media (max-width: 1200px) {
-        .sidebar {
-            width: 260px;
-        }
-        
-        .main-content {
-            margin-left: 260px;
-        }
-    }
-
-    @media (max-width: 992px) {
-        .school-name {
-            font-size: 1rem;
-        }
-
-        .logo-img {
-            width: 50px;
-            height: 50px;
-        }
-
-        .consultation-form-container,
-        .consultation-schedule {
-            padding: 2rem;
-        }
-
-        .header-info-section {
-            padding: 2rem;
-        }
-
-        .header-info-section h3 {
-            font-size: 1.8rem;
-        }
-
-        .notification-dropdown {
-            width: 350px;
-        }
-    }
-
-    @media (max-width: 768px) {
-        body {
-            padding-top: 70px;
-        }
-        
-        .top-header {
-            height: 70px;
-            padding: 0.5rem 0;
-        }
-        
-        .mobile-menu-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            top: 85px;
-            left: 20px;
-        }
-
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 70px;
-            height: calc(100vh - 70px);
-            z-index: 1020;
-            transform: translateX(-100%);
-            overflow-y: auto;
-            width: 300px;
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(30px);
-        }
-
-        .sidebar.active {
-            transform: translateX(0);
-        }
-
-        .sidebar-overlay {
-            top: 70px;
-        }
-
-        .sidebar-overlay.active {
-            display: block;
-        }
-
-        .main-content {
-            padding: 1.5rem;
-            width: 100%;
-            margin-left: 0;
-        }
-
-        .header-content {
-            padding: 0 1rem;
-        }
-
-        .school-name {
-            font-size: 0.9rem;
-        }
-
-        .republic, .clinic-title {
-            font-size: 0.65rem;
-        }
-
-        .consultation-form-container,
-        .consultation-schedule {
-            padding: 1.5rem;
-        }
-
-        .header-info-section {
-            padding: 1.5rem;
-        }
-
-        .header-info-section h3 {
-            font-size: 1.5rem;
-        }
-
-        .btn-action {
-            padding: 0.5rem;
-            margin: 0 0.125rem;
-            width: 38px;
-            height: 38px;
-        }
-
-        .table-responsive {
-            font-size: 0.9rem;
-        }
-
-        .btn-primary {
-            width: 100%;
-            justify-content: center;
-        }
-
-        .notification-dropdown {
-            width: 320px;
-            right: -50px;
-        }
-
-        .notification-dropdown::before {
-            right: 60px;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .header-info-section h3 {
-            font-size: 1.3rem;
-        }
-
-        .consultation-form-container,
-        .consultation-schedule {
-            padding: 1.25rem;
-        }
-
-        .btn-primary {
-            padding: 1rem 2rem;
-            font-size: 1rem;
-        }
-
-        .table td, .table th {
-            padding: 1rem 0.75rem;
-        }
-
-        .status-pending, .status-approved, 
-        .status-rejected, .status-completed {
-            font-size: 0.75rem;
-            padding: 0.5rem 1rem;
-        }
-
-        .main-content {
-            padding: 1.25rem;
-        }
-        
-        .mobile-menu-toggle {
-            top: 80px;
-            width: 45px;
-            height: 45px;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
-        .modal-header,
-        .modal-footer {
-            padding: 1.25rem 1.5rem;
-        }
-
-        .notification-dropdown {
-            width: 280px;
-            right: -30px;
-        }
-
-        .notification-dropdown::before {
-            right: 40px;
-        }
-
-        .notification-bell {
-            width: 45px;
-            height: 45px;
-        }
-
-        .notification-bell i {
-            font-size: 1.2rem;
-        }
-
-        .bell-badge {
-            width: 20px;
-            height: 20px;
-            font-size: 0.7rem;
-        }
-    }
+    .modal-content { border-radius: var(--border-radius); border: none; box-shadow: var(--shadow); backdrop-filter: blur(20px); background: rgba(255,255,255,0.95); }
+    .modal-header { border-bottom: 2px solid rgba(0,0,0,0.1); padding: 1.5rem 2rem; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
+    .bg-warning { background: linear-gradient(135deg, var(--warning), #e0a800) !important; }
     
-    @media (max-width: 480px) {
-        .logo-img {
-            width: 40px;
-            height: 40px;
-        }
-        
-        .school-name {
-            font-size: 0.8rem;
-        }
-        
-        .republic, .clinic-title {
-            font-size: 0.6rem;
-        }
-        
-        .mobile-menu-toggle {
-            width: 45px;
-            height: 45px;
-            top: 80px;
-            left: 15px;
-        }
-        
-        .main-content {
-            padding: 1rem;
-        }
-
-        .consultation-form-container,
-        .consultation-schedule {
-            padding: 1rem;
-        }
-
-        .header-info-section {
-            padding: 1.25rem;
-        }
-
-        .notification-dropdown {
-            width: 250px;
-            right: -20px;
-        }
-
-        .notification-dropdown::before {
-            right: 30px;
-        }
-    }
-
-    @media (max-width: 375px) {
-        .mobile-menu-toggle {
-            top: 75px;
-            left: 15px;
-            width: 40px;
-            height: 40px;
-        }
-        
-        .main-content {
-            padding: 0.75rem;
-        }
-
-        .consultation-form-container,
-        .consultation-schedule {
-            padding: 0.75rem;
-        }
-
-        .table-responsive {
-            font-size: 0.8rem;
-        }
-
-        .notification-dropdown {
-            width: 220px;
-            right: -10px;
-        }
-
-        .notification-dropdown::before {
-            right: 20px;
-        }
-    }
-
-    /* Animations - ENHANCED */
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes slideInLeft {
-        from {
-            opacity: 0;
-            transform: translateX(-30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-
-    .fade-in {
-        animation: fadeInUp 0.8s ease-out;
-    }
-
-    .slide-in-left {
-        animation: slideInLeft 0.6s ease-out;
-    }
-
-    /* Loading States */
-    .loading {
-        opacity: 0.7;
-        pointer-events: none;
-    }
-
-    /* Focus States for Accessibility */
-    .focus-visible {
-        outline: 3px solid var(--primary);
-        outline-offset: 2px;
-    }
-
-    /* Scrollbar Styling */
-    .sidebar::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .sidebar::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
-
-    .sidebar::-webkit-scrollbar-thumb {
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        border-radius: 10px;
-    }
-
-    .sidebar::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(135deg, var(--primary-dark), #6a4a9a);
-    }
-
-    /* Form Row Enhancements */
-    .form-row-enhanced {
-        margin-bottom: 1.5rem;
-    }
-
-    .form-row-enhanced .form-control:focus,
-    .form-row-enhanced .form-select:focus {
-        transform: translateY(-2px);
-    }
-
-    /* Touch Device Improvements */
-    .touch-device .btn-action {
-        padding: 1rem;
-        width: 44px;
-        height: 44px;
-    }
-
-    .touch-device .btn-primary {
-        min-height: 54px;
-    }
+    .alert-success { background: linear-gradient(135deg, rgba(39, 174, 96, 0.95) 0%, rgba(33, 154, 82, 0.98) 100%); color: #ffffff !important; border-left-color: #27ae60; }
+    .alert-danger { background: linear-gradient(135deg, rgba(231, 76, 60, 0.95) 0%, rgba(192, 57, 43, 0.98) 100%); color: white; border-left-color: #e74c3c; }
+    .alert i { margin-right: 0.75rem; font-size: 1.2rem; }
+    .empty-state { text-align: center; padding: 3rem 2rem; color: var(--text-light); }
+    .empty-state i { font-size: 4rem; margin-bottom: 1.5rem; color: #dee2e6; opacity: 0.7; display: block; }
+    .autocomplete-container { position: relative; }
+    .autocomplete-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid var(--primary); border-top: none; border-radius: 0 0 12px 12px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+    .autocomplete-suggestion { padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: var(--transition); font-weight: 500; }
+    .autocomplete-suggestion:hover { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.05)); color: var(--primary); }
+    
+    @media (max-width: 1200px) { .sidebar { width: 260px; } .main-content { margin-left: 260px; } }
+    @media (max-width: 992px) { .notification-dropdown { width: 350px; } }
+    @media (max-width: 768px) { body { padding-top: 70px; } .top-header { height: 70px; } .mobile-menu-toggle { display: flex; top: 85px; left: 20px; } .sidebar { transform: translateX(-100%); width: 300px; top: 70px; } .sidebar.active { transform: translateX(0); } .main-content { padding: 1.5rem; width: 100%; margin-left: 0; } .notification-dropdown { width: 320px; right: -50px; } .notification-dropdown::before { right: 60px; } }
+    @media (max-width: 576px) { .consultation-form-container, .consultation-schedule { padding: 1.25rem; } .btn-primary { padding: 1rem 2rem; font-size: 1rem; } .table td, .table th { padding: 1rem 0.75rem; } .status-pending, .status-approved, .status-rejected, .status-completed { font-size: 0.75rem; padding: 0.5rem 1rem; } .main-content { padding: 1.25rem; } .mobile-menu-toggle { top: 80px; width: 45px; height: 45px; } .notification-dropdown { width: 280px; right: -30px; } .notification-dropdown::before { right: 40px; } }
+    @media (max-width: 480px) { .mobile-menu-toggle { width: 45px; height: 45px; top: 80px; left: 15px; } .main-content { padding: 1rem; } .consultation-form-container, .consultation-schedule { padding: 1rem; } .notification-dropdown { width: 250px; right: -20px; } .notification-dropdown::before { right: 30px; } }
+    @media (max-width: 375px) { .mobile-menu-toggle { top: 75px; left: 15px; width: 40px; height: 40px; } .main-content { padding: 0.75rem; } .consultation-form-container, .consultation-schedule { padding: 0.75rem; } .table-responsive { font-size: 0.8rem; } .notification-dropdown { width: 220px; right: -10px; } .notification-dropdown::before { right: 20px; } }
+    
+    .fade-in { animation: fadeInUp 0.8s ease-out; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    .slide-in-left { animation: slideInLeft 0.6s ease-out; }
+    @keyframes slideInLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+    .touch-device .btn-action { padding: 1rem; width: 44px; height: 44px; }
+    .touch-device .btn-primary { min-height: 54px; }
   </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - ENHANCED -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - ENHANCED -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - ENHANCED -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -2002,7 +457,6 @@ $current_time = date('H:i');
                     </div>
                 </div>
 
-                <!-- ✅ NEW: BELL NOTIFICATION -->
                 <div class="notification-wrapper" style="position: relative;">
                     <div class="notification-bell" id="notificationBell">
                         <i class="fas fa-bell"></i>
@@ -2013,12 +467,11 @@ $current_time = date('H:i');
                         <?php endif; ?>
                     </div>
 
-                    <!-- ✅ UPDATED: NOTIFICATION DROPDOWN - WALANG EXPIRED ANNOUNCEMENTS -->
                     <div class="notification-dropdown" id="notificationDropdown">
                         <div class="notification-header">
                             <h5><i class="fas fa-bell"></i> Notifications</h5>
                             <?php if ($total_notifications > 0): ?>
-                                <span class="notification-count"><?= $total_notifications ?> new</span>
+                                <span class="notification-count" id="notificationCount"><?= $total_notifications ?> new</span>
                             <?php endif; ?>
                             
                             <?php if ($consultation_notifications > 0): ?>
@@ -2030,77 +483,87 @@ $current_time = date('H:i');
                         
                         <div class="notification-items">
                             <?php if ($total_notifications > 0): ?>
-                               <!-- Consultation Notifications Section -->
-<?php if ($consultation_notifications > 0): ?>
-<div class="notification-section">
-    <div class="notification-section-header">
-        <h6><i class="fas fa-calendar-check me-2"></i> Consultation Updates</h6>
-        <span class="notification-section-count"><?= $consultation_notifications ?></span>
-    </div>
-    
-    <?php if ($approved_count > 0): ?>
-        <div class="notification-item approved">
-            <div class="notification-icon approved">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="notification-content">
-                <p><?= $approved_count ?> Consultation<?= $approved_count > 1 ? 's' : '' ?> Approved</p>
-                <small>Your consultation request has been approved</small>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($disapproved_count > 0): ?>
-        <div class="notification-item rejected">
-            <div class="notification-icon rejected">
-                <i class="fas fa-times-circle"></i>
-            </div>
-            <div class="notification-content">
-                <p><?= $disapproved_count ?> Consultation<?= $disapproved_count > 1 ? 's' : '' ?> Disapproved</p>
-                <small>Your consultation request has been disapproved</small>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($rescheduled_count > 0): ?>
-        <div class="notification-item rescheduled">
-            <div class="notification-icon rescheduled">
-                <i class="fas fa-calendar-alt"></i>
-            </div>
-            <div class="notification-content">
-                <p><?= $rescheduled_count ?> Consultation<?= $rescheduled_count > 1 ? 's' : '' ?> Rescheduled</p>
-                <small>Your consultation has been rescheduled</small>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($cancelled_count > 0): ?>
-        <div class="notification-item cancelled">
-            <div class="notification-icon cancelled">
-                <i class="fas fa-ban"></i>
-            </div>
-            <div class="notification-content">
-                <p><?= $cancelled_count ?> Consultation<?= $cancelled_count > 1 ? 's' : '' ?> Cancelled</p>
-                <small>Your consultation has been cancelled</small>
-            </div>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($no_show_count > 0): ?>
-        <div class="notification-item no-show">
-            <div class="notification-icon no-show">
-                <i class="fas fa-user-times"></i>
-            </div>
-            <div class="notification-content">
-                <p><?= $no_show_count ?> Consultation<?= $no_show_count > 1 ? 's' : '' ?> Marked as No Show</p>
-                <small>You missed your scheduled consultation</small>
-            </div>
-        </div>
-    <?php endif; ?>
-</div>
-<?php endif; ?>
+                               <?php if ($consultation_notifications > 0): ?>
+                                <div class="notification-section">
+                                    <div class="notification-section-header">
+                                        <h6><i class="fas fa-calendar-check me-2"></i> Consultation Updates</h6>
+                                        <span class="notification-section-count"><?= $consultation_notifications ?></span>
+                                    </div>
+                                    
+                                    <?php if ($approved_count > 0): ?>
+                                        <div class="notification-item approved">
+                                            <div class="notification-icon approved">
+                                                <i class="fas fa-check-circle"></i>
+                                            </div>
+                                            <div class="notification-content">
+                                                <p><?= $approved_count ?> Consultation<?= $approved_count > 1 ? 's' : '' ?> Approved</p>
+                                                <small>Your consultation request has been approved</small>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if ($rejected_count > 0): ?>
+                                        <div class="notification-item rejected">
+                                            <div class="notification-icon rejected">
+                                                <i class="fas fa-times-circle"></i>
+                                            </div>
+                                            <div class="notification-content">
+                                                <p><?= $rejected_count ?> Consultation<?= $rejected_count > 1 ? 's' : '' ?> Rejected</p>
+                                                <small>Your consultation request has been rejected</small>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if ($rescheduled_count > 0): ?>
+                                        <div class="notification-item rescheduled">
+                                            <div class="notification-icon rescheduled">
+                                                <i class="fas fa-calendar-alt"></i>
+                                            </div>
+                                            <div class="notification-content">
+                                                <p><?= $rescheduled_count ?> Consultation<?= $rescheduled_count > 1 ? 's' : '' ?> Rescheduled</p>
+                                                <small>Your consultation has been rescheduled</small>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
 
-                                <!-- ✅ UPDATED: ANNOUNCEMENT NOTIFICATIONS SECTION - NEW ANNOUNCEMENTS LANG -->
+                                    <?php if ($completed_count > 0): ?>
+                                        <div class="notification-item completed">
+                                            <div class="notification-icon completed">
+                                                <i class="fas fa-clipboard-check"></i>
+                                            </div>
+                                            <div class="notification-content">
+                                                <p><?= $completed_count ?> Consultation<?= $completed_count > 1 ? 's' : '' ?> Completed</p>
+                                                <small>Your consultation has been marked as completed</small>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if ($cancelled_count > 0): ?>
+                                        <div class="notification-item cancelled">
+                                            <div class="notification-icon cancelled">
+                                                <i class="fas fa-ban"></i>
+                                            </div>
+                                            <div class="notification-content">
+                                                <p><?= $cancelled_count ?> Consultation<?= $cancelled_count > 1 ? 's' : '' ?> Cancelled</p>
+                                                <small>Your consultation has been cancelled</small>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if ($no_show_count > 0): ?>
+                                        <div class="notification-item no-show">
+                                            <div class="notification-icon no-show">
+                                                <i class="fas fa-user-times"></i>
+                                            </div>
+                                            <div class="notification-content">
+                                                <p><?= $no_show_count ?> Consultation<?= $no_show_count > 1 ? 's' : '' ?> Marked as No Show</p>
+                                                <small>You missed your scheduled consultation</small>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <?php endif; ?>
+
                                 <?php if ($announcement_notifications > 0): ?>
                                 <div class="notification-section">
                                     <div class="notification-section-header">
@@ -2119,8 +582,6 @@ $current_time = date('H:i');
                                             </div>
                                         </div>
                                     <?php endif; ?>
-                                    
-                                    <!-- ✅ INIWASAN: WALANG EXPIRED ANNOUNCEMENTS NOTIFICATION -->
                                 </div>
                                 <?php endif; ?>
                             <?php else: ?>
@@ -2148,7 +609,6 @@ $current_time = date('H:i');
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar - ENHANCED -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="student_dashboard.php" class="nav-item">
@@ -2164,7 +624,6 @@ $current_time = date('H:i');
                 <a href="schedule_consultation.php" class="nav-item active">
                     <i class="fas fa-calendar-plus"></i>
                     <span>Schedule Consultation</span>
-                    <!-- ✅ UPDATED: NOTIFICATION BADGES -->
                     <?php if ($consultation_notifications > 0): ?>
                         <div class="notification-badge total" title="Consultation updates: <?= $consultation_notifications ?>">
                             <?= $consultation_notifications ?>
@@ -2180,9 +639,8 @@ $current_time = date('H:i');
                 <a href="student_announcement.php" class="nav-item">
                     <i class="fas fa-bullhorn"></i>
                     <span>Announcement</span>
-                    <!-- ✅ UPDATED: ANNOUNCEMENT NOTIFICATION BADGE IN SIDEBAR - NEW ANNOUNCEMENTS LANG -->
                     <?php if ($announcement_notifications > 0): ?>
-                        <div class="notification-badge" title="New announcements: <?= $announcement_notifications ?>">
+                        <div class="notification-badge announcement" title="New announcements: <?= $announcement_notifications ?>">
                             <?= $announcement_notifications ?>
                         </div>
                     <?php endif; ?>
@@ -2200,9 +658,7 @@ $current_time = date('H:i');
             </nav>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <!-- Alerts - ENHANCED -->
             <div id="alertContainer" class="alert-container fade-in">
                 <?php if (!empty($success_message)): ?>
                     <div class="alert alert-success alert-dismissible fade show">
@@ -2217,63 +673,69 @@ $current_time = date('H:i');
                 <?php endif; ?>
             </div>
 
-            <!-- HEADER INFO SECTION - ENHANCED -->
             <div class="header-info-section fade-in">
                 <h3><i class="fas fa-calendar-plus me-3"></i>Schedule Consultation</h3>
                 <p>Book your medical consultation with our healthcare professionals</p>
                 
-               <!-- ✅ UPDATED: STATUS NOTIFICATION BADGES -->
-<?php if ($total_notifications > 0): ?>
-<div class="d-flex justify-content-center gap-3 mt-3 flex-wrap">
-    <?php if ($approved_count_main > 0): ?>
-        <div class="d-flex align-items-center gap-2">
-            <span class="notification-badge approved" title="Approved consultations">
-                <?= $approved_count_main ?>
-            </span>
-            <small class="text-dark fw-bold">Approved</small>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($disapproved_count_main > 0): ?>
-        <div class="d-flex align-items-center gap-2">
-            <span class="notification-badge rejected" title="Disapproved consultations">
-                <?= $disapproved_count_main ?>
-            </span>
-            <small class="text-dark fw-bold">Disapproved</small>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($rescheduled_count_main > 0): ?>
-        <div class="d-flex align-items-center gap-2">
-            <span class="notification-badge rescheduled" title="Rescheduled consultations">
-                <?= $rescheduled_count_main ?>
-            </span>
-            <small class="text-dark fw-bold">Rescheduled</small>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($cancelled_count_main > 0): ?>
-        <div class="d-flex align-items-center gap-2">
-            <span class="notification-badge cancelled" title="Cancelled consultations">
-                <?= $cancelled_count_main ?>
-            </span>
-            <small class="text-dark fw-bold">Cancelled</small>
-        </div>
-    <?php endif; ?>
-    
-    <?php if ($no_show_count_main > 0): ?>
-        <div class="d-flex align-items-center gap-2">
-            <span class="notification-badge no-show" title="No Show consultations">
-                <?= $no_show_count_main ?>
-            </span>
-            <small class="text-dark fw-bold">No Show</small>
-        </div>
-    <?php endif; ?>
-</div>
-<?php endif; ?>
+               <?php if ($total_notifications > 0): ?>
+                <div class="d-flex justify-content-center gap-3 mt-3 flex-wrap">
+                    <?php if ($approved_count_main > 0): ?>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="notification-badge approved" title="Approved consultations">
+                                <?= $approved_count_main ?>
+                            </span>
+                            <small class="text-dark fw-bold">Approved</small>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($rejected_count_main > 0): ?>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="notification-badge rejected" title="Rejected consultations">
+                                <?= $rejected_count_main ?>
+                            </span>
+                            <small class="text-dark fw-bold">Rejected</small>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($rescheduled_count_main > 0): ?>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="notification-badge rescheduled" title="Rescheduled consultations">
+                                <?= $rescheduled_count_main ?>
+                            </span>
+                            <small class="text-dark fw-bold">Rescheduled</small>
+                        </div>
+                    <?php endif; ?>
+                    
+                     <?php if ($completed_count_main > 0): ?>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="notification-badge completed" style="background: linear-gradient(135deg, #cce7ff, #b3d9ff); color: #004085;" title="Completed consultations">
+                                <?= $completed_count_main ?>
+                            </span>
+                            <small class="text-dark fw-bold">Completed</small>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($cancelled_count_main > 0): ?>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="notification-badge cancelled" title="Cancelled consultations">
+                                <?= $cancelled_count_main ?>
+                            </span>
+                            <small class="text-dark fw-bold">Cancelled</small>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($no_show_count_main > 0): ?>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="notification-badge no-show" title="No Show consultations">
+                                <?= $no_show_count_main ?>
+                            </span>
+                            <small class="text-dark fw-bold">No Show</small>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
             </div>
 
-            <!-- ✅ NEW: PENDING APPOINTMENT RESTRICTION -->
             <?php if ($pending_count > 0): ?>
             <div class="pending-restriction-alert fade-in">
                 <h5><i class="fas fa-exclamation-triangle"></i> Scheduling Restricted</h5>
@@ -2281,12 +743,10 @@ $current_time = date('H:i');
             </div>
             <?php endif; ?>
 
-            <!-- Consultation Form - ENHANCED -->
             <div class="consultation-form-container fade-in">
                 <h4><i class="fas fa-calendar-plus me-2"></i>New Consultation Request</h4>
                 <form method="POST" action="" id="consultationForm">
                     <input type="hidden" name="action" value="create">
-                    <!-- ✅ CSRF TOKEN FIELD -->
                     <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                     
                     <div class="row form-row-enhanced">
@@ -2296,7 +756,7 @@ $current_time = date('H:i');
                                 <input type="date" name="date" class="form-control" 
                                        min="<?= $current_date; ?>" 
                                        value="<?= $current_date; ?>" 
-                                       <?= $pending_count > 0 || $consultation_count >= 3 ? 'disabled' : '' ?> 
+                                       <?= $pending_count > 0 ? 'disabled' : '' ?> 
                                        required>
                                 <small class="form-text">Select your preferred date</small>
                             </div>
@@ -2305,7 +765,7 @@ $current_time = date('H:i');
                             <div class="form-group">
                                 <label class="form-label"><strong>Time:</strong></label>
                                 <select name="time" class="form-select" id="timeSelect" 
-                                        <?= $pending_count > 0 || $consultation_count >= 3 ? 'disabled' : '' ?> 
+                                        <?= $pending_count > 0 ? 'disabled' : '' ?> 
                                         required>
                                     <option value="">Select Time</option>
                                     <option value="08:00">8:00 AM</option>
@@ -2329,7 +789,7 @@ $current_time = date('H:i');
                     <div class="form-group mb-4">
                         <label class="form-label"><strong>Reason/Concern:</strong></label>
                         <select name="concern" class="form-select" id="concernSelect" 
-                                <?= $pending_count > 0 || $consultation_count >= 3 ? 'disabled' : '' ?> 
+                                <?= $pending_count > 0 ? 'disabled' : '' ?> 
                                 required>
                             <option value="">Select Concern</option>
                             <option value="Medicine">Medicine</option>
@@ -2345,13 +805,12 @@ $current_time = date('H:i');
                         </select>
                         <small class="form-text">What is the reason for your consultation?</small>
                         
-                        <!-- Other Concern Textbox with Autocomplete -->
                         <div id="otherConcernContainer" class="mt-3" style="display: none;">
                             <label class="form-label"><strong>Please specify your concern:</strong></label>
                             <div class="autocomplete-container">
                                 <input type="text" name="other_concern" id="otherConcern" class="form-control" 
                                        placeholder="Start typing to see suggestions..."
-                                       <?= $pending_count > 0 || $consultation_count >= 3 ? 'disabled' : '' ?>>
+                                       <?= $pending_count > 0 ? 'disabled' : '' ?>>
                                 <div id="autocompleteSuggestions" class="autocomplete-suggestions" style="display: none;"></div>
                             </div>
                             <small class="form-text">Type your specific reason for consultation or select from suggestions</small>
@@ -2362,18 +821,16 @@ $current_time = date('H:i');
                         <label class="form-label"><strong>Additional Notes (Optional):</strong></label>
                         <textarea name="notes" class="form-control" rows="4" 
                                   placeholder="Please provide any additional information about your condition or concerns..."
-                                  <?= $pending_count > 0 || $consultation_count >= 3 ? 'disabled' : '' ?>></textarea>
+                                  <?= $pending_count > 0 ? 'disabled' : '' ?>></textarea>
                         <small class="form-text">Any details that might help the medical staff</small>
                     </div>
                     
                     <div class="form-actions text-center">
                         <button type="submit" class="btn btn-primary btn-lg" 
-                                <?= $pending_count > 0 || $consultation_count >= 3 ? 'disabled' : '' ?>>
+                                <?= $pending_count > 0 ? 'disabled' : '' ?>>
                             <i class="fas fa-paper-plane me-2"></i> 
                             <?php if ($pending_count > 0): ?>
                                 PENDING CONSULTATION RESTRICTED
-                            <?php elseif ($consultation_count >= 3): ?>
-                                CONSULTATION LIMIT REACHED
                             <?php else: ?>
                                 SUBMIT CONSULTATION REQUEST
                             <?php endif; ?>
@@ -2384,17 +841,11 @@ $current_time = date('H:i');
                                 <i class="fas fa-exclamation-triangle"></i> 
                                 <strong>Scheduling Restricted:</strong> You cannot schedule new consultations while you have pending appointment requests.
                             </div>
-                        <?php elseif ($consultation_count >= 3): ?>
-                            <div class="alert alert-warning mt-3">
-                                <i class="fas fa-exclamation-triangle"></i> 
-                                <strong>Limit Reached:</strong> You have reached the maximum of 3 active consultations. Please wait for some to be completed or cancel existing ones.
-                            </div>
                         <?php endif; ?>
                     </div>
                 </form>
             </div>
 
-            <!-- Consultation Table - ENHANCED -->
             <div class="consultation-schedule fade-in">
                 <h3 class="schedule-title"><i class="fas fa-calendar-alt me-2"></i>YOUR CONSULTATION SCHEDULE</h3>
                 
@@ -2433,12 +884,12 @@ $current_time = date('H:i');
                                             <td><?= htmlspecialchars(formatTime($c['time'])); ?></td>
                                             <td><?= htmlspecialchars($c['requested']); ?></td>
                                             <td>
-                                                <span class="status-<?= strtolower($c['status']); ?>">
+                                                <span class="status-<?= strtolower(str_replace(' ', '-', $c['status'])); ?>">
                                                     <?= htmlspecialchars($c['status']); ?>
                                                 </span>
                                             </td>
                                             <td>
-                                                <?php if (!$c['is_viewed'] && in_array($c['status'], ['Approved', 'Disapproved', 'Rescheduled', 'Cancelled', 'No Show'])): ?>
+                                                <?php if (!$c['is_viewed'] && in_array($c['status'], ['Approved', 'Rejected', 'Rescheduled', 'Completed', 'Cancelled', 'No Show'])): ?>
                                                     <span class="new-badge" title="New Update">NEW</span>
                                                 <?php endif; ?>
                                                 
@@ -2464,6 +915,15 @@ $current_time = date('H:i');
                                                         <i class="fas fa-times"></i>
                                                     </a>
                                                 <?php endif; ?>
+                                                
+                                                <?php if ($c['status'] === 'Rejected'): ?>
+                                                    <a href="?remove=<?= $c['id']; ?>" 
+                                                       class="btn-action btn-remove" 
+                                                       onclick="return confirm('Are you sure you want to remove this rejected request from your history?')"
+                                                       title="Remove Request">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </a>
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -2476,7 +936,6 @@ $current_time = date('H:i');
         </main>
     </div>
 
-    <!-- View Modal - ENHANCED -->
     <div class="modal fade" id="viewModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -2485,22 +944,19 @@ $current_time = date('H:i');
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="viewBody">
-                    <!-- Content will be loaded by JavaScript -->
-                </div>
+                    </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn-secondary btn" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Modal - ENHANCED -->
     <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <form method="POST" class="modal-content">
                 <input type="hidden" name="action" value="edit">
                 <input type="hidden" name="consultation_id" id="edit_consultation_id">
-                <!-- ✅ CSRF TOKEN FIELD -->
                 <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                 
                 <div class="modal-header bg-warning">
@@ -2538,10 +994,11 @@ $current_time = date('H:i');
         const viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
         const editModal = new bootstrap.Modal(document.getElementById('editModal'));
 
-        // ✅ NEW: BELL NOTIFICATION FUNCTIONALITY
+        // ✅ BELL NOTIFICATION FUNCTIONALITY
         const notificationBell = document.getElementById('notificationBell');
         const notificationDropdown = document.getElementById('notificationDropdown');
         const bellBadge = document.getElementById('bellBadge');
+        const notificationCount = document.getElementById('notificationCount'); // The label inside
 
         // Toggle notification dropdown
         if (notificationBell) {
@@ -2558,13 +1015,33 @@ $current_time = date('H:i');
                     this.style.transform = 'scale(1.1) rotate(0deg)';
                 }, 300);
                 
-                // Remove pulse animation when clicked
+                 // ✅ FIX: HIDE BADGE AUTOMATICALLY (VISUAL ONLY)
                 if (bellBadge) {
-                    bellBadge.style.animation = 'none';
+                    bellBadge.style.transition = 'opacity 0.3s ease';
+                    bellBadge.style.opacity = '0';
                     setTimeout(() => {
-                        bellBadge.style.animation = 'pulse 2s infinite';
-                    }, 100);
+                        bellBadge.style.display = 'none';
+                    }, 300);
                 }
+                // HIDE "New" LABEL inside dropdown (optional but cleaner)
+                if (notificationCount) {
+                    notificationCount.style.display = 'none';
+                }
+
+                // ✅ SEND AJAX REQUEST TO UPDATE DATABASE (Persistence)
+                // This ensures badge stays hidden on refresh
+                const formData = new FormData();
+                formData.append('action', 'mark_read');
+
+                fetch('schedule_consultation.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(data => {
+                    // console.log('Notifications marked as read:', data); 
+                })
+                .catch(error => console.error('Error marking notifications as read:', error));
             });
 
             // Close dropdown when clicking outside
@@ -2922,7 +1399,7 @@ $current_time = date('H:i');
             "Dependent personality disorder", "Obsessive-compulsive personality disorder",
             "Paraphilic disorders", "Voyeuristic disorder", "Exhibitionistic disorder",
             "Frotteuristic disorder", "Sexual masochism disorder", "Sexual sadism disorder",
-            "Pedophilic disorder", "Fetishistic disorder", "Transvestic disorder", "Gender dysphoria"
+            "Pedophilic disorder", "Fetishistic disorder", "Transvestic disorder", "Gender dysphoria",
         ];
 
         // Function to handle concern selection
@@ -3172,44 +1649,35 @@ $current_time = date('H:i');
             });
         });
 
+        // ✅ UPDATED: Include 'Completed' in viewConsultation
         function viewConsultation(c, isViewed) {
             const body = document.getElementById('viewBody');
+            
+            // Generate the status badge HTML (using the same class names)
+            // Fix for status styling in modal (handle spaces if any, convert to lowercase)
+            const statusClass = 'status-' + c.status.toLowerCase().replace(' ', '-');
+            
             body.innerHTML = `
                 <div class="consultation-details">
                     <div class="row">
                         <div class="col-md-6">
                             <p><strong>Date:</strong><br>${c.date}</p>
                             <p><strong>Time:</strong><br>${c.time}</p>
-                            <p><strong>Status:</strong><br><span class="status-${c.status.toLowerCase()}">${c.status}</span></p>
+                            <p><strong>Status:</strong><br><span class="${statusClass}">${c.status}</span></p>
                         </div>
                         <div class="col-md-6">
                             <p><strong>Concern:</strong><br>${c.requested}</p>
                             <p><strong>Created:</strong><br>${c.created_at}</p>
                         </div>
                     </div>
-                    ${c.notes ? `
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <p><strong>Additional Notes:</strong></p>
-                            <div class="alert alert-info">${c.notes}</div>
-                        </div>
-                    </div>` : ''}
-                    
-                    ${!isViewed && ['Approved', 'Disapproved', 'Rescheduled', 'Cancelled', 'No Show'].includes(c.status) ? `
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="alert alert-warning">
-                                <i class="fas fa-info-circle"></i> This is a new update. It will be marked as viewed.
-                            </div>
-                        </div>
-                    </div>` : ''}
+                    ${c.notes ? `<div class="row mt-3"><div class="col-12"><p><strong>Additional Notes:</strong></p><div class="alert alert-info">${c.notes}</div></div></div>` : ''}
+                    ${!isViewed && ['Approved', 'Rejected', 'Rescheduled', 'Completed', 'Cancelled', 'No Show'].includes(c.status) ? `<div class="row mt-4"><div class="col-12"><div class="alert alert-warning"><i class="fas fa-info-circle"></i> This is a new update. It will be marked as viewed.</div></div></div>` : ''}
                 </div>
             `;
-            
             viewModal.show();
             
-            // Auto-mark as viewed when modal is shown (for unviewed consultations with status updates)
-            if (!isViewed && ['Approved', 'Disapproved', 'Rescheduled', 'Cancelled', 'No Show'].includes(c.status)) {
+            // Only mark as viewed if it's an update status
+            if (!isViewed && ['Approved', 'Rejected', 'Rescheduled', 'Completed', 'Cancelled', 'No Show'].includes(c.status)) {
                 markAsViewed(c.id);
             }
         }

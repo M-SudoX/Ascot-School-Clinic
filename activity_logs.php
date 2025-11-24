@@ -1,24 +1,65 @@
 <?php
+// ==================== SESSION AND SECURITY ====================
 session_start();
 require 'includes/db_connect.php';
 require 'includes/activity_logger.php';
 
-// ✅ Check kung naka-login ang student
+// ✅ SECURITY CHECK: Ensure student is logged in
 if (!isset($_SESSION['student_id'])) {
     header("Location: student_login.php");
     exit();
 }
 
 $student_id = $_SESSION['student_id'];
-$student_number = $_SESSION['student_number'] ?? ($_SESSION['student_id'] ?? 'N/A');
 
-// ✅ NEW: FETCH CONSULTATION STATUS COUNTS FOR NOTIFICATIONS
+// ==================== 🟢 AJAX HANDLER (FIX: UPDATE DB & SESSION) ====================
+// Ito ang sasalo ng signal galing sa JavaScript para i-update ang status
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'mark_read') {
+    try {
+        // 1. Update Consultation Requests sa Database (Gawin viewed = TRUE)
+        $updateStmt = $pdo->prepare("UPDATE consultation_requests SET is_viewed = TRUE WHERE student_id = ?");
+        $updateStmt->execute([$student_id]);
+
+        // 2. Update Announcements sa Session (Gamitin ang Database Time para accurate)
+        $timeStmt = $pdo->query("SELECT NOW()");
+        $dbCurrentTime = $timeStmt->fetchColumn();
+
+        $_SESSION['announcements_last_viewed'] = $dbCurrentTime;
+        
+        echo "success";
+    } catch (Exception $e) {
+        echo "error";
+    }
+    exit; // Tigil dito para hindi mag-load ang buong HTML
+}
+// ====================================================================================
+
+$student_number = $_SESSION['student_number'] ?? '';
+
+// ✅ FETCH USER INFO IF NOT IN SESSION (Fallback)
+if (empty($student_number)) {
+    $stmt = $pdo->prepare("SELECT student_number, fullname FROM users WHERE id = ?");
+    $stmt->execute([$student_id]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $student_number = $user['student_number'] ?? '';
+    if(isset($user['fullname'])) $_SESSION['fullname'] = $user['fullname'];
+    $_SESSION['student_number'] = $student_number;
+}
+
+if (!$student_number) {
+    die("Student record not found.");
+}
+
+// ==================== NOTIFICATION LOGIC (CONSISTENT) ====================
+
+// ✅ FETCH CONSULTATION STATUS COUNTS (UNVIEWED ONLY)
 try {
     $status_counts_stmt = $pdo->prepare("
         SELECT status, COUNT(*) as count 
         FROM consultation_requests 
         WHERE student_id = ? 
-        AND status IN ('Approved', 'Rejected', 'Rescheduled', 'Cancelled')
+        AND status IN ('Approved', 'Disapproved', 'Rescheduled', 'Cancelled', 'No Show', 'Rejected')
+        AND is_viewed = FALSE
         GROUP BY status
     ");
     $status_counts_stmt->execute([$student_id]);
@@ -26,89 +67,74 @@ try {
     
     // Initialize counts
     $approved_count = 0;
-    $rejected_count = 0;
+    $disapproved_count = 0;
+    $rejected_count = 0; // Added rejected count
     $rescheduled_count = 0;
     $cancelled_count = 0;
-    $consultation_notifications = 0;
+    $no_show_count = 0;
     
     // Process counts
     foreach ($status_counts as $status_count) {
         switch ($status_count['status']) {
-            case 'Approved':
-                $approved_count = $status_count['count'];
-                break;
-            case 'Rejected':
-                $rejected_count = $status_count['count'];
-                break;
-            case 'Rescheduled':
-                $rescheduled_count = $status_count['count'];
-                break;
-            case 'Cancelled':
-                $cancelled_count = $status_count['count'];
-                break;
+            case 'Approved': $approved_count = $status_count['count']; break;
+            case 'Disapproved': $disapproved_count = $status_count['count']; break;
+            case 'Rejected': $rejected_count = $status_count['count']; break;
+            case 'Rescheduled': $rescheduled_count = $status_count['count']; break;
+            case 'Cancelled': $cancelled_count = $status_count['count']; break;
+            case 'No Show': $no_show_count = $status_count['count']; break;
         }
     }
     
-    $consultation_notifications = $approved_count + $rejected_count + $rescheduled_count + $cancelled_count;
+    $consultation_notifications = $approved_count + $disapproved_count + $rejected_count + $rescheduled_count + $cancelled_count + $no_show_count;
     
 } catch (PDOException $e) {
-    $approved_count = 0;
-    $rejected_count = 0;
-    $rescheduled_count = 0;
-    $cancelled_count = 0;
     $consultation_notifications = 0;
 }
 
-// ✅ FIXED: ANNOUNCEMENT COUNTS - TANGGALIN ANG EXPIRED SA NOTIFICATION COUNT
+// ✅ UPDATED: FETCH ANNOUNCEMENT COUNTS (WITH SESSION CHECK)
 try {
-    // COUNT NEW ANNOUNCEMENTS (last 7 days) - ACTIVE LANG AT HINDI EXPIRED
-    $new_announcements_stmt = $pdo->prepare("
-        SELECT COUNT(*) as count 
-        FROM announcements 
-        WHERE post_on_front = 1 
+    // First, run expiration check to ensure data is fresh
+    $currentDateTime = date('Y-m-d H:i:s');
+    $expire_stmt = $pdo->prepare("
+        UPDATE announcements 
+        SET is_active = 0, status = 'inactive'
+        WHERE expiry_date IS NOT NULL 
+        AND expiry_date <= ? 
         AND is_active = 1
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        AND (expiry_date IS NULL OR expiry_date > NOW())
     ");
-    $new_announcements_stmt->execute();
+    $expire_stmt->execute([$currentDateTime]);
+
+    // Build query base
+    $sql = "SELECT COUNT(*) as count 
+            FROM announcements 
+            WHERE post_on_front = 1 
+            AND is_active = 1 
+            AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            AND (expiry_date IS NULL OR expiry_date > NOW())";
+
+    // FIX: Check session timestamp para hindi na mag-notify kung na-view na
+    if (isset($_SESSION['announcements_last_viewed'])) {
+        $sql .= " AND created_at > :last_viewed";
+        $new_announcements_stmt = $pdo->prepare($sql);
+        $new_announcements_stmt->execute([':last_viewed' => $_SESSION['announcements_last_viewed']]);
+    } else {
+        $new_announcements_stmt = $pdo->prepare($sql);
+        $new_announcements_stmt->execute();
+    }
+
     $new_announcements_count = $new_announcements_stmt->fetch(PDO::FETCH_ASSOC)['count'];
     
-    // ✅ FIXED: TANGGALIN ANG COUNTING NG EXPIRED ANNOUNCEMENTS
-    $expired_announcements_count = 0; // Hindi na kasama sa notification count
-    
-    // ✅ FIXED: TOTAL ANNOUNCEMENT NOTIFICATIONS - NEW ANNOUNCEMENTS LANG
-    $announcement_notifications = $new_announcements_count; // Expired hindi na kasama
-    
-    // ✅ FIXED: TOTAL ALL NOTIFICATIONS
+    $announcement_notifications = $new_announcements_count;
     $total_notifications = $consultation_notifications + $announcement_notifications;
     
 } catch (PDOException $e) {
-    $new_announcements_count = 0;
-    $expired_announcements_count = 0;
     $announcement_notifications = 0;
     $total_notifications = $consultation_notifications;
 }
 
-$stmt = $pdo->prepare("SELECT fullname, student_number, course_year, cellphone_number 
-                       FROM student_information 
-                       WHERE student_number = :student_number LIMIT 1");
-$stmt->execute([':student_number' => $student_number]);
-$student_info = $stmt->fetch(PDO::FETCH_ASSOC);
+// ==================== ACTIVITY LOGS LOGIC ====================
 
-// ✅ ERROR HANDLING: BACKUP SYSTEM KUNG WALANG MAKUHA SA DATABASE
-if (!$student_info) {
-    $student_info = [
-        'fullname' => $_SESSION['fullname'] ?? 'N/A',
-        'student_number' => $student_number,
-        'course_year' => 'Not set',
-        'cellphone_number' => 'Not set'
-    ];
-} else {
-    $_SESSION['fullname'] = $student_info['fullname'];
-    $_SESSION['student_number'] = $student_info['student_number'];
-}
-
-// ✅ Fetch ONLY SPECIFIC ACTION LOGS - hindi kasama ang viewed/accessed/login/logout
+// ✅ Fetch ONLY SPECIFIC ACTION LOGS - exclude login/logout for cleaner view
 try {
     $stmt = $pdo->prepare("
         SELECT id, action, log_date 
@@ -133,9 +159,7 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Activity Logs - ASCOT Clinic</title>
     
-    <!-- Bootstrap -->
     <link href="assets/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link href="assets/webfonts/all.min.css" rel="stylesheet">
     
     <style>
@@ -171,11 +195,9 @@ try {
             padding-top: 80px;
             line-height: 1.6;
             min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Header Styles - ENHANCED */
+        /* Header Styles */
         .top-header {
             background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
             padding: 0.75rem 0;
@@ -249,7 +271,7 @@ try {
             letter-spacing: 0.5px;
         }
 
-        /* ✅ NEW: BELL NOTIFICATION STYLES */
+        /* Bell Notification Styles */
         .notification-bell {
             position: relative;
             display: flex;
@@ -301,21 +323,12 @@ try {
         }
 
         @keyframes pulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
-            }
-            50% {
-                transform: scale(1.1);
-                box-shadow: 0 4px 12px rgba(220, 53, 69, 0.6);
-            }
-            100% {
-                transform: scale(1);
-                box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4);
-            }
+            0% { transform: scale(1); box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4); }
+            50% { transform: scale(1.1); box-shadow: 0 4px 12px rgba(220, 53, 69, 0.6); }
+            100% { transform: scale(1); box-shadow: 0 2px 8px rgba(220, 53, 69, 0.4); }
         }
 
-        /* ✅ NEW: NOTIFICATION DROPDOWN */
+        /* Notification Dropdown */
         .notification-dropdown {
             position: absolute;
             top: 100%;
@@ -385,13 +398,8 @@ try {
             overflow-y: auto;
         }
 
-        .notification-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .notification-section:last-child {
-            margin-bottom: 0;
-        }
+        .notification-section { margin-bottom: 1.5rem; }
+        .notification-section:last-child { margin-bottom: 0; }
 
         .notification-section-header {
             display: flex;
@@ -429,6 +437,7 @@ try {
             margin-bottom: 0.75rem;
             transition: var(--transition);
             border-left: 4px solid;
+            cursor: pointer;
         }
 
         .notification-item:hover {
@@ -436,35 +445,13 @@ try {
             transform: translateX(5px);
         }
 
-        .notification-item.approved {
-            border-left-color: var(--success);
-            background: rgba(40, 167, 69, 0.05);
-        }
-
-        .notification-item.rejected {
-            border-left-color: var(--danger);
-            background: rgba(220, 53, 69, 0.05);
-        }
-
-        .notification-item.rescheduled {
-            border-left-color: var(--warning);
-            background: rgba(255, 193, 7, 0.05);
-        }
-
-        .notification-item.cancelled {
-            border-left-color: var(--secondary);
-            background: rgba(118, 75, 162, 0.05);
-        }
-
-        .notification-item.new-announcement {
-            border-left-color: var(--success);
-            background: rgba(40, 167, 69, 0.05);
-        }
-
-        .notification-item.expired-announcement {
-            border-left-color: var(--danger);
-            background: rgba(220, 53, 69, 0.05);
-        }
+        .notification-item.approved { border-left-color: var(--success); background: rgba(40, 167, 69, 0.05); }
+        .notification-item.disapproved { border-left-color: var(--danger); background: rgba(220, 53, 69, 0.05); }
+        .notification-item.rejected { border-left-color: var(--danger); background: rgba(220, 53, 69, 0.05); }
+        .notification-item.rescheduled { border-left-color: var(--warning); background: rgba(255, 193, 7, 0.05); }
+        .notification-item.cancelled { border-left-color: var(--secondary); background: rgba(118, 75, 162, 0.05); }
+        .notification-item.no-show { border-left-color: #6c757d; background: rgba(108, 117, 125, 0.05); }
+        .notification-item.new-announcement { border-left-color: var(--success); background: rgba(40, 167, 69, 0.05); }
 
         .notification-icon {
             width: 40px;
@@ -477,33 +464,13 @@ try {
             color: white;
         }
 
-        .notification-icon.approved {
-            background: var(--success);
-        }
-
-        .notification-icon.rejected {
-            background: var(--danger);
-        }
-
-        .notification-icon.rescheduled {
-            background: var(--warning);
-        }
-
-        .notification-icon.cancelled {
-            background: var(--secondary);
-        }
-
-        .notification-icon.new-announcement {
-            background: var(--success);
-        }
-
-        .notification-icon.expired-announcement {
-            background: var(--danger);
-        }
-
-        .notification-content {
-            flex: 1;
-        }
+        .notification-icon.approved { background: var(--success); }
+        .notification-icon.disapproved { background: var(--danger); }
+        .notification-icon.rejected { background: var(--danger); }
+        .notification-icon.rescheduled { background: var(--warning); }
+        .notification-icon.cancelled { background: var(--secondary); }
+        .notification-icon.no-show { background: #6c757d; }
+        .notification-icon.new-announcement { background: var(--success); }
 
         .notification-content p {
             margin: 0;
@@ -529,12 +496,7 @@ try {
             opacity: 0.5;
         }
 
-        .notification-empty p {
-            margin: 0;
-            font-weight: 600;
-        }
-
-        /* Mobile Menu Toggle - ENHANCED */
+        /* Mobile Menu Toggle */
         .mobile-menu-toggle {
             display: none;
             position: fixed;
@@ -556,16 +518,15 @@ try {
         .mobile-menu-toggle:hover {
             transform: scale(1.05);
             background: var(--primary-dark);
-            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
         }
 
-        /* Dashboard Container - ENHANCED */
+        /* Dashboard Container */
         .dashboard-container {
             display: flex;
             min-height: calc(100vh - 80px);
         }
 
-        /* Sidebar Styles - ENHANCED */
+        /* Sidebar Styles */
         .sidebar {
             width: 280px;
             background: rgba(255, 255, 255, 0.95);
@@ -596,10 +557,7 @@ try {
             color: var(--text-dark);
             text-decoration: none;
             transition: var(--transition);
-            border: none;
-            background: none;
             width: 100%;
-            text-align: left;
             cursor: pointer;
             font-weight: 600;
             border-radius: 0 12px 12px 0;
@@ -625,9 +583,7 @@ try {
             transform: translateX(5px);
         }
 
-        .nav-item:hover::before {
-            width: 100%;
-        }
+        .nav-item:hover::before { width: 100%; }
 
         .nav-item.active {
             background: linear-gradient(90deg, rgba(255,218,106,0.15) 0%, transparent 100%);
@@ -635,22 +591,11 @@ try {
             border-left: 6px solid var(--accent);
         }
 
-        .nav-item.active::before {
-            width: 100%;
-        }
-
         .nav-item i {
             width: 24px;
             margin-right: 1rem;
             font-size: 1.2rem;
             color: inherit;
-            transition: var(--transition);
-        }
-
-        .nav-item span {
-            flex: 1;
-            color: inherit;
-            font-size: 0.95rem;
         }
 
         .nav-item.logout {
@@ -664,7 +609,7 @@ try {
             color: var(--danger);
         }
 
-        /* ✅ NEW: SIDEBAR NOTIFICATION BADGES */
+        /* Sidebar Notification Badges */
         .notification-badge {
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
@@ -681,44 +626,22 @@ try {
             box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
             transition: var(--transition);
         }
-
-        .notification-badge.approved {
-            background: linear-gradient(135deg, var(--success), #218838);
-        }
-
-        .notification-badge.rejected {
-            background: linear-gradient(135deg, var(--danger), #c82333);
-        }
-
-        .notification-badge.rescheduled {
-            background: linear-gradient(135deg, var(--warning), #e0a800);
-        }
-
-        .notification-badge.cancelled {
-            background: linear-gradient(135deg, var(--secondary), #6f42c1);
-        }
-
-        .notification-badge.total {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            font-size: 0.75rem;
-            min-width: 24px;
-            height: 24px;
-        }
+        
+        .notification-badge.announcement { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+        .notification-badge.total { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
 
         .nav-item:hover .notification-badge {
             transform: scale(1.1);
         }
 
-        /* Main Content - ENHANCED */
+        /* Main Content */
         .main-content {
             flex: 1;
             padding: 2rem;
             overflow-x: hidden;
             margin-left: 280px;
-            margin-top: 0;
         }
 
-        /* Sidebar Overlay for Mobile - ENHANCED */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -731,11 +654,9 @@ try {
             z-index: 1019;
         }
 
-        .sidebar-overlay.active {
-            display: block;
-        }
+        .sidebar-overlay.active { display: block; }
 
-        /* WELCOME SECTION - ENHANCED */
+        /* Welcome Section */
         .welcome-section {
             background: linear-gradient(135deg, var(--accent-light) 0%, rgba(255,247,218,0.9) 100%);
             border-radius: var(--border-radius);
@@ -748,24 +669,11 @@ try {
             overflow: hidden;
         }
 
-        .welcome-section::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 20px 20px;
-            opacity: 0.3;
-        }
-
         .welcome-content h1 {
             color: var(--text-dark);
             font-weight: 800;
             font-size: 2.2rem;
             margin-bottom: 0.5rem;
-            position: relative;
         }
 
         .welcome-content p {
@@ -775,7 +683,7 @@ try {
             font-weight: 500;
         }
 
-        /* ACTIVITY LOGS CARD - ENHANCED */
+        /* Activity Card Styles */
         .activity-card {
             background: rgba(255,255,255,0.95);
             backdrop-filter: blur(20px);
@@ -789,25 +697,7 @@ try {
             overflow: hidden;
         }
 
-        .activity-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-        }
-
-        .activity-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            transition: left 0.6s ease;
-        }
-
-        .activity-card:hover::before {
-            left: 100%;
-        }
+        .activity-card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
 
         .card-header {
             display: flex;
@@ -839,14 +729,9 @@ try {
             color: var(--text-dark);
             background: linear-gradient(135deg, var(--accent), #ffd24a);
             box-shadow: 0 4px 15px rgba(255,218,106,0.4);
-            transition: var(--transition);
         }
 
-        .activity-card:hover .card-icon {
-            transform: scale(1.1) rotate(5deg);
-        }
-
-        /* Table Styles - ENHANCED */
+        /* Table Styles */
         .activity-table {
             width: 100%;
             border-collapse: collapse;
@@ -877,24 +762,10 @@ try {
             font-weight: 500;
         }
 
-        .activity-table tr:last-child td {
-            border-bottom: none;
-        }
+        .activity-table tr:last-child td { border-bottom: none; }
+        .activity-table tr:hover { background: rgba(255, 218, 106, 0.08); }
 
-        .activity-table tr {
-            transition: var(--transition);
-        }
-
-        .activity-table tr:hover {
-            background: rgba(255, 218, 106, 0.08);
-            transform: translateX(5px);
-        }
-
-        .action-cell {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
+        .action-cell { display: flex; align-items: center; gap: 1rem; }
 
         .action-icon {
             width: 45px;
@@ -907,11 +778,6 @@ try {
             color: white;
             flex-shrink: 0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transition: var(--transition);
-        }
-
-        .action-cell:hover .action-icon {
-            transform: scale(1.1) rotate(5deg);
         }
 
         .icon-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
@@ -921,424 +787,51 @@ try {
         .icon-danger { background: linear-gradient(135deg, var(--danger), #c82333); }
         .icon-secondary { background: linear-gradient(135deg, var(--gray), #5a6268); }
 
-        .no-data {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: var(--text-light);
-        }
+        .no-data { text-align: center; padding: 4rem 2rem; color: var(--text-light); }
+        .no-data i { font-size: 4rem; margin-bottom: 1.5rem; opacity: 0.7; }
+        .no-data h4 { margin-bottom: 1rem; font-weight: 600; font-size: 1.5rem; }
 
-        .no-data i {
-            font-size: 4rem;
-            margin-bottom: 1.5rem;
-            color: #dee2e6;
-            display: block;
-            opacity: 0.7;
-        }
+        /* Badge */
+        .badge { padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
+        .badge-primary { background: rgba(255, 218, 106, 0.2); color: var(--text-dark); border: 1px solid rgba(255, 218, 106, 0.3); }
 
-        .no-data h4 {
-            color: var(--text-light);
-            margin-bottom: 1rem;
-            font-weight: 600;
-            font-size: 1.5rem;
-        }
-
-        .no-data p {
-            color: #999;
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin: 0;
-        }
-
-        .alert-info {
-            background: rgba(23, 162, 184, 0.1);
-            border: 1px solid rgba(23, 162, 184, 0.2);
-            color: #0c5460;
-            border-radius: 12px;
-            padding: 1.25rem;
-            margin-bottom: 2rem;
-            font-weight: 500;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-
-        /* Badge Styles - ENHANCED */
-        .badge {
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .badge-primary {
-            background: rgba(255, 218, 106, 0.2);
-            color: var(--text-dark);
-            border: 1px solid rgba(255, 218, 106, 0.3);
-        }
-
-        /* Responsive Design - ENHANCED */
-        @media (max-width: 1200px) {
-            .sidebar {
-                width: 260px;
-            }
-            
-            .main-content {
-                margin-left: 260px;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .school-name {
-                font-size: 1rem;
-            }
-
-            .logo-img {
-                width: 50px;
-                height: 50px;
-            }
-
-            .activity-card {
-                padding: 2rem;
-            }
-
-            .card-title {
-                font-size: 1.3rem;
-            }
-
-            .card-icon {
-                width: 55px;
-                height: 55px;
-                font-size: 1.3rem;
-            }
-
-            .notification-dropdown {
-                width: 350px;
-            }
-        }
-
+        /* Responsive */
+        @media (max-width: 1200px) { .sidebar { width: 260px; } .main-content { margin-left: 260px; } }
         @media (max-width: 768px) {
-            body {
-                padding-top: 70px;
-            }
-            
-            .top-header {
-                height: 70px;
-                padding: 0.5rem 0;
-            }
-            
-            .mobile-menu-toggle {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                top: 85px;
-                left: 20px;
-            }
-
-            .sidebar {
-                position: fixed;
-                left: 0;
-                top: 70px;
-                height: calc(100vh - 70px);
-                z-index: 1020;
-                transform: translateX(-100%);
-                overflow-y: auto;
-                width: 300px;
-                background: rgba(255, 255, 255, 0.98);
-                backdrop-filter: blur(30px);
-            }
-
-            .sidebar.active {
-                transform: translateX(0);
-            }
-
-            .sidebar-overlay {
-                top: 70px;
-            }
-
-            .sidebar-overlay.active {
-                display: block;
-            }
-
-            .main-content {
-                padding: 1.5rem;
-                width: 100%;
-                margin-left: 0;
-            }
-
-            .header-content {
-                padding: 0 1rem;
-            }
-
-            .school-name {
-                font-size: 0.9rem;
-            }
-
-            .republic, .clinic-title {
-                font-size: 0.65rem;
-            }
-
-            .activity-card {
-                padding: 1.5rem;
-            }
-
-            .activity-table {
-                font-size: 0.9rem;
-            }
-
-            .activity-table th,
-            .activity-table td {
-                padding: 1rem 0.75rem;
-            }
-
-            .action-cell {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.75rem;
-            }
-
-            .card-header {
-                flex-direction: column;
-                gap: 1rem;
-                align-items: flex-start;
-            }
-
-            .welcome-section {
-                padding: 2rem;
-            }
-
-            .welcome-content h1 {
-                font-size: 1.8rem;
-            }
-
-            .notification-dropdown {
-                width: 320px;
-                right: -50px;
-            }
-
-            .notification-dropdown::before {
-                right: 60px;
-            }
+            body { padding-top: 70px; }
+            .top-header { height: 70px; padding: 0.5rem 0; }
+            .mobile-menu-toggle { display: flex; top: 85px; left: 20px; }
+            .sidebar { left: 0; top: 70px; height: calc(100vh - 70px); transform: translateX(-100%); width: 300px; }
+            .sidebar.active { transform: translateX(0); }
+            .main-content { padding: 1.5rem; margin-left: 0; }
+            .notification-dropdown { width: 320px; right: -50px; }
+            .notification-dropdown::before { right: 60px; }
+            .activity-table { font-size: 0.9rem; }
+            .activity-table th, .activity-table td { padding: 1rem 0.75rem; }
         }
-
         @media (max-width: 576px) {
-            .activity-card {
-                padding: 1.25rem;
-            }
-
-            .welcome-section {
-                padding: 1.5rem;
-            }
-
-            .welcome-content h1 {
-                font-size: 1.5rem;
-            }
-
-            .main-content {
-                padding: 1.25rem;
-            }
-            
-            .mobile-menu-toggle {
-                top: 80px;
-                width: 45px;
-                height: 45px;
-            }
-
-            .activity-table {
-                font-size: 0.85rem;
-            }
-
-            .activity-table th,
-            .activity-table td {
-                padding: 0.75rem 0.5rem;
-            }
-
-            .action-icon {
-                width: 40px;
-                height: 40px;
-                font-size: 1rem;
-            }
-
-            .notification-dropdown {
-                width: 280px;
-                right: -30px;
-            }
-
-            .notification-dropdown::before {
-                right: 40px;
-            }
-
-            .notification-bell {
-                width: 45px;
-                height: 45px;
-            }
-
-            .notification-bell i {
-                font-size: 1.2rem;
-            }
-
-            .bell-badge {
-                width: 20px;
-                height: 20px;
-                font-size: 0.7rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .logo-img {
-                width: 40px;
-                height: 40px;
-            }
-            
-            .school-name {
-                font-size: 0.8rem;
-            }
-            
-            .republic, .clinic-title {
-                font-size: 0.6rem;
-            }
-            
-            .mobile-menu-toggle {
-                width: 45px;
-                height: 45px;
-                top: 80px;
-                left: 15px;
-            }
-            
-            .main-content {
-                padding: 1rem;
-            }
-
-            .activity-table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-
-            .activity-card {
-                padding: 1rem;
-            }
-
-            .welcome-section {
-                padding: 1.25rem;
-            }
-
-            .notification-dropdown {
-                width: 250px;
-                right: -20px;
-            }
-
-            .notification-dropdown::before {
-                right: 30px;
-            }
+            .activity-table { display: block; overflow-x: auto; white-space: nowrap; }
+            .notification-dropdown { width: 280px; right: -30px; }
+            .notification-dropdown::before { right: 40px; }
         }
 
-        @media (max-width: 375px) {
-            .mobile-menu-toggle {
-                top: 75px;
-                left: 15px;
-                width: 40px;
-                height: 40px;
-            }
-            
-            .main-content {
-                padding: 0.75rem;
-            }
-
-            .activity-card {
-                padding: 0.75rem;
-            }
-
-            .notification-dropdown {
-                width: 220px;
-                right: -10px;
-            }
-
-            .notification-dropdown::before {
-                right: 20px;
-            }
-        }
-
-        /* ANIMATIONS - ENHANCED */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .fade-in {
-            animation: fadeInUp 0.8s ease-out;
-        }
-
-        .slide-in-left {
-            animation: slideInLeft 0.6s ease-out;
-        }
-
-        .stagger-animation > * {
-            opacity: 0;
-            animation: fadeInUp 0.6s ease-out forwards;
-        }
-
+        /* Animations */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeInUp 0.8s ease-out; }
+        .stagger-animation > * { opacity: 0; animation: fadeInUp 0.6s ease-out forwards; }
         .stagger-animation > *:nth-child(1) { animation-delay: 0.1s; }
         .stagger-animation > *:nth-child(2) { animation-delay: 0.2s; }
         .stagger-animation > *:nth-child(3) { animation-delay: 0.3s; }
-        .stagger-animation > *:nth-child(4) { animation-delay: 0.4s; }
-
-        /* Scrollbar Styling */
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 10px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(135deg, var(--primary-dark), #6a4a9a);
-        }
-
-        /* Touch Device Improvements */
-        .touch-device .activity-card {
-            padding: 1.5rem;
-        }
-
-        .touch-device .action-icon {
-            width: 50px;
-            height: 50px;
-        }
     </style>
 </head>
+
 <body>
-    <!-- Mobile Menu Toggle Button - ENHANCED -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - ENHANCED -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - ENHANCED -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -1351,29 +844,24 @@ try {
                     </div>
                 </div>
 
-                <!-- ✅ NEW: BELL NOTIFICATION -->
                 <div class="notification-wrapper" style="position: relative;">
                     <div class="notification-bell" id="notificationBell">
                         <i class="fas fa-bell"></i>
                         <?php if ($total_notifications > 0): ?>
-                            <div class="bell-badge" id="bellBadge">
-                                <?= $total_notifications ?>
-                            </div>
+                            <div class="bell-badge" id="bellBadge"><?= $total_notifications ?></div>
                         <?php endif; ?>
                     </div>
 
-                    <!-- ✅ NEW: NOTIFICATION DROPDOWN -->
                     <div class="notification-dropdown" id="notificationDropdown">
                         <div class="notification-header">
                             <h5><i class="fas fa-bell"></i> Notifications</h5>
                             <?php if ($total_notifications > 0): ?>
-                                <span class="notification-count"><?= $total_notifications ?> new</span>
+                                <span class="notification-count" id="notificationCount"><?= $total_notifications ?> new</span>
                             <?php endif; ?>
                         </div>
                         
                         <div class="notification-items">
                             <?php if ($total_notifications > 0): ?>
-                                <!-- Consultation Notifications Section -->
                                 <?php if ($consultation_notifications > 0): ?>
                                 <div class="notification-section">
                                     <div class="notification-section-header">
@@ -1383,75 +871,60 @@ try {
                                     
                                     <?php if ($approved_count > 0): ?>
                                         <div class="notification-item approved">
-                                            <div class="notification-icon approved">
-                                                <i class="fas fa-check-circle"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $approved_count ?> Consultation<?= $approved_count > 1 ? 's' : '' ?> Approved</p>
-                                                <small>Your consultation request has been approved</small>
-                                            </div>
+                                            <div class="notification-icon approved"><i class="fas fa-check-circle"></i></div>
+                                            <div class="notification-content"><p><?= $approved_count ?> Approved</p><small>Request approved</small></div>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if ($disapproved_count > 0): ?>
+                                        <div class="notification-item disapproved">
+                                            <div class="notification-icon disapproved"><i class="fas fa-times-circle"></i></div>
+                                            <div class="notification-content"><p><?= $disapproved_count ?> Disapproved</p><small>Request disapproved</small></div>
                                         </div>
                                     <?php endif; ?>
                                     
                                     <?php if ($rejected_count > 0): ?>
                                         <div class="notification-item rejected">
-                                            <div class="notification-icon rejected">
-                                                <i class="fas fa-times-circle"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $rejected_count ?> Consultation<?= $rejected_count > 1 ? 's' : '' ?> Rejected</p>
-                                                <small>Your consultation request has been rejected</small>
-                                            </div>
+                                            <div class="notification-icon rejected"><i class="fas fa-times-circle"></i></div>
+                                            <div class="notification-content"><p><?= $rejected_count ?> Rejected</p><small>Request rejected</small></div>
                                         </div>
                                     <?php endif; ?>
                                     
                                     <?php if ($rescheduled_count > 0): ?>
                                         <div class="notification-item rescheduled">
-                                            <div class="notification-icon rescheduled">
-                                                <i class="fas fa-calendar-alt"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $rescheduled_count ?> Consultation<?= $rescheduled_count > 1 ? 's' : '' ?> Rescheduled</p>
-                                                <small>Your consultation has been rescheduled</small>
-                                            </div>
+                                            <div class="notification-icon rescheduled"><i class="fas fa-calendar-alt"></i></div>
+                                            <div class="notification-content"><p><?= $rescheduled_count ?> Rescheduled</p><small>Consultation rescheduled</small></div>
                                         </div>
                                     <?php endif; ?>
                                     
                                     <?php if ($cancelled_count > 0): ?>
                                         <div class="notification-item cancelled">
-                                            <div class="notification-icon cancelled">
-                                                <i class="fas fa-ban"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $cancelled_count ?> Consultation<?= $cancelled_count > 1 ? 's' : '' ?> Cancelled</p>
-                                                <small>Your consultation has been cancelled</small>
-                                            </div>
+                                            <div class="notification-icon cancelled"><i class="fas fa-ban"></i></div>
+                                            <div class="notification-content"><p><?= $cancelled_count ?> Cancelled</p><small>Consultation cancelled</small></div>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if ($no_show_count > 0): ?>
+                                        <div class="notification-item no-show">
+                                            <div class="notification-icon no-show"><i class="fas fa-user-times"></i></div>
+                                            <div class="notification-content"><p><?= $no_show_count ?> No Show</p><small>Marked as no show</small></div>
                                         </div>
                                     <?php endif; ?>
                                 </div>
                                 <?php endif; ?>
 
-                                <!-- Announcement Notifications Section -->
                                 <?php if ($announcement_notifications > 0): ?>
                                 <div class="notification-section">
                                     <div class="notification-section-header">
-                                        <h6><i class="fas fa-bullhorn me-2"></i> Announcement Updates</h6>
+                                        <h6><i class="fas fa-bullhorn me-2"></i> Announcements</h6>
                                         <span class="notification-section-count"><?= $announcement_notifications ?></span>
                                     </div>
-                                    
                                     <?php if ($new_announcements_count > 0): ?>
                                         <div class="notification-item new-announcement">
-                                            <div class="notification-icon new-announcement">
-                                                <i class="fas fa-bell"></i>
-                                            </div>
-                                            <div class="notification-content">
-                                                <p><?= $new_announcements_count ?> New Announcement<?= $new_announcements_count > 1 ? 's' : '' ?></p>
-                                                <small>Posted in the last 7 days</small>
-                                            </div>
+                                            <div class="notification-icon new-announcement"><i class="fas fa-bell"></i></div>
+                                            <div class="notification-content"><p><?= $new_announcements_count ?> New Announcement<?= $new_announcements_count > 1 ? 's' : '' ?></p><small>Posted recently</small></div>
                                         </div>
                                     <?php endif; ?>
-                                    
-                                    <!-- ✅ FIXED: TANGGAL NA ANG EXPIRED ANNOUNCEMENTS SA NOTIFICATION -->
                                 </div>
                                 <?php endif; ?>
                             <?php else: ?>
@@ -1464,12 +937,8 @@ try {
                         
                         <?php if ($total_notifications > 0): ?>
                             <div class="text-center mt-3">
-                                <a href="schedule_consultation.php" class="btn btn-primary btn-sm me-2">
-                                    <i class="fas fa-calendar me-1"></i> Consultations
-                                </a>
-                                <a href="student_announcement.php" class="btn btn-success btn-sm">
-                                    <i class="fas fa-bullhorn me-1"></i> Announcements
-                                </a>
+                                <a href="schedule_consultation.php" class="btn btn-primary btn-sm me-2"><i class="fas fa-calendar me-1"></i> Consultations</a>
+                                <a href="student_announcement.php" class="btn btn-success btn-sm"><i class="fas fa-bullhorn me-1"></i> Announcements</a>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -1479,61 +948,43 @@ try {
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar - ENHANCED -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="student_dashboard.php" class="nav-item">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
+                    <i class="fas fa-home"></i><span>Dashboard</span>
                 </a>
-
                 <a href="update_profile.php" class="nav-item">
-                    <i class="fas fa-user-edit"></i>
-                    <span>Update Profile</span>
+                    <i class="fas fa-user-edit"></i><span>Update Profile</span>
                 </a>
-
                 <a href="schedule_consultation.php" class="nav-item">
-                    <i class="fas fa-calendar-plus"></i>
-                    <span>Schedule Consultation</span>
-                    <!-- ✅ NEW: NOTIFICATION BADGES -->
+                    <i class="fas fa-calendar-plus"></i><span>Schedule Consultation</span>
                     <?php if ($consultation_notifications > 0): ?>
                         <div class="notification-badge total" title="Consultation updates: <?= $consultation_notifications ?>">
                             <?= $consultation_notifications ?>
                         </div>
                     <?php endif; ?>
                 </a>
-
                 <a href="student_report.php" class="nav-item">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Report</span>
+                    <i class="fas fa-chart-bar"></i><span>Report</span>
                 </a>
-
                 <a href="student_announcement.php" class="nav-item">
-                    <i class="fas fa-bullhorn"></i>
-                    <span>Announcement</span>
-                    <!-- ✅ NEW: ANNOUNCEMENT NOTIFICATION BADGE IN SIDEBAR -->
+                    <i class="fas fa-bullhorn"></i><span>Announcement</span>
                     <?php if ($announcement_notifications > 0): ?>
-                        <div class="notification-badge" title="Announcement updates: <?= $announcement_notifications ?>">
+                        <div class="notification-badge announcement" title="Announcement updates: <?= $announcement_notifications ?>">
                             <?= $announcement_notifications ?>
                         </div>
                     <?php endif; ?>
                 </a>
-
                 <a href="activity_logs.php" class="nav-item active">
-                    <i class="fas fa-clipboard-list"></i>
-                    <span>Activity Logs</span>
+                    <i class="fas fa-clipboard-list"></i><span>Activity Logs</span>
                 </a>
-                
                 <a href="logout.php" class="nav-item logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
+                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
                 </a>
             </nav>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <!-- WELCOME SECTION - ENHANCED -->
             <div class="welcome-section fade-in">
                 <div class="welcome-content">
                     <h1>Activity Logs 📋</h1>
@@ -1541,23 +992,14 @@ try {
                 </div>
             </div>
 
-            <!-- ACTIVITY LOGS CARD - ENHANCED -->
             <div class="activity-card fade-in">
                 <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-history me-2"></i>
-                        Activity History
-                        <span class="badge badge-primary ms-2"><?php echo count($logs); ?> Records</span>
-                    </h3>
-                    <div class="card-icon">
-                        <i class="fas fa-clipboard-list"></i>
-                    </div>
+                    <h3 class="card-title"><i class="fas fa-history me-2"></i> Activity History <span class="badge badge-primary ms-2"><?php echo count($logs); ?> Records</span></h3>
+                    <div class="card-icon"><i class="fas fa-clipboard-list"></i></div>
                 </div>
                 
                 <?php if (isset($error)): ?>
-                    <div class="alert alert-info">
-                        <strong><i class="fas fa-info-circle me-2"></i>Info:</strong> <?php echo $error; ?>
-                    </div>
+                    <div class="alert alert-info"><strong><i class="fas fa-info-circle me-2"></i>Info:</strong> <?php echo $error; ?></div>
                 <?php endif; ?>
                 
                 <?php if (!empty($logs)): ?>
@@ -1575,50 +1017,34 @@ try {
                                         <td>
                                             <div class="action-cell">
                                                 <?php 
-                                                // Add icons based on action type
                                                 $action = htmlspecialchars($log['action']);
-                                                $iconClass = '';
-                                                $icon = '';
+                                                $iconClass = 'icon-secondary';
+                                                $icon = 'fas fa-history';
                                                 
                                                 if (strpos($action, 'profile') !== false) {
-                                                    $iconClass = 'icon-primary';
-                                                    $icon = 'fas fa-user-edit';
+                                                    $iconClass = 'icon-primary'; $icon = 'fas fa-user-edit';
                                                 } elseif (strpos($action, 'medical') !== false) {
-                                                    $iconClass = 'icon-info';
-                                                    $icon = 'fas fa-file-medical';
+                                                    $iconClass = 'icon-info'; $icon = 'fas fa-file-medical';
                                                 } elseif (strpos($action, 'password') !== false) {
-                                                    $iconClass = 'icon-warning';
-                                                    $icon = 'fas fa-key';
+                                                    $iconClass = 'icon-warning'; $icon = 'fas fa-key';
                                                 } elseif (strpos($action, 'consultation') !== false) {
                                                     if (strpos($action, 'Scheduled') !== false) {
-                                                        $iconClass = 'icon-success';
-                                                        $icon = 'fas fa-calendar-plus';
+                                                        $iconClass = 'icon-success'; $icon = 'fas fa-calendar-plus';
                                                     } elseif (strpos($action, 'Edited') !== false) {
-                                                        $iconClass = 'icon-primary';
-                                                        $icon = 'fas fa-edit';
+                                                        $iconClass = 'icon-primary'; $icon = 'fas fa-edit';
                                                     } elseif (strpos($action, 'Cancelled') !== false) {
-                                                        $iconClass = 'icon-danger';
-                                                        $icon = 'fas fa-times-circle';
+                                                        $iconClass = 'icon-danger'; $icon = 'fas fa-times-circle';
                                                     } else {
-                                                        $iconClass = 'icon-info';
-                                                        $icon = 'fas fa-calendar-check';
+                                                        $iconClass = 'icon-info'; $icon = 'fas fa-calendar-check';
                                                     }
-                                                } else {
-                                                    $iconClass = 'icon-secondary';
-                                                    $icon = 'fas fa-history';
                                                 }
                                                 ?>
-                                                <div class="action-icon <?php echo $iconClass; ?>">
-                                                    <i class="<?php echo $icon; ?>"></i>
-                                                </div>
+                                                <div class="action-icon <?php echo $iconClass; ?>"><i class="<?php echo $icon; ?>"></i></div>
                                                 <span><?php echo $action; ?></span>
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="text-muted">
-                                                <i class="fas fa-clock me-2"></i>
-                                                <?php echo date('M d, Y h:i A', strtotime($log['log_date'])); ?>
-                                            </span>
+                                            <span class="text-muted"><i class="fas fa-clock me-2"></i><?php echo date('M d, Y h:i A', strtotime($log['log_date'])); ?></span>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -1636,54 +1062,67 @@ try {
         </main>
     </div>
 
-    <!-- JS -->
     <script src="assets/js/bootstrap.bundle.min.js"></script>
-    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ✅ NEW: BELL NOTIFICATION FUNCTIONALITY
+            // ✅ BELL NOTIFICATION (WITH PERSISTENCE FIX)
             const notificationBell = document.getElementById('notificationBell');
             const notificationDropdown = document.getElementById('notificationDropdown');
             const bellBadge = document.getElementById('bellBadge');
+            const notificationCount = document.getElementById('notificationCount');
 
-            // Toggle notification dropdown
-            notificationBell.addEventListener('click', function(e) {
-                e.stopPropagation();
-                notificationDropdown.classList.toggle('active');
-                
-                // Add animation to bell when clicked
-                this.style.transform = 'scale(1.1) rotate(15deg)';
-                setTimeout(() => {
-                    this.style.transform = 'scale(1.1) rotate(-5deg)';
-                }, 150);
-                setTimeout(() => {
-                    this.style.transform = 'scale(1.1) rotate(0deg)';
-                }, 300);
-                
-                // Remove pulse animation when clicked
-                if (bellBadge) {
-                    bellBadge.style.animation = 'none';
-                    setTimeout(() => {
-                        bellBadge.style.animation = 'pulse 2s infinite';
-                    }, 100);
-                }
-            });
+            if (notificationBell) {
+                notificationBell.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    notificationDropdown.classList.toggle('active');
+                    
+                    // Animation
+                    this.style.transform = 'scale(1.1)';
+                    setTimeout(() => { this.style.transform = 'scale(1)'; }, 200);
+                    
+                    // Hide Badge Visually
+                    if (bellBadge) {
+                        bellBadge.style.display = 'none';
+                    }
+                    if (notificationCount) {
+                        notificationCount.style.display = 'none';
+                    }
 
-            // Close dropdown when clicking outside
+                    // Send AJAX Request
+                    const formData = new FormData();
+                    formData.append('action', 'mark_read');
+
+                    fetch('activity_logs.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.text())
+                    .then(data => {
+                        // console.log('Marked as read:', data);
+                    })
+                    .catch(error => console.error('Error:', error));
+                });
+            }
+
             document.addEventListener('click', function(e) {
-                if (!notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                if (notificationBell && !notificationBell.contains(e.target) && !notificationDropdown.contains(e.target)) {
                     notificationDropdown.classList.remove('active');
                 }
             });
 
-            // Close dropdown when pressing Escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    notificationDropdown.classList.remove('active');
-                }
+            const notificationItems = document.querySelectorAll('.notification-item');
+            notificationItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    if (this.classList.contains('new-announcement')) {
+                        window.location.href = 'student_announcement.php';
+                    } else {
+                        window.location.href = 'schedule_consultation.php';
+                    }
+                });
+                item.style.cursor = 'pointer';
             });
 
-            // MOBILE MENU FUNCTIONALITY - ENHANCED
+            // MOBILE MENU
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const sidebar = document.getElementById('sidebar');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
@@ -1694,19 +1133,13 @@ try {
                 const icon = mobileMenuToggle.querySelector('i');
                 icon.classList.toggle('fa-bars');
                 icon.classList.toggle('fa-times');
-                
-                // Add animation class
-                if (sidebar.classList.contains('active')) {
-                    sidebar.classList.add('slide-in-left');
-                } else {
-                    sidebar.classList.remove('slide-in-left');
-                }
             }
 
-            mobileMenuToggle.addEventListener('click', toggleMobileMenu);
-            sidebarOverlay.addEventListener('click', toggleMobileMenu);
+            if(mobileMenuToggle) {
+                mobileMenuToggle.addEventListener('click', toggleMobileMenu);
+                sidebarOverlay.addEventListener('click', toggleMobileMenu);
+            }
 
-            // Close sidebar when clicking nav items on mobile
             if (window.innerWidth <= 768) {
                 document.querySelectorAll('.nav-item').forEach(item => {
                     item.addEventListener('click', function() {
@@ -1717,87 +1150,14 @@ try {
                 });
             }
 
-            // LOADING ANIMATIONS
-            const staggerElements = document.querySelectorAll('.stagger-animation > *');
-            staggerElements.forEach((element, index) => {
-                element.style.animationDelay = `${index * 0.1}s`;
-            });
+            // AUTO REFRESH (Optional, kept from previous code)
+            setTimeout(() => { location.reload(); }, 120000);
 
+            // ANIMATIONS
             const fadeElements = document.querySelectorAll('.fade-in');
             fadeElements.forEach((element, index) => {
-                element.style.animationDelay = `${index * 0.15}s`;
+                element.style.animationDelay = `${index * 0.1}s`;
             });
-
-            // ENHANCED INTERACTIONS
-            const activityCards = document.querySelectorAll('.activity-card');
-            activityCards.forEach(card => {
-                card.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-8px)';
-                });
-                
-                card.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(-5px)';
-                });
-            });
-
-            // FOCUS MANAGEMENT FOR ACCESSIBILITY
-            const focusableElements = document.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-            focusableElements.forEach(element => {
-                element.addEventListener('focus', function() {
-                    this.classList.add('focus-visible');
-                });
-                
-                element.addEventListener('blur', function() {
-                    this.classList.remove('focus-visible');
-                });
-            });
-
-            // TOUCH DEVICE ENHANCEMENTS
-            if ('ontouchstart' in window) {
-                document.body.classList.add('touch-device');
-                
-                // Increase tap targets
-                const tapTargets = document.querySelectorAll('.nav-item, .activity-card, .notification-bell');
-                tapTargets.forEach(target => {
-                    target.style.minHeight = '44px';
-                });
-            }
-
-            // RESIZE HANDLER
-            window.addEventListener('resize', function() {
-                if (window.innerWidth > 768 && sidebar.classList.contains('active')) {
-                    toggleMobileMenu();
-                }
-                
-                // Close notification dropdown on mobile when resizing
-                if (window.innerWidth <= 768) {
-                    notificationDropdown.classList.remove('active');
-                }
-            });
-
-            // ✅ NEW: NOTIFICATION ITEM INTERACTIONS
-            const notificationItems = document.querySelectorAll('.notification-item');
-            notificationItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    if (this.classList.contains('new-announcement') || this.classList.contains('expired-announcement')) {
-                        window.location.href = 'student_announcement.php';
-                    } else {
-                        window.location.href = 'schedule_consultation.php';
-                    }
-                });
-                
-                item.style.cursor = 'pointer';
-            });
-
-            // Auto-refresh activity logs every 2 minutes
-            function autoRefreshLogs() {
-                setTimeout(() => {
-                    location.reload();
-                }, 120000); // 2 minutes
-            }
-
-            // Initialize auto-refresh
-            autoRefreshLogs();
         });
     </script>
 </body>

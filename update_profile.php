@@ -1,23 +1,121 @@
 <?php
-session_start();
+// ==================== SESSION AT SECURITY ====================
+session_start();  // SIMULIN ANG SESSION PARA MA-ACCESS ANG USER DATA
 require 'includes/db_connect.php';
-require 'includes/activity_logger.php';
+require 'includes/activity_logger.php';  // IKONEK SA DATABASE GAMIT ANG PDO
 
-if (!isset($_SESSION['student_number'])) {
-    header("Location: student_login.php");
-    exit();
+// ✅ SECURITY CHECK: TINITIGNAN KUNG NAKA-LOGIN ANG USER
+if (!isset($_SESSION['student_id'])) {
+    header("Location: student_login.php");  // KUNG HINDI NAKA-LOGIN, BALIK SA LOGIN PAGE
+    exit();  // ITIGIL ANG EXECUTION
 }
 
-$student_number = $_SESSION['student_number'];
-$student_id = $_SESSION['student_id'] ?? $student_number;
+$student_id = $_SESSION['student_id'];
 
-// ✅ FETCH CONSULTATION STATUS COUNTS FOR NOTIFICATIONS
+// ==================== 🟢 AJAX HANDLER (FIX: UPDATE DB & SESSION) ====================
+// Ito ang sasalo ng signal galing sa JavaScript para i-update ang status
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'mark_read') {
+    try {
+        // 1. Update Consultation Requests sa Database (Gawin viewed = TRUE)
+        $updateStmt = $pdo->prepare("UPDATE consultation_requests SET is_viewed = TRUE WHERE student_id = ?");
+        $updateStmt->execute([$student_id]);
+
+        // 2. Update Announcements sa Session (Gamitin ang Database Time para accurate)
+        $timeStmt = $pdo->query("SELECT NOW()");
+        $dbCurrentTime = $timeStmt->fetchColumn();
+
+        $_SESSION['announcements_last_viewed'] = $dbCurrentTime;
+        
+        echo "success";
+    } catch (Exception $e) {
+        echo "error";
+    }
+    exit; // Tigil dito para hindi mag-load ang buong HTML
+}
+// ====================================================================================
+
+$student_number = $_SESSION['student_number'] ?? ($_SESSION['student_id'] ?? 'N/A');
+
+// ✅ I-LOG ANG PAG-ACCESS SA DASHBOARD (automatic duplicate prevention na)
+
+$stmt = $pdo->prepare("SELECT fullname, student_number, course_year, cellphone_number 
+                        FROM student_information 
+                        WHERE student_number = :student_number LIMIT 1");
+
+$stmt->execute([':student_number' => $student_number]);
+
+$student_info = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// ✅ ERROR HANDLING: BACKUP SYSTEM KUNG WALANG MAKUHA SA DATABASE
+if (!$student_info) {
+    // GUMAMIT NG SESSION DATA KUNG WALANG RECORD SA DATABASE
+    $student_info = [
+        'fullname' => $_SESSION['fullname'] ?? 'N/A',
+        'student_number' => $student_number,
+        'course_year' => 'Not set',
+        'cellphone_number' => 'Not set'
+    ];
+} else {
+    // ✅ UPDATE ANG SESSION DATA PARA CONSISTENT ANG INFORMATION
+    $_SESSION['fullname'] = $student_info['fullname'];
+    $_SESSION['student_number'] = $student_info['student_number']; // SIGURADUHING NA-SET
+}
+
+// ✅ FETCH UPCOMING APPOINTMENTS
 try {
+    $appointment_stmt = $pdo->prepare("
+        SELECT date, time, requested, status 
+        FROM consultation_requests 
+        WHERE student_id = ? AND date >= CURDATE() AND status IN ('Pending', 'Approved')
+        ORDER BY date ASC, time ASC 
+        LIMIT 3
+    ");
+    $appointment_stmt->execute([$student_id]);
+    $upcoming_appointments = $appointment_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $upcoming_appointments = [];
+}
+
+// ✅ FETCH APPOINTMENTS FOR CALENDAR
+try {
+    $calendar_stmt = $pdo->prepare("
+        SELECT date, time, requested, status 
+        FROM consultation_requests 
+        WHERE student_id = ? AND status IN ('Pending', 'Approved', 'Completed')
+        ORDER BY date ASC
+    ");
+    $calendar_stmt->execute([$student_id]);
+    $calendar_appointments = $calendar_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $calendar_appointments = [];
+}
+
+// ✅ FETCH RECENT ACTIVITIES - SAME FILTER AS ACTIVITY_LOGS.PHP
+try {
+    $activity_stmt = $pdo->prepare("
+        SELECT action, log_date 
+        FROM activity_logs 
+        WHERE student_id = ?
+        AND action NOT LIKE '%logged in%' 
+        AND action NOT LIKE '%logged out%'
+        ORDER BY log_date DESC 
+        LIMIT 3
+    ");
+    $activity_stmt->execute([$student_id]);
+    $recent_activities = $activity_stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $recent_activities = [];
+}
+
+// ✅ UPDATED: FETCH CONSULTATION STATUS COUNTS FOR NOTIFICATIONS (UNVIEWED ONLY)
+try {
+    // Added 'Rejected' to the list of statuses
     $status_counts_stmt = $pdo->prepare("
         SELECT status, COUNT(*) as count 
         FROM consultation_requests 
         WHERE student_id = ? 
-        AND status IN ('Approved', 'Rejected', 'Rescheduled', 'Cancelled')
+        AND status IN ('Approved', 'Disapproved', 'Rescheduled', 'Cancelled', 'No Show', 'Rejected')
+        AND is_viewed = FALSE
         GROUP BY status
     ");
     $status_counts_stmt->execute([$student_id]);
@@ -25,9 +123,11 @@ try {
     
     // Initialize counts
     $approved_count = 0;
-    $rejected_count = 0;
+    $disapproved_count = 0;
+    $rejected_count = 0; // Added rejected count
     $rescheduled_count = 0;
     $cancelled_count = 0;
+    $no_show_count = 0;
     $consultation_notifications = 0;
     
     // Process counts
@@ -36,7 +136,10 @@ try {
             case 'Approved':
                 $approved_count = $status_count['count'];
                 break;
-            case 'Rejected':
+            case 'Disapproved':
+                $disapproved_count = $status_count['count'];
+                break;
+            case 'Rejected': // Added case for Rejected
                 $rejected_count = $status_count['count'];
                 break;
             case 'Rescheduled':
@@ -45,34 +148,46 @@ try {
             case 'Cancelled':
                 $cancelled_count = $status_count['count'];
                 break;
+            case 'No Show':
+                $no_show_count = $status_count['count'];
+                break;
         }
     }
     
-    $consultation_notifications = $approved_count + $rejected_count + $rescheduled_count + $cancelled_count;
+    // Added rejected_count to total notifications
+    $consultation_notifications = $approved_count + $disapproved_count + $rejected_count + $rescheduled_count + $cancelled_count + $no_show_count;
     
 } catch (PDOException $e) {
     $approved_count = 0;
+    $disapproved_count = 0;
     $rejected_count = 0;
     $rescheduled_count = 0;
     $cancelled_count = 0;
+    $no_show_count = 0;
     $consultation_notifications = 0;
 }
 
-// ✅ UPDATED: FETCH ANNOUNCEMENT COUNTS FOR NOTIFICATIONS (WALANG EXPIRED ANNOUNCEMENTS)
+// ✅ UPDATED: FETCH ANNOUNCEMENT COUNTS FOR NOTIFICATIONS (EXPIRED ANNOUNCEMENTS ARE NOT COUNTED)
 try {
-    // COUNT ONLY NEW ANNOUNCEMENTS (last 7 days) that are still active
-    $new_announcements_stmt = $pdo->prepare("
-        SELECT COUNT(*) as count 
-        FROM announcements 
-        WHERE post_on_front = 1 
-        AND is_active = 1
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        AND (expiry_date IS NULL OR expiry_date > NOW())
-    ");
-    $new_announcements_stmt->execute();
+    // Build query base
+    $sql = "SELECT COUNT(*) as count 
+            FROM announcements 
+            WHERE post_on_front = 1 
+            AND is_active = 1
+            AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            AND (expiry_date IS NULL OR expiry_date > NOW())";
+            
+    // FIX: Check session timestamp para hindi na mag-notify kung na-view na
+    if (isset($_SESSION['announcements_last_viewed'])) {
+        $sql .= " AND created_at > :last_viewed";
+        $new_announcements_stmt = $pdo->prepare($sql);
+        $new_announcements_stmt->execute([':last_viewed' => $_SESSION['announcements_last_viewed']]);
+    } else {
+        $new_announcements_stmt = $pdo->prepare($sql);
+        $new_announcements_stmt->execute();
+    }
+
     $new_announcements_count = $new_announcements_stmt->fetch(PDO::FETCH_ASSOC)['count'];
-    
-    // ✅ REMOVED: Expired announcements are no longer counted
     
     // TOTAL ANNOUNCEMENT NOTIFICATIONS (only new announcements)
     $announcement_notifications = $new_announcements_count;
@@ -226,7 +341,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: update_profile.php?success=1");
         exit();
         
-    } catch (PDOException $e) { // FIXED: Added the missing closing brace here
+    } catch (PDOException $e) {
         $update_error = "There was an error updating your profile. Please try again.";
     }
 }
@@ -244,9 +359,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Update Profile - ASCOT Clinic</title>
   
-  <!-- Bootstrap -->
   <link href="assets/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Font Awesome -->
   <link href="assets/webfonts/all.min.css" rel="stylesheet">
   
   <style>
@@ -426,7 +539,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         }
     }
 
-    /* ✅ ENHANCED: NOTIFICATION DROPDOWN */
+    /* ✅ UPDATED: NOTIFICATION DROPDOWN */
     .notification-dropdown {
         position: absolute;
         top: 100%;
@@ -552,7 +665,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         background: rgba(40, 167, 69, 0.05);
     }
 
-    .notification-item.rejected {
+    .notification-item.disapproved {
         border-left-color: var(--danger);
         background: rgba(220, 53, 69, 0.05);
     }
@@ -565,6 +678,11 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
     .notification-item.cancelled {
         border-left-color: var(--secondary);
         background: rgba(118, 75, 162, 0.05);
+    }
+
+    .notification-item.no-show {
+        border-left-color: #6c757d;
+        background: rgba(108, 117, 125, 0.05);
     }
 
     .notification-item.new-announcement {
@@ -587,7 +705,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         background: var(--success);
     }
 
-    .notification-icon.rejected {
+    .notification-icon.disapproved {
         background: var(--danger);
     }
 
@@ -597,6 +715,10 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
 
     .notification-icon.cancelled {
         background: var(--secondary);
+    }
+
+    .notification-icon.no-show {
+        background: #6c757d;
     }
 
     .notification-icon.new-announcement {
@@ -766,7 +888,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         color: var(--danger);
     }
 
-    /* ✅ ENHANCED: SIDEBAR NOTIFICATION BADGES */
+    /* ✅ UPDATED: SIDEBAR NOTIFICATION BADGES */
     .notification-badge {
         background: linear-gradient(135deg, var(--primary), var(--primary-dark));
         color: white;
@@ -792,7 +914,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         background: linear-gradient(135deg, var(--success), #218838);
     }
 
-    .notification-badge.rejected {
+    .notification-badge.disapproved {
         background: linear-gradient(135deg, var(--danger), #c82333);
     }
 
@@ -802,6 +924,10 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
 
     .notification-badge.cancelled {
         background: linear-gradient(135deg, var(--secondary), #6f42c1);
+    }
+
+    .notification-badge.no-show {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
     }
 
     .notification-badge.total {
@@ -1682,15 +1808,12 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
   </style>
 </head>
 <body>
-    <!-- Mobile Menu Toggle Button - ENHANCED -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
         <i class="fas fa-bars"></i>
     </button>
 
-    <!-- Sidebar Overlay for Mobile - ENHANCED -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Header - ENHANCED -->
     <header class="top-header">
         <div class="container-fluid">
             <div class="header-content">
@@ -1703,7 +1826,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                     </div>
                 </div>
 
-                <!-- ✅ ENHANCED: BELL NOTIFICATION -->
                 <div class="notification-wrapper" style="position: relative;">
                     <div class="notification-bell" id="notificationBell">
                         <i class="fas fa-bell"></i>
@@ -1714,7 +1836,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                         <?php endif; ?>
                     </div>
 
-                    <!-- ✅ ENHANCED: NOTIFICATION DROPDOWN -->
                     <div class="notification-dropdown" id="notificationDropdown">
                         <div class="notification-header">
                             <h5><i class="fas fa-bell"></i> Notifications</h5>
@@ -1725,7 +1846,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                         
                         <div class="notification-items">
                             <?php if ($total_notifications > 0): ?>
-                                <!-- Consultation Notifications Section -->
                                 <?php if ($consultation_notifications > 0): ?>
                                 <div class="notification-section">
                                     <div class="notification-section-header">
@@ -1744,7 +1864,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                                             </div>
                                         </div>
                                     <?php endif; ?>
-                                    
+
                                     <?php if ($rejected_count > 0): ?>
                                         <div class="notification-item rejected">
                                             <div class="notification-icon rejected">
@@ -1753,6 +1873,18 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                                             <div class="notification-content">
                                                 <p><?= $rejected_count ?> Consultation<?= $rejected_count > 1 ? 's' : '' ?> Rejected</p>
                                                 <small>Your consultation request has been rejected</small>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if ($disapproved_count > 0): ?>
+                                        <div class="notification-item disapproved">
+                                            <div class="notification-icon disapproved">
+                                                <i class="fas fa-times-circle"></i>
+                                            </div>
+                                            <div class="notification-content">
+                                                <p><?= $disapproved_count ?> Consultation<?= $disapproved_count > 1 ? 's' : '' ?> Disapproved</p>
+                                                <small>Your consultation request has been disapproved</small>
                                             </div>
                                         </div>
                                     <?php endif; ?>
@@ -1780,10 +1912,21 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                                             </div>
                                         </div>
                                     <?php endif; ?>
+
+                                    <?php if ($no_show_count > 0): ?>
+                                        <div class="notification-item no-show">
+                                            <div class="notification-icon no-show">
+                                                <i class="fas fa-user-times"></i>
+                                            </div>
+                                            <div class="notification-content">
+                                                <p><?= $no_show_count ?> Consultation<?= $no_show_count > 1 ? 's' : '' ?> Marked as No Show</p>
+                                                <small>You missed your scheduled consultation</small>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                                 <?php endif; ?>
 
-                                <!-- Announcement Notifications Section -->
                                 <?php if ($announcement_notifications > 0): ?>
                                 <div class="notification-section">
                                     <div class="notification-section-header">
@@ -1829,7 +1972,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
     </header>
 
     <div class="dashboard-container">
-        <!-- Sidebar - ENHANCED -->
         <aside class="sidebar" id="sidebar">
             <nav class="sidebar-nav">
                 <a href="student_dashboard.php" class="nav-item">
@@ -1845,7 +1987,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 <a href="schedule_consultation.php" class="nav-item">
                     <i class="fas fa-calendar-plus"></i>
                     <span>Schedule Consultation</span>
-                    <!-- ✅ ENHANCED: NOTIFICATION BADGES -->
                     <?php if ($consultation_notifications > 0): ?>
                         <div class="notification-badge total" title="Consultation updates: <?= $consultation_notifications ?>">
                             <?= $consultation_notifications ?>
@@ -1861,7 +2002,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 <a href="student_announcement.php" class="nav-item">
                     <i class="fas fa-bullhorn"></i>
                     <span>Announcement</span>
-                    <!-- ✅ NEW: ANNOUNCEMENT NOTIFICATION BADGE IN SIDEBAR -->
                     <?php if ($announcement_notifications > 0): ?>
                         <div class="notification-badge announcement" title="Announcement updates: <?= $announcement_notifications ?>">
                             <?= $announcement_notifications ?>
@@ -1881,9 +2021,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
             </nav>
         </aside>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <!-- ERROR MESSAGE DISPLAY -->
             <?php if (isset($update_error)): ?>
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <i class="fas fa-exclamation-circle me-2"></i> <?php echo $update_error; ?>
@@ -1891,7 +2029,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 </div>
             <?php endif; ?>
             
-            <!-- SUCCESS MESSAGE DISPLAY -->
             <?php if ($success): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="fas fa-check-circle me-2"></i> Profile updated successfully!
@@ -1899,7 +2036,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 </div>
             <?php endif; ?>
 
-            <!-- FORM HEADER WITH LOGO - ENHANCED -->
             <div class="form-header-with-logo fade-in">
                 <div class="container">
                     <div class="row align-items-center">
@@ -1917,22 +2053,18 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 </div>
             </div>
 
-            <!-- HEALTH INFORMATION FORM - ENHANCED -->
             <div class="health-form-container fade-in">
                 <div class="form-title">
                     <h3>HEALTH INFORMATION FORM</h3>
                     <p class="form-subtitle">Do not leave any item unanswered</p>
                 </div>
 
-                <!-- MAIN FORM -->
                 <form id="healthForm" action="update_profile.php" method="POST">
                     <input type="hidden" name="student_number" value="<?php echo htmlspecialchars($student_number); ?>">
 
-                    <!-- PART I: STUDENT INFORMATION SECTION -->
                     <div class="form-section">
                         <div class="section-title">PART I: STUDENT INFORMATION</div>
                         
-                        <!-- Name and Address Row -->
                         <div class="row form-row-enhanced">
                             <div class="col-md-6 mb-4">
                                 <label class="form-label">Name:</label>
@@ -1950,7 +2082,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                             </div>
                         </div>
 
-                        <!-- Personal Details Row -->
                         <div class="row form-row-enhanced">
                             <div class="col-md-6 col-lg-2 mb-4">
                                 <label class="form-label">Age:</label>
@@ -1998,7 +2129,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                             </div>
                         </div>
 
-                        <!-- Family and School Details Row -->
                         <div class="row form-row-enhanced">
                             <div class="col-md-6 mb-4">
                                 <label class="form-label">Parent's Name/Guardian:</label>
@@ -2022,7 +2152,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                             </div>
                         </div>
 
-                        <!-- Course and Contact Details Row -->
                         <div class="row form-row-enhanced">
                             <div class="col-md-6 mb-4">
                                 <label class="form-label">Course/Year:</label>
@@ -2044,11 +2173,9 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                         </div>
                     </div>
 
-                    <!-- PART II: MEDICAL HISTORY SECTION -->
                     <div class="form-section">
                         <div class="section-title">PART II: MEDICAL HISTORY</div>
                         
-                        <!-- Question 1: Medical Attention -->
                         <div class="medical-question mb-4">
                             <p class="question-text">1. Do you need medical attention or has known medical illness?</p>
                             <div class="radio-options">
@@ -2068,7 +2195,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                             
                             <p class="instruction-text">Please check the following that apply and give more information as needed</p>
                             
-                            <!-- Medical Conditions Checkboxes -->
                             <div class="conditions-grid">
                                 <?php
                                 $conditions_saved = explode(',', $medical_info['medical_conditions'] ?? '');
@@ -2084,12 +2210,11 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                                     echo "<div class='form-check-custom'>
                                             <input class='form-check-input' type='checkbox' name='conditions[]' value='$opt' id='condition_$opt' $checked $disabled>
                                             <label class='form-check-label' for='condition_$opt'>$opt</label>
-                                        </div>";
+                                          </div>";
                                 }
                                 ?>
                             </div>
 
-                            <!-- Other Conditions Field -->
                             <div class="row mt-4">
                                 <div class="col-md-6">
                                     <label class="form-label">Others:</label>
@@ -2101,7 +2226,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                             </div>
                         </div>
 
-                        <!-- Previous Hospitalization Section -->
                         <div class="row form-row-enhanced">
                             <div class="col-md-6 mb-4">
                                 <label class="form-label">Previous Hospitalization</label>
@@ -2129,7 +2253,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                             </div>
                         </div>
 
-                        <!-- Operation/Surgery Section -->
                         <div class="row form-row-enhanced">
                             <div class="col-md-6 mb-4">
                                 <label class="form-label">Operation/Surgery</label>
@@ -2157,12 +2280,10 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                             </div>
                         </div>
 
-                        <!-- Question 2: Allergies Information -->
                         <div class="medical-question">
                             <p class="question-text">2. Additional Information for Student with medical information</p>
                             <p class="instruction-text">The history of allergies to the following:</p>
                             
-                            <!-- Allergies Information -->
                             <div class="row form-row-enhanced">
                                 <div class="col-md-6 mb-4">
                                     <label class="form-label">Food:</label>
@@ -2174,25 +2295,21 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                                 <div class="col-md-6 mb-4">
                                     <label class="form-label">Medicine:</label>
                                     <input type="text" name="medicine_allergies" class="form-control underlined"
-                                       value="<?php echo htmlspecialchars($medical_info['medicine_allergies'] ?? ''); ?>"
-                                       <?php echo !$edit_mode ? 'readonly' : ''; ?>
-                                       placeholder="Medicine allergies">
+                                           value="<?php echo htmlspecialchars($medical_info['medicine_allergies'] ?? ''); ?>"
+                                           <?php echo !$edit_mode ? 'readonly' : ''; ?>
+                                           placeholder="Medicine allergies">
                                 </div>
                             </div>
 
-                            <!-- EDIT AND SAVE BUTTONS SECTION -->
                             <div class="action-buttons">
                                 <?php if (!$edit_mode): ?>
-                                    <!-- EDIT BUTTON -->
                                     <a href="update_profile.php?edit=true" class="btn btn-edit">
                                         <i class="fas fa-edit"></i> Edit Profile
                                     </a>
                                 <?php else: ?>
-                                    <!-- SAVE BUTTON -->
                                     <button type="submit" class="btn btn-save">
                                         <i class="fas fa-save"></i> Save Changes
                                     </button>
-                                    <!-- CANCEL BUTTON -->
                                     <a href="update_profile.php" class="btn btn-cancel">
                                         <i class="fas fa-times"></i> Cancel
                                     </a>
@@ -2205,7 +2322,6 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
         </main>
     </div>
 
-    <!-- JS -->
     <script src="assets/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -2218,7 +2334,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 }, 5000);
             }
 
-            // ✅ ENHANCED: BELL NOTIFICATION FUNCTIONALITY
+            // ✅ UPDATED: BELL NOTIFICATION FUNCTIONALITY (WITH DB UPDATE)
             const notificationBell = document.getElementById('notificationBell');
             const notificationDropdown = document.getElementById('notificationDropdown');
             const bellBadge = document.getElementById('bellBadge');
@@ -2238,13 +2354,29 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                         this.style.transform = 'scale(1.1) rotate(0deg)';
                     }, 300);
                     
-                    // Remove pulse animation when clicked
+                    // ✅ FIX: HIDE BADGE AUTOMATICALLY (VISUAL ONLY)
                     if (bellBadge) {
-                        bellBadge.style.animation = 'none';
+                        bellBadge.style.transition = 'opacity 0.3s ease';
+                        bellBadge.style.opacity = '0';
                         setTimeout(() => {
-                            bellBadge.style.animation = 'pulse 2s infinite';
-                        }, 100);
+                            bellBadge.style.display = 'none';
+                        }, 300);
                     }
+
+                    // ✅ SEND AJAX REQUEST TO UPDATE DATABASE (Persistence)
+                    // This ensures badge stays hidden on refresh
+                    const formData = new FormData();
+                    formData.append('action', 'mark_read');
+
+                    fetch('update_profile.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.text())
+                    .then(data => {
+                        // console.log('Notifications marked as read:', data); 
+                    })
+                    .catch(error => console.error('Error marking notifications as read:', error));
                 });
 
                 // Close dropdown when clicking outside
@@ -2262,7 +2394,7 @@ $display_fullname = $student_info['fullname'] ?? ($user_info['fullname'] ?? $stu
                 });
             }
 
-            // ✅ ENHANCED: NOTIFICATION ITEM INTERACTIONS
+            // ✅ UPDATED: NOTIFICATION ITEM INTERACTIONS
             const notificationItems = document.querySelectorAll('.notification-item');
             notificationItems.forEach(item => {
                 item.addEventListener('click', function() {
